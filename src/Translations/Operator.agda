@@ -4,15 +4,20 @@
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Data.Bool hiding (_≟_)
-open import Relation.Nullary using (¬_; Dec; yes; no)
+open import Relation.Nullary using (¬_; Dec; yes; no; does; contradiction; contrapositon)
+open import Relation.Nullary.Negation
 open import Plans.Domain
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong)
+open import Data.List.Relation.Binary.Sublist.Heterogeneous.Core using (_∷ʳ_) renaming ([] to ∅)
 
 module Translations.Operator (domain : Domain) where
+  open import Data.List using (_++_; filterᵇ; unzip; map)
+
   open Domain domain
+  
   open import ADJ.Core PredMap
-  open import Data.List using (_++_; filterᵇ)
+  open import Utils.BigTensor PredMap using (⨂_)
 
   private 
     cond : ActionDescription → List (Polarity × Predicate)
@@ -32,25 +37,59 @@ module Translations.Operator (domain : Domain) where
         
     filterNegative : List PredMap → List PredMap
     filterNegative L = filterᵇ isNeg L
+  
+    u≥l : U ≥ L
+    u≥l = StructRule.W ∷ʳ (StructRule.C ∷ʳ ∅)
+
+    _≡pol?_ : DecidableEquality Polarity
+    pol₁ ≡pol? pol₂ with pol₁ | pol₂
+    ... | + | + = yes refl
+    ... | + | - = no (λ())
+    ... | - | + = no (λ ())
+    ... | - | - = yes refl
+
 
     _≟_ : DecidableEquality PredMap
-    ⟨ + , p₁ ⟩ ≟ ⟨ + , p₂ ⟩ with p₁ ≟ₚ p₂
-    ... | yes p=p = yes {!   !} 
-    ... | no p!=p = no {!   !}
-    ⟨ - , p₁ ⟩ ≟ ⟨ + , p₂ ⟩ = no λ()
-    ⟨ + , p₁ ⟩ ≟ ⟨ - , p₂ ⟩ = no λ()
-    ⟨ - , p₁ ⟩ ≟ ⟨ - , p₂ ⟩ with p₁ ≟ₚ p₂
-    ... | yes p=p = yes {!  !}
-    ... | no p!=p = no {!   !}
-  
+    ⟨ pol₁ , p₁ ⟩ ≟ ⟨ pol₂ , p₂ ⟩ with does (pol₁ ≡pol? pol₂) | does (p₁ ≟ₚ p₂)
+    ... | false | false = no {!  !}
+    ... | false | true = no {!   !}
+    ... | true | false = no {!   !}
+    ... | true | true = yes {!   !}
+
+    open import Data.List.Membership.DecPropositional _≟_ using (_∈?_)
+
   translO : ActionDescription → Prop U
-  translO = {! Up[U](P₁ ⊸ P₂) !}
+  translO o = Up[ u≥l ] (P₁ ⊸ P₂)
     where
       P₁ : Prop L
       P₂ : Prop L
 
-      P₁ = {!   !}
-      P₂ = {!   !}
+      o⁺ = filterPositive (ActionDescription.preconditions o)
+      o⁻ = filterNegative (ActionDescription.preconditions o)
+      o₊ = filterPositive (ActionDescription.effects o)
+      o₋ = filterNegative (ActionDescription.effects o)
 
-      translP : PredMap → ActionDescription → (Predicate × Predicate)
-      translP p o = {!   !}  
+      translP : PredMap → ActionDescription → PredMap × PredMap
+      translP p o with does (p ∈? o⁺) | does (p ∈? o⁻) | does (p ∈? o₊) | does (p ∈? o₋)
+      ... | false | false | false | false = ⟨ p , p ⟩
+      ... | false | false | false | true = {!   !}
+      ... | false | false | true | false = {!   !}
+      ... | false | false | true | true = {!   !}
+      ... | false | true | false | false = {!   !}
+      ... | false | true | false | true = {!   !}
+      ... | false | true | true | false = {!   !}
+      ... | false | true | true | true = {!   !}
+      ... | true | false | false | false = {!   !}
+      ... | true | false | false | true = {!   !}
+      ... | true | false | true | false = {!   !}
+      ... | true | false | true | true = {!   !}
+      ... | true | true | false | false = {!   !}
+      ... | true | true | false | true = {!   !}
+      ... | true | true | true | d = {! d  !}
+
+      Ps : (List PredMap) × (List PredMap)
+      Ps = unzip (Data.List.map (λ p → translP p o) (cond o))
+
+      P₁ = ⨂ proj₁ Ps
+      P₂ = ⨂ proj₂ Ps
+  
