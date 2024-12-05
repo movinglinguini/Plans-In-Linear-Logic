@@ -4,7 +4,7 @@
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Data.Bool hiding (_≟_)
-open import Relation.Nullary using (¬_; Dec; yes; no; does; contradiction; contrapositon)
+open import Relation.Nullary using (¬_; Dec; yes; no; does; contradiction; contraposition)
 open import Relation.Nullary.Negation
 open import Plans.Domain
 import Relation.Binary.PropositionalEquality as Eq
@@ -47,14 +47,13 @@ module Translations.Operator (domain : Domain) where
     ... | + | - = no (λ())
     ... | - | + = no (λ ())
     ... | - | - = yes refl
-
-
+    
     _≟_ : DecidableEquality PredMap
-    ⟨ pol₁ , p₁ ⟩ ≟ ⟨ pol₂ , p₂ ⟩ with does (pol₁ ≡pol? pol₂) | does (p₁ ≟ₚ p₂)
-    ... | false | false = no {!  !}
-    ... | false | true = no {!   !}
-    ... | true | false = no {!   !}
-    ... | true | true = yes {!   !}
+    ⟨ pol₁ , p₁ ⟩ ≟ ⟨ pol₂ , p₂ ⟩ with pol₁ ≡pol? pol₂ | p₁ ≟ₚ p₂
+    ... | yes refl | yes refl = yes refl
+    ... | yes refl | no p!=p = no λ refl → p!=p {! refl  !}
+    ... | no pol!=pol | yes refl = no λ refl → pol!=pol {!   !}
+    ... | no pol!=pol | no p!=p = no {!   !}
 
     open import Data.List.Membership.DecPropositional _≟_ using (_∈?_)
 
