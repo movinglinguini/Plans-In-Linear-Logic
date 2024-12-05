@@ -48,12 +48,18 @@ module Translations.Operator (domain : Domain) where
     ... | - | + = no (λ ())
     ... | - | - = yes refl
     
+    postulate
+      -- If a pred map is equal, then its constituents must be equal.
+      pp=pp-1 : ∀ { pol₁ pol₂ : Polarity } { p₁ p₂ : Predicate } → ⟨ pol₁ , p₁ ⟩ ≡ ⟨ pol₂ , p₂ ⟩ → pol₁ ≡ pol₂
+      pp=pp-2 : ∀ { pol₁ pol₂ : Polarity } { p₁ p₂ : Predicate } → ⟨ pol₁ , p₁ ⟩ ≡ ⟨ pol₂ , p₂ ⟩ → p₁ ≡ p₂
+
     _≟_ : DecidableEquality PredMap
     ⟨ pol₁ , p₁ ⟩ ≟ ⟨ pol₂ , p₂ ⟩ with pol₁ ≡pol? pol₂ | p₁ ≟ₚ p₂
     ... | yes refl | yes refl = yes refl
-    ... | yes refl | no p!=p = no λ refl → p!=p {! refl  !}
-    ... | no pol!=pol | yes refl = no λ refl → pol!=pol {!   !}
-    ... | no pol!=pol | no p!=p = no {!   !}
+    ... | yes refl | no p!=p = no λ x → contradiction (pp=pp-2 x) p!=p
+    ... | no pol!=pol | yes refl = no λ x → contradiction (pp=pp-1 x) pol!=pol 
+    ... | no pol!=pol | no p!=p = no λ x → contradiction (pp=pp-2 x) p!=p
+        
 
     open import Data.List.Membership.DecPropositional _≟_ using (_∈?_)
 
