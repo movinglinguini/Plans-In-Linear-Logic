@@ -4,6 +4,7 @@
 [submodule "Adjoint-Logic-in-Agda"]
 	path = Adjoint-Logic-in-Agda
 	url = https://github.com/movinglinguini/Adjoint-Logic-in-Agda
+	branch = linear-logic-planning
 [submodule "AgdaADJ"]
 	path = AgdaADJ
 	url = https://github.com/movinglinguini/Adjoint-Logic-in-Agda

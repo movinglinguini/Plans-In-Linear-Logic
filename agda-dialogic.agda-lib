@@ -1,4 +1,4 @@
 name: agda-dialogic
-include: src/ AgdaADJ/src ActionsYouCanHandle/src
+include: src/ test/ AgdaADJ/src ActionsYouCanHandle/src
 depend: standard-library-2.1
 flags:

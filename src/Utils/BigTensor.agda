@@ -1,6 +1,6 @@
-module Utils.BigTensor (a : Set) where
-  open import ADJ.Core a
+module Utils.BigTensor (U : Set) (T : Set) where
+  open import ADJ.Core U T 
 
-  ⨂_ : List a → Prop L
+  ⨂_ : List (Prop Linear) → Prop Linear
   ⨂ ∅ = 𝟙
-  ⨂ (x , xs) = (` x) ⊗ (⨂ xs)
+  ⨂ (x , xs) = x ⊗ (⨂ xs)

@@ -8,17 +8,17 @@ open Eq using (_≡_; refl)
 open import Data.List.Relation.Binary.Sublist.Propositional using (_⊇_)
 open import Relation.Binary.Definitions using (DecidableEquality)
 
-module ADJ.Core (PredMap : Set) where
+module ADJ.Core (U : Set) (T : Set) where
   -- Bundle up and export pieces of ADJ
   open import Mode using (Mode; StructRule; _,_; ∅; List) public
   
   -- Linear mode
-  L : Mode
-  L = record { structRules = ∅ }
+  Linear : Mode
+  Linear = record { structRules = ∅ }
 
   -- Unrestricted mode
-  U : Mode
-  U = record { structRules = StructRule.W , StructRule.C , ∅ }
+  Unrestricted : Mode
+  Unrestricted = record { structRules = StructRule.W , StructRule.C , ∅ }
   
   private
     _≟_ : DecidableEquality StructRule
@@ -40,5 +40,5 @@ module ADJ.Core (PredMap : Set) where
   ... | no ¬k⊆m = no  ¬k⊆m
 
   -- Make this instance of ADJ available
-  open import ExplicitADJ PredMap L _≥_ _≥?_ public
+  open import ExplicitADJ U T Linear _≥_ _≥?_ as ADJ-UL public
   
