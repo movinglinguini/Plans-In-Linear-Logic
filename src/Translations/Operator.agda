@@ -11,6 +11,7 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong)
 open import Data.List.Relation.Binary.Sublist.Heterogeneous.Core using (_∷ʳ_) renaming ([] to ∅)
 open import Data.String hiding (_++_) renaming (_≟_ to _≟ₛ_)
+open import Data.Nat using (ℕ; suc) renaming (_≟_ to _≟ₙ_)
 
 module Translations.Operator (domain : Domain) (Term : Set) where
   open import Data.List using (_++_; filterᵇ; unzip; map)
@@ -21,9 +22,6 @@ module Translations.Operator (domain : Domain) (Term : Set) where
   open import Utils.BigTensor PredMap Term using (⨂_)
 
   private 
-    cond : ActionDescription → List (Polarity × Predicate)
-    cond record { preconditions = preconditions ; effects = effects } = preconditions ++ effects
-
     isPos : PredMap → Bool
     isPos ⟨ + , p ⟩ = true
     isPos ⟨ - , p ⟩ = false
@@ -39,12 +37,24 @@ module Translations.Operator (domain : Domain) (Term : Set) where
         
     filterNegative : List PredMap → List PredMap
     filterNegative L = filterᵇ isNeg L
+
+    _⁺ : ActionDescription → List PredMap
+    o ⁺ = filterPositive (ActionDescription.preconditions o)
+
+    _⁻ : ActionDescription → List PredMap
+    o ⁻ = filterNegative (ActionDescription.preconditions o)
+
+    _₊ : ActionDescription → List PredMap
+    o ₊ = filterPositive (ActionDescription.effects o)
+
+    _₋ : ActionDescription → List PredMap
+    o ₋ = filterNegative (ActionDescription.effects o)
   
     u≥l : Unrestricted ≥ Linear
     u≥l = StructRule.W ∷ʳ (StructRule.C ∷ʳ ∅)
 
     postulate
-      pols=pols : ∀ { x y : String } → (polvar x) ≡ (polvar y) → x ≡ y
+      pols=pols : ∀ { x y : ℕ } → (polvar x) ≡ (polvar y) → x ≡ y
 
     _≡pol?_ : DecidableEquality Polarity
     pol₁ ≡pol? pol₂ with pol₁ | pol₂
@@ -56,7 +66,7 @@ module Translations.Operator (domain : Domain) (Term : Set) where
     ... | - | polvar x = no λ ()
     ... | polvar x | + = no λ ()
     ... | polvar x | - = no λ ()
-    ... | polvar x | polvar y with x ≟ₛ y
+    ... | polvar x | polvar y with x ≟ₙ y
     ... | yes refl = yes refl
     ... | no x!=y = no λ x₁ → x!=y (pols=pols x₁)
 
@@ -74,32 +84,59 @@ module Translations.Operator (domain : Domain) (Term : Set) where
         
 
     open import Data.List.Membership.DecPropositional _≟_ using (_∈?_)
+  
+  open import Utils.ListIntersection _≟_ public
+  open import Utils.ListUnion _≟_ public
 
-  translO : ActionDescription → Prop Unrestricted
-  translO o = Up[ u≥l ] (P₁ ⊸ P₂)
-    where
-      P₁ : Prop Linear
-      P₂ : Prop Linear
+  cond : ActionDescription → List PredMap
+  cond record { preconditions = ps ; effects = es } = ps ∪ es
 
-      o⁺ = filterPositive (ActionDescription.preconditions o)
-      o⁻ = filterNegative (ActionDescription.preconditions o)
-      o₊ = filterPositive (ActionDescription.effects o)
-      o₋ = filterNegative (ActionDescription.effects o)
+  translO : ActionDescription             -- Original Action Description
+              → List PredMap              -- Same action description to walk through
+              → Prop Linear               -- Left side of lolli, Initialized to 𝟙
+              → Prop Linear               -- Right side of lolli, Initialized to 𝟙
+              → ℕ                         -- Variable counter, initialized to 0
+              → Prop Unrestricted
+  translO AD Data.List.[] L R c = Up[ u≥l ] (L ⊸ R)
+  translO AD (⟨ pol , p ⟩ Data.List.∷ conds) L R c with does (⟨ pol , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
+  ... | true = translO AD conds (` (⟨ pol , p ⟩) ⊗ L) (` (⟨ pol , p ⟩) ⊗ R) c
+  ... | false with does (⟨ pol , p ⟩ ∈? ((AD ⁻) ∩ (AD ₋)))
+  ... | true = translO AD conds ((` (⟨ pol , p ⟩) ⊗ L)) ((` (⟨ pol , p ⟩) ⊗ R)) c
+  ... | false with does (⟨ pol , p ⟩ ∈? (AD ⁺))
+  ... | true = translO AD conds ((` (⟨ pol , p ⟩) ⊗ L)) ((` (⟨ pol , p ⟩) ⊗ R)) c
+  ... | false with does (⟨ pol , p ⟩ ∈? (AD ⁻))
+  ... | true = translO AD conds ((` (⟨ pol , p ⟩) ⊗ L)) ((` (⟨ pol , p ⟩) ⊗ R)) c 
+  ... | false with does (⟨ pol , p ⟩ ∈? (AD ₊))
+  ... | true = translO AD conds (` (⟨ polvar c , p ⟩) ⊗ L) (` (⟨ pol , p ⟩) ⊗ R) (suc c)
+  ... | false with does (⟨ pol , p ⟩ ∈? (AD ₋))
+  ... | true = translO AD conds (` (⟨ polvar c , p ⟩) ⊗ L) (` (⟨ pol , p ⟩) ⊗ R) (suc c)
+  ... | false = 𝟙 ⊸ 𝟙 -- An error must have occurred to get here
 
-      translP : PredMap → ActionDescription → (Prop Linear) × (Prop Linear)
-      translP p o with does (p ∈? o⁺) | does (p ∈? o₊)
-      ... | false | true = ⟨ ∀[ "x" ] (` ⟨ polvar "x" , proj₂ p ⟩) , ` p ⟩
-      ... | true | false = ⟨ ` p , ` p ⟩
-      ... | true | true =  ⟨ ` p , ` p ⟩
-      ... | false | false with does (p ∈? o⁻) | does (p ∈? o₋)
-      ... | false | false = ⟨ 𝟙 , 𝟙 ⟩
-      ... | false | true = ⟨ ∀[ "x" ] (` ⟨ polvar "x" , proj₂ p ⟩) , ` p ⟩
-      ... | true | false = ⟨ ` p , ` p ⟩
-      ... | true | true = ⟨ ` p , ` p ⟩       
+  -- translO : ActionDescription → Prop Unrestricted
+  -- translO o = Up[ u≥l ] (P₁ ⊸ P₂)
+  --   where
+  --     P₁ : Prop Linear
+  --     P₂ : Prop Linear
+
+  --     o⁺ = filterPositive (ActionDescription.preconditions o)
+  --     o⁻ = filterNegative (ActionDescription.preconditions o)
+  --     o₊ = filterPositive (ActionDescription.effects o)
+  --     o₋ = filterNegative (ActionDescription.effects o)
+
+  --     translP : PredMap → ActionDescription → (Prop Linear) × (Prop Linear)
+  --     translP p o with does (p ∈? o⁺) | does (p ∈? o₊)
+  --     ... | false | true = ⟨ ∀[ "x" ] (` ⟨ polvar "x" , proj₂ p ⟩) , ` p ⟩
+  --     ... | true | false = ⟨ ` p , ` p ⟩
+  --     ... | true | true =  ⟨ ` p , ` p ⟩
+  --     ... | false | false with does (p ∈? o⁻) | does (p ∈? o₋)
+  --     ... | false | false = ⟨ 𝟙 , 𝟙 ⟩
+  --     ... | false | true = ⟨ ∀[ "x" ] (` ⟨ polvar "x" , proj₂ p ⟩) , ` p ⟩
+  --     ... | true | false = ⟨ ` p , ` p ⟩
+  --     ... | true | true = ⟨ ` p , ` p ⟩       
       
-      Ps : (List (Prop Linear)) × (List (Prop Linear))
-      Ps = unzip (Data.List.map (λ p → translP p o) (cond o))
+  --     Ps : (List (Prop Linear)) × (List (Prop Linear))
+  --     Ps = unzip (Data.List.map (λ p → translP p o) (cond o))
 
-      P₁ = ⨂ proj₁ Ps
-      P₂ = ⨂ proj₂ Ps
+  --     P₁ = ⨂ proj₁ Ps
+  --     P₂ = ⨂ proj₂ Ps
   
