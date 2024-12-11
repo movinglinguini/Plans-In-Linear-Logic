@@ -11,12 +11,13 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong)
 open import Data.List.Relation.Binary.Sublist.Heterogeneous.Core using (_∷ʳ_) renaming ([] to ∅)
 open import Data.String hiding (_++_) renaming (_≟_ to _≟ₛ_)
-open import Data.Nat using (ℕ; suc) renaming (_≟_ to _≟ₙ_)
+open import Data.Nat using (ℕ; suc; zero) renaming (_≟_ to _≟ₙ_)
 
 module Translations.Operator (domain : Domain) (Term : Set) where
   open import Data.List using (_++_; filterᵇ; unzip; map)
 
   open Domain domain
+  open import Plans.PredMap.Properties domain
   
   open import ADJ.Core PredMap Term public
   open import Utils.BigTensor PredMap Term using (⨂_)
@@ -52,66 +53,62 @@ module Translations.Operator (domain : Domain) (Term : Set) where
   
     u≥l : Unrestricted ≥ Linear
     u≥l = StructRule.W ∷ʳ (StructRule.C ∷ʳ ∅)
-
-    postulate
-      pols=pols : ∀ { x y : ℕ } → (polvar x) ≡ (polvar y) → x ≡ y
-
-    _≡pol?_ : DecidableEquality Polarity
-    pol₁ ≡pol? pol₂ with pol₁ | pol₂
-    ... | + | + = yes refl
-    ... | + | - = no (λ())
-    ... | + | polvar x = no λ ()
-    ... | - | + = no (λ ())
-    ... | - | - = yes refl
-    ... | - | polvar x = no λ ()
-    ... | polvar x | + = no λ ()
-    ... | polvar x | - = no λ ()
-    ... | polvar x | polvar y with x ≟ₙ y
-    ... | yes refl = yes refl
-    ... | no x!=y = no λ x₁ → x!=y (pols=pols x₁)
-
-    postulate
-      -- If pred maps are equal, then their constituents must be equal.
-      pp=pp-1 : ∀ { pol₁ pol₂ : Polarity } { p₁ p₂ : Predicate } → ⟨ pol₁ , p₁ ⟩ ≡ ⟨ pol₂ , p₂ ⟩ → pol₁ ≡ pol₂
-      pp=pp-2 : ∀ { pol₁ pol₂ : Polarity } { p₁ p₂ : Predicate } → ⟨ pol₁ , p₁ ⟩ ≡ ⟨ pol₂ , p₂ ⟩ → p₁ ≡ p₂
-
-    _≟_ : DecidableEquality PredMap
-    ⟨ pol₁ , p₁ ⟩ ≟ ⟨ pol₂ , p₂ ⟩ with pol₁ ≡pol? pol₂ | p₁ ≟ₚ p₂
-    ... | yes refl | yes refl = yes refl
-    ... | yes refl | no p!=p = no λ x → contradiction (pp=pp-2 x) p!=p
-    ... | no pol!=pol | yes refl = no λ x → contradiction (pp=pp-1 x) pol!=pol 
-    ... | no pol!=pol | no p!=p = no λ x → contradiction (pp=pp-2 x) p!=p
-        
-
-    open import Data.List.Membership.DecPropositional _≟_ using (_∈?_)
   
   open import Utils.ListIntersection _≟_ public
-  open import Utils.ListUnion _≟_ public
+  open import Utils.ListUnion _≟ₚ_ public
 
-  cond : ActionDescription → List PredMap
-  cond record { preconditions = ps ; effects = es } = ps ∪ es
+  private
+    cond : List PredMap → List Predicate
+    cond ∅ = ∅
+    cond (⟨ pol , pred ⟩ , ps) = pred , cond ps
 
-  translO : ActionDescription             -- Original Action Description
-              → List PredMap              -- Same action description to walk through
-              → Prop Linear               -- Left side of lolli, Initialized to 𝟙
-              → Prop Linear               -- Right side of lolli, Initialized to 𝟙
-              → ℕ                         -- Variable counter, initialized to 0
-              → Prop Unrestricted
-  translO AD Data.List.[] L R c = Up[ u≥l ] (L ⊸ R)
-  translO AD (⟨ pol , p ⟩ Data.List.∷ conds) L R c with does (⟨ pol , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
-  ... | true = translO AD conds (` (⟨ pol , p ⟩) ⊗ L) (` (⟨ pol , p ⟩) ⊗ R) c
-  ... | false with does (⟨ pol , p ⟩ ∈? ((AD ⁻) ∩ (AD ₋)))
-  ... | true = translO AD conds ((` (⟨ pol , p ⟩) ⊗ L)) ((` (⟨ pol , p ⟩) ⊗ R)) c
-  ... | false with does (⟨ pol , p ⟩ ∈? (AD ⁺))
-  ... | true = translO AD conds ((` (⟨ pol , p ⟩) ⊗ L)) ((` (⟨ pol , p ⟩) ⊗ R)) c
-  ... | false with does (⟨ pol , p ⟩ ∈? (AD ⁻))
-  ... | true = translO AD conds ((` (⟨ pol , p ⟩) ⊗ L)) ((` (⟨ pol , p ⟩) ⊗ R)) c 
-  ... | false with does (⟨ pol , p ⟩ ∈? (AD ₊))
-  ... | true = translO AD conds (` (⟨ polvar c , p ⟩) ⊗ L) (` (⟨ pol , p ⟩) ⊗ R) (suc c)
-  ... | false with does (⟨ pol , p ⟩ ∈? (AD ₋))
-  ... | true = translO AD conds (` (⟨ polvar c , p ⟩) ⊗ L) (` (⟨ pol , p ⟩) ⊗ R) (suc c)
-  ... | false = 𝟙 ⊸ 𝟙 -- An error must have occurred to get here
+    buildProp : ∀ { m : Mode } → Prop m → ℕ → Prop m
+    buildProp imp zero = imp
+    buildProp imp (suc c) = all buildProp imp c
 
+    translOhelper : ActionDescription       -- Original Action Description
+                → List Predicate            -- Conditions of action description
+                → Prop Linear               -- Left side of lolli, Initialized to 𝟙
+                → Prop Linear               -- Right side of lolli, Initialized to 𝟙
+                → ℕ                         -- Variable counter, initialized to 0
+                → Prop Unrestricted
+    translOhelper AD ∅ L R c = Up[ u≥l ] (buildProp (L ⊸ R) c)
+    translOhelper AD (p , conds) L R c with does (⟨ + , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
+    ... | true = translOhelper AD conds (` ⟨ + , p ⟩ ⊗ L) (` ⟨ + , p ⟩ ⊗ R) c
+    ... | false with does (⟨ - , p ⟩ ∈? ((AD ⁻) ∩ (AD ₋)))
+    ... | true = translOhelper AD conds (` ⟨ - , p ⟩ ⊗ L) (` ⟨ - , p ⟩ ⊗ R) c
+    ... | false with does (⟨ + , p ⟩ ∈? (AD ⁺)) ∧ does (⟨ - , p ⟩ ∈? (AD ₋))
+    ... | true = translOhelper AD conds (` ⟨ + , p ⟩ ⊗ L) (` ⟨ - , p ⟩ ⊗ R) c
+    ... | false with does (⟨ - , p ⟩ ∈? (AD ⁻)) ∧ does (⟨ + , p ⟩ ∈? (AD ₊))
+    ... | true = translOhelper AD conds (` ⟨ - , p ⟩ ⊗ L) (` ⟨ + , p ⟩ ⊗ R) c
+    ... | false with does (⟨ + , p ⟩ ∈? (AD ⁺))
+    ... | true = translOhelper AD conds (` ⟨ + , p ⟩ ⊗ L) (` ⟨ + , p ⟩ ⊗ R) c
+    ... | false with does (⟨ - , p ⟩ ∈? (AD ⁻))
+    ... | true = translOhelper AD conds (` ⟨ - , p ⟩ ⊗ L) (` ⟨ - , p ⟩ ⊗ R) c
+    ... | false with does (⟨ + , p ⟩ ∈? (AD ₊))
+    ... | true = translOhelper AD conds (` ⟨ polvar c , p ⟩ ⊗ L) (` ⟨ + , p ⟩ ⊗ R) (suc c)
+    ... | false = translOhelper AD conds (` ⟨ polvar c , p ⟩ ⊗ L) (` ⟨ - , p ⟩ ⊗ R) (suc c)
+    -- translOhelper AD (⟨ pol , p ⟩ Data.List.∷ conds) L R c with does (⟨ pol , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
+    -- ... | true = translOhelper AD conds (` (⟨ pol , p ⟩) ⊗ L) (` (⟨ pol , p ⟩) ⊗ R) c
+    -- ... | false with does (⟨ pol , p ⟩ ∈? ((AD ⁻) ∩ (AD ₋)))
+    -- ... | true = translOhelper AD conds ((` (⟨ pol , p ⟩) ⊗ L)) ((` (⟨ pol , p ⟩) ⊗ R)) c
+    -- ... | false with does (⟨ pol , p ⟩ ∈? (AD ⁺)) ∧ does (⟨ - , p ⟩ ∈? (AD ₋))
+    -- ... | true = translOhelper AD conds ((` (⟨ pol , p ⟩) ⊗ L)) ((` (⟨ - , p ⟩) ⊗ R)) c
+    -- ... | false with does (⟨ pol , p ⟩ ∈? (AD ⁻)) ∧ does (⟨ + , p ⟩ ∈? (AD ₊))
+    -- ... | true = translOhelper AD conds ((` (⟨ pol , p ⟩) ⊗ L)) ((` (⟨ + , p ⟩) ⊗ R)) c
+    -- ... | false with does (⟨ pol , p ⟩ ∈? (AD ⁺))
+    -- ... | true = translOhelper AD conds (` (⟨ pol , p ⟩) ⊗ L) (` (⟨ pol , p ⟩) ⊗ R) c
+    -- ... | false with does (⟨ pol , p ⟩ ∈? (AD ⁻))
+    -- ... | true = translOhelper AD conds (` (⟨ pol , p ⟩) ⊗ L) (` (⟨ pol , p ⟩) ⊗ R) c
+    -- ... | false with does (⟨ pol , p ⟩ ∈? (AD ₊))
+    -- ... | true = translOhelper AD conds (` (⟨ polvar c , p ⟩) ⊗ L) (` (⟨ pol , p ⟩) ⊗ R) (suc c)
+    -- ... | false with does (⟨ pol , p ⟩ ∈? (AD ₋))
+    -- ... | true = translOhelper AD conds (` (⟨ polvar c , p ⟩) ⊗ L) (` (⟨ pol , p ⟩) ⊗ R) (suc c)
+    -- ... | false = 𝟙 ⊸ 𝟙 -- An error must have occurred to get here
+
+  translO : ActionDescription → Prop Unrestricted
+  translO AD = translOhelper AD (cond (ActionDescription.preconditions AD) ∪ cond (ActionDescription.effects AD)) 𝟙 𝟙 zero
+  -- translO AD = translOhelper AD (cond AD) 𝟙 𝟙 zero
   -- translO : ActionDescription → Prop Unrestricted
   -- translO o = Up[ u≥l ] (P₁ ⊸ P₂)
   --   where
@@ -139,4 +136,4 @@ module Translations.Operator (domain : Domain) (Term : Set) where
 
   --     P₁ = ⨂ proj₁ Ps
   --     P₂ = ⨂ proj₂ Ps
-  
+   
