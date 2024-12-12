@@ -20,7 +20,7 @@ module Proofs.Completeness (domain : Domain) (U : Set) (T : Set) where
       → sat⟨ W , S ⟩
 
   -- Plan as solution
-
+  
 
 
 
