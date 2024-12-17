@@ -2,10 +2,11 @@ open import Relation.Binary.Definitions using (DecidableEquality)
 open import Relation.Nullary using (¬_; Dec; yes; no; does; contradiction; contraposition)
 open import Data.List renaming ([] to ∅; _∷_ to _,_)
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
-open import Data.Nat using (zero)
+open import Data.Nat using (ℕ; zero)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong)
 open import Data.Fin renaming (_≟_ to _≟f_)
+open import Data.Fin.Patterns
 open import Data.Nat using (ℕ) renaming (_≟_ to _≟n_)
 
 open import Plans.Domain
@@ -16,6 +17,7 @@ module MovieDomain where
   data Type : Set where
     ⊤ : Type
 
+  numberOfObjects : ℕ
   numberOfObjects = 5
 
   data Object : Set where
@@ -227,10 +229,70 @@ module MovieDomain where
   chips x ≟ₚ dip x₁ = no λ()
   chips x ≟ₚ pop x₁ = no λ()
   chips x ≟ₚ crackers x₁ = no λ()
-  cheese x ≟ₚ p₂ = {!   !}
-  dip x ≟ₚ p₂ = {!   !}
-  pop x ≟ₚ p₂ = {!   !}
-  crackers x ≟ₚ p₂ = {!   !}
+  cheese x ≟ₚ movie-rewound = no λ()
+  cheese x ≟ₚ counter-at-two-hours = no λ()
+  cheese x ≟ₚ counter-at-other-than-two-hours = no λ()
+  cheese x ≟ₚ counter-at-zero = no λ()
+  cheese x ≟ₚ have-chips = no λ()
+  cheese x ≟ₚ have-dip = no λ()
+  cheese x ≟ₚ have-pop = no λ()
+  cheese x ≟ₚ have-cheese = no λ()
+  cheese x ≟ₚ have-crackers = no λ()
+  cheese x ≟ₚ chips x₁ = no λ()
+  cheese (id x) ≟ₚ cheese (id y) with x ≟f y
+  ... | yes refl = yes refl
+  ... | no ¬x=y = no (λ{ refl → ¬x=y refl})
+  cheese x ≟ₚ dip x₁ = no λ()
+  cheese x ≟ₚ pop x₁ = no λ()
+  cheese x ≟ₚ crackers x₁ = no λ()
+  dip x ≟ₚ movie-rewound = no λ()
+  dip x ≟ₚ counter-at-two-hours = no λ()
+  dip x ≟ₚ counter-at-other-than-two-hours = no λ()
+  dip x ≟ₚ counter-at-zero = no λ()
+  dip x ≟ₚ have-chips = no λ()
+  dip x ≟ₚ have-dip = no λ()
+  dip x ≟ₚ have-pop = no λ()
+  dip x ≟ₚ have-cheese = no λ()
+  dip x ≟ₚ have-crackers = no λ()
+  dip x ≟ₚ chips x₁ = no λ()
+  dip x ≟ₚ cheese x₁ = no λ()
+  dip (id x) ≟ₚ dip (id y) with x ≟f y
+  ... | yes refl = yes refl
+  ... | no ¬x=y = no (λ{ refl → ¬x=y refl})
+  dip x ≟ₚ pop x₁ = no λ()
+  dip x ≟ₚ crackers x₁ = no λ()
+  pop x ≟ₚ movie-rewound = no λ()
+  pop x ≟ₚ counter-at-two-hours = no λ()
+  pop x ≟ₚ counter-at-other-than-two-hours = no λ()
+  pop x ≟ₚ counter-at-zero = no λ()
+  pop x ≟ₚ have-chips = no λ()
+  pop x ≟ₚ have-dip = no λ()
+  pop x ≟ₚ have-pop = no λ()
+  pop x ≟ₚ have-cheese = no λ()
+  pop x ≟ₚ have-crackers = no λ()
+  pop x ≟ₚ chips x₁ = no λ()
+  pop x ≟ₚ cheese x₁ = no λ()
+  pop x ≟ₚ dip x₁ = no λ()
+  pop (id x) ≟ₚ pop (id y) with x ≟f y
+  ... | yes refl = yes refl
+  ... | no ¬x=y = no (λ{ refl → ¬x=y refl})
+  pop x ≟ₚ crackers x₁ = no λ()
+  crackers x ≟ₚ movie-rewound = no λ()
+  crackers x ≟ₚ counter-at-two-hours = no λ()
+  crackers x ≟ₚ counter-at-other-than-two-hours = no λ()
+  crackers x ≟ₚ counter-at-zero = no λ()
+  crackers x ≟ₚ have-chips = no λ()
+  crackers x ≟ₚ have-dip = no λ()
+  crackers x ≟ₚ have-pop = no λ()
+  crackers x ≟ₚ have-cheese = no λ()
+  crackers x ≟ₚ have-crackers = no λ()
+  crackers x ≟ₚ chips x₁ = no λ()
+  crackers x ≟ₚ cheese x₁ = no λ()
+  crackers x ≟ₚ dip x₁ = no λ()
+  crackers x ≟ₚ pop x₁ = no λ()
+  crackers (id x) ≟ₚ crackers (id y) with x ≟f y
+  ... | yes refl = yes refl
+  ... | no ¬x=y = no (λ{ refl → ¬x=y refl})
 
   movieDomain : Domain
   movieDomain = record { 
@@ -239,6 +301,9 @@ module MovieDomain where
     Action = Action ;
     Γ = Γ ;
     _≟ₚ_ = _≟ₚ_ }
+
+  open Domain movieDomain public
+    hiding (Action; Predicate; Type; Γ; _≟ₚ_)
 
   -- Testing translation of an action definition
   open import Translations.Operator movieDomain

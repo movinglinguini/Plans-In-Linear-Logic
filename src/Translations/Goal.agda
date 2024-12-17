@@ -4,12 +4,13 @@ open import Data.List
 import ADJ.Core
 import Utils.BigTensor
 
-module Translations.Goal (domain : Domain) (Term : Set) where
+module Translations.Goal (domain : Domain) where
 
   open Domain domain
 
-  open ADJ.Core PredMap Term
-  open Utils.BigTensor PredMap Term using (⨂_)
+  open import Translations.State domain
+  open ADJ.Core Proposition public
+  open Utils.BigTensor Proposition using (⨂_)
 
   translG : GoalState → Prop Linear
-  translG G = ⨂ (map (λ g → ` g) G)
+  translG G = ⨂ (translS G)
