@@ -155,10 +155,62 @@ module MovieDomain where
   have-chips ≟ₚ dip x = no λ()
   have-chips ≟ₚ pop x = no λ()
   have-chips ≟ₚ crackers x = no λ()
-  have-dip ≟ₚ p₂ = {!   !}
-  have-pop ≟ₚ p₂ = {!   !}
-  have-cheese ≟ₚ p₂ = {!   !}
-  have-crackers ≟ₚ p₂ = {!   !}
+  have-dip ≟ₚ movie-rewound = no λ()
+  have-dip ≟ₚ counter-at-two-hours = no λ()
+  have-dip ≟ₚ counter-at-other-than-two-hours = no λ()
+  have-dip ≟ₚ counter-at-zero = no λ()
+  have-dip ≟ₚ have-chips = no λ()
+  have-dip ≟ₚ have-dip = yes refl
+  have-dip ≟ₚ have-pop = no λ()
+  have-dip ≟ₚ have-cheese = no λ()
+  have-dip ≟ₚ have-crackers = no λ()
+  have-dip ≟ₚ chips x = no λ()
+  have-dip ≟ₚ cheese x = no λ()
+  have-dip ≟ₚ dip x = no λ()
+  have-dip ≟ₚ pop x = no λ()
+  have-dip ≟ₚ crackers x = no λ()
+  have-pop ≟ₚ movie-rewound = no λ()
+  have-pop ≟ₚ counter-at-two-hours = no λ()
+  have-pop ≟ₚ counter-at-other-than-two-hours = no λ()
+  have-pop ≟ₚ counter-at-zero = no λ()
+  have-pop ≟ₚ have-chips = no λ()
+  have-pop ≟ₚ have-dip = no λ()
+  have-pop ≟ₚ have-pop = yes refl
+  have-pop ≟ₚ have-cheese = no λ()
+  have-pop ≟ₚ have-crackers = no λ()
+  have-pop ≟ₚ chips x = no λ()
+  have-pop ≟ₚ cheese x = no λ()
+  have-pop ≟ₚ dip x = no λ()
+  have-pop ≟ₚ pop x = no λ()
+  have-pop ≟ₚ crackers x = no λ()
+  have-cheese ≟ₚ movie-rewound = no λ()
+  have-cheese ≟ₚ counter-at-two-hours = no λ()
+  have-cheese ≟ₚ counter-at-other-than-two-hours = no λ()
+  have-cheese ≟ₚ counter-at-zero = no λ()
+  have-cheese ≟ₚ have-chips = no λ()
+  have-cheese ≟ₚ have-dip = no λ()
+  have-cheese ≟ₚ have-pop = no λ()
+  have-cheese ≟ₚ have-cheese = yes refl
+  have-cheese ≟ₚ have-crackers = no λ()
+  have-cheese ≟ₚ chips x = no λ()
+  have-cheese ≟ₚ cheese x = no λ()
+  have-cheese ≟ₚ dip x = no λ()
+  have-cheese ≟ₚ pop x = no λ()
+  have-cheese ≟ₚ crackers x = no λ()
+  have-crackers ≟ₚ movie-rewound = no λ()
+  have-crackers ≟ₚ counter-at-two-hours = no λ()
+  have-crackers ≟ₚ counter-at-other-than-two-hours = no λ()
+  have-crackers ≟ₚ counter-at-zero = no λ()
+  have-crackers ≟ₚ have-chips = no λ()
+  have-crackers ≟ₚ have-dip = no λ()
+  have-crackers ≟ₚ have-pop = no λ()
+  have-crackers ≟ₚ have-cheese = no λ()
+  have-crackers ≟ₚ have-crackers = yes refl
+  have-crackers ≟ₚ chips x = no λ()
+  have-crackers ≟ₚ cheese x = no λ()
+  have-crackers ≟ₚ dip x = no λ()
+  have-crackers ≟ₚ pop x = no λ()
+  have-crackers ≟ₚ crackers x = no λ()
   chips x ≟ₚ movie-rewound = no λ()
   chips x ≟ₚ counter-at-two-hours = no λ()
   chips x ≟ₚ counter-at-other-than-two-hours = no λ()
@@ -171,11 +223,6 @@ module MovieDomain where
   chips (id x) ≟ₚ chips (id y) with x ≟f y
   ... | yes refl = yes refl
   ... | no ¬x=y = no (λ{ refl → ¬x=y refl})
-  -- chips (id x) ≟ₚ chips (var y) = no λ()
-  -- chips (var x) ≟ₚ chips (id x₁) = no λ()
-  -- chips (var x) ≟ₚ chips (var y) with x ≟n y
-  -- ... | yes refl = yes refl
-  -- ... | no ¬x=y = no (λ{ refl → ¬x=y refl})
   chips x ≟ₚ cheese x₁ = no λ()
   chips x ≟ₚ dip x₁ = no λ()
   chips x ≟ₚ pop x₁ = no λ()
@@ -194,12 +241,12 @@ module MovieDomain where
     _≟ₚ_ = _≟ₚ_ }
 
   -- Testing translation of an action definition
-  open import Translations.Operator movieDomain Object
+  open import Translations.Operator movieDomain
 
-  AD = (Γ (get-chips (id zero)))
+  AD = (Γ (rewind-movie))
   tAD : Prop Unrestricted
   tAD = translO AD
   {-
-    Output: Up[ u≥l ] ∀ . ⟨ polvar 0 , movie-rewound ⟩ ⊗ ⟨ + , counter-at-two-hours ⟩ ⊗ 𝟙 
-                    ⊸ ⟨ + , movie-rewound ⟩ ⊗ ⟨ + , counter-at-two-hours ⟩ ⊗ 𝟙 
+    Output: Up[ u≥l ] ∀ . ∀ . v[counter-at-other-than-two-hours, true] ⊗ v[movie-rewond, #0] ⊗ v[counter-at-zero, #1]
+                            ⊸ v[counter-at-other-than-two-hours, true] ⊗ v[movie-rewound, true] ⊗ v[counter-at-zero, true]
   -}    

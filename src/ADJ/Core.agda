@@ -9,7 +9,7 @@ open import Data.List.Relation.Binary.Sublist.Propositional using (_⊇_)
 open import Relation.Binary.Definitions using (DecidableEquality)
 
 -- TODO: Decide if T needs to stay
-module ADJ.Core (U : Set) (T : Set) where
+module ADJ.Core (U : Set) where
   -- Bundle up and export pieces of ADJ
   open import ADJ.Mode using (Mode; StructRule; _,_; ∅; List) public
   
