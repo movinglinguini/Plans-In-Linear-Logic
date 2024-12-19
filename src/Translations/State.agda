@@ -4,6 +4,12 @@ open import Data.Product renaming (_,_ to ⟨_,_⟩)
 
 open import Plans.Domain
 
+{--
+For pretty printing
+-}
+open import Text.Pretty 80
+open import Data.Nat.Show
+
 module Translations.State (domain : Domain) where
   open Domain domain
 

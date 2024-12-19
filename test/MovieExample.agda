@@ -1,3 +1,6 @@
+open import Text.Pretty 80
+open import Data.Fin.Show renaming (show to showf)
+open import Data.String using (String)
 open import Data.Product
 open import Data.Sum
 open import Data.List
@@ -5,7 +8,6 @@ open import Data.Unit
 open import Data.Nat
 open import Data.Fin
 open import Data.Maybe
-
 open import Agda.Builtin.FromNat
 import Data.Nat.Literals as NatLiterals
 import Data.Fin.Literals as FinLiterals
@@ -119,20 +121,56 @@ module MovieExample where
   -- Translation of goal state
   open import Translations.Goal movieDomain
   open import Translations.State movieDomain
+  open import Translations.Operator movieDomain
   open import ADJ.Core Proposition
+  open import ADJ.PrettyPrinter movieDomain
+
+  -------------------------------------------------
+  -- Define pretty printing predicates
+  -------------------------------------------------
+  prettyObj : Object → Doc
+  prettyObj (id x) = text (showf x)
+  
+  prettyPred : Predicate → Doc
+  prettyPred movie-rewound = text "movie-rewound"
+  prettyPred counter-at-two-hours = text "counter-at-two-hours"
+  prettyPred counter-at-other-than-two-hours = text "counter-at-other-than-two-hours"
+  prettyPred counter-at-zero = text "counter-at-zero"
+  prettyPred have-chips = text "have-chips"
+  prettyPred have-dip = text "have-dip"
+  prettyPred have-pop = text "have-pop"
+  prettyPred have-cheese = text "have-cheese"
+  prettyPred have-crackers = text "have-crackers"
+  prettyPred (chips x) = text "chips" <+> (prettyObj x)
+  prettyPred (cheese x) = text "cheese" <+> (prettyObj x)
+  prettyPred (dip x) = text "dip" <+> (prettyObj x)
+  prettyPred (pop x) = text "pop" <+> (prettyObj x)
+  prettyPred (crackers x) = text "crackers" <+> (prettyObj x)
+
+  open PrettyPrint prettyPred
 
   tGoal : Prop Linear 
   tGoal = translG goalState
+  prettyGoal = render (prettyProp tGoal)
   {-
     Output: v[movie_rewound, true] ⊗ v[counter-at-zero, true] ⊗ v[have-chips, true] 
           ⊗ v[have-cheese, true] ⊗ v[have-dip, true] ⊗ v[have-crackers, true]
-          ⊗ v[have-pop, true]
+          ⊗ v[have-pop, true] 
   -}
 
   open import Utils.WorldState movieDomain
 
   totalState : State
   totalState = worldToState initialWorld totalWorld
+
+  -- Translation of State
+  tState : List (Prop Linear)
+  tState = translS totalState
+  prettyState = (Data.List.map render (Data.List.map prettyProp tState))
+
+  tAction : Prop Unrestricted
+  tAction = translO (Γ rewind-movie)
+  prettyAction = render (prettyProp tAction)
   
   -- Translation of problem
   open import Translations.Problem movieDomain
