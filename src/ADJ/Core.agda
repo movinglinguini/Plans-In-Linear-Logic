@@ -2,6 +2,7 @@
   Instantiates ADJ Logic with modes, a preorder on modes, a decidable preorder on modes, and a base type
   to construct propositions from.
 -}
+open import Data.List using (List) renaming(_∷_ to _,_; [] to ∅)
 open import Relation.Nullary using (¬_; Dec; yes; no)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl)
@@ -11,7 +12,7 @@ open import Relation.Binary.Definitions using (DecidableEquality)
 -- TODO: Decide if T needs to stay
 module ADJ.Core (U : Set) where
   -- Bundle up and export pieces of ADJ
-  open import ADJ.Mode using (Mode; StructRule; _,_; ∅; List) public
+  open import ADJ.Mode using (Mode; StructRule) public
   
   -- Linear mode
   Linear : Mode

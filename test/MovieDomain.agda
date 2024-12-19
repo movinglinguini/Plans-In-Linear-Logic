@@ -307,6 +307,8 @@ module MovieDomain where
 
   -- Testing translation of an action definition
   open import Translations.Operator movieDomain
+  open import Translations.State movieDomain 
+  open import ADJ.Core Proposition
 
   AD = (Γ (rewind-movie))
   tAD : Prop Unrestricted

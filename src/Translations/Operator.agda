@@ -1,6 +1,6 @@
 -- Translation of action descriptions from Actions You Can Handle into open 
 -- lolli propositions in Adjoint Logic
-
+open import Data.List hiding (all)
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Data.Bool hiding (_≟_)
@@ -19,7 +19,7 @@ module Translations.Operator (domain : Domain) where
   open Domain domain
   
   open import Translations.State domain
-  open import ADJ.Core Proposition public
+  open import ADJ.Core Proposition
   open import Utils.BigTensor Proposition using (⨂_)
   open import Utils.PredMap.DecEquality domain
 
@@ -52,19 +52,22 @@ module Translations.Operator (domain : Domain) where
     o ₋ = filterNegative (ActionDescription.effects o)
   
     u≥l : Unrestricted ≥ Linear
-    u≥l = StructRule.W ∷ʳ (StructRule.C ∷ʳ ∅)
+    u≥l = StructRule.W
+      Data.List.Relation.Binary.Sublist.Heterogeneous.Core.∷ʳ
+      StructRule.C
+      Data.List.Relation.Binary.Sublist.Heterogeneous.Core.∷ʳ ∅
   
   open import Utils.ListIntersection _≟_ public
   open import Utils.ListUnion _≟ₚ_ public
 
   private
     cond : List PredMap → List Predicate
-    cond ∅ = ∅
-    cond (⟨ pol , pred ⟩ , ps) = pred , cond ps
+    cond [] = []
+    cond (⟨ pol , pred ⟩ ∷ ps) = pred ∷ cond ps
 
     buildProp : ∀ { m : Mode } → Prop m → ℕ → Prop m
     buildProp imp zero = imp
-    buildProp imp (suc c) = all buildProp imp c
+    buildProp imp (suc c) = all (buildProp imp c)
 
     translOhelper : ActionDescription       -- Original Action Description
                 → List Predicate            -- Conditions of action description
@@ -72,8 +75,8 @@ module Translations.Operator (domain : Domain) where
                 → Prop Linear               -- Right side of lolli, Initialized to 𝟙
                 → ℕ                         -- Variable counter, initialized to 0
                 → Prop Unrestricted
-    translOhelper AD ∅ L R c = Up[ u≥l ] (buildProp (L ⊸ R) c)
-    translOhelper AD (p , conds) L R c with does (⟨ + , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
+    translOhelper AD [] L R c = Up[ u≥l ] (buildProp (L ⊸ R) c)
+    translOhelper AD (p ∷ conds) L R c with does (⟨ + , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
     ... | true = translOhelper AD conds (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R) c
     ... | false with does (⟨ - , p ⟩ ∈? ((AD ⁻) ∩ (AD ₋)))
     ... | true = translOhelper AD conds (` v[ p , false ] ⊗ L) (` v[ p , false ] ⊗ R) c
