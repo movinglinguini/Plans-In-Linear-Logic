@@ -1,4 +1,3 @@
-open import Text.Pretty 80
 open import Data.Fin.Show renaming (show to showf)
 open import Data.String using (String)
 open import Data.Product
@@ -8,19 +7,18 @@ open import Data.Unit
 open import Data.Nat
 open import Data.Fin
 open import Data.Maybe
-open import Agda.Builtin.FromNat
-import Data.Nat.Literals as NatLiterals
-import Data.Fin.Literals as FinLiterals
+open import Data.Nat.Show
 
 open import MovieDomain
 open import Plans.Semantics movieDomain
 open import Plans.Plan movieDomain
 open import Plans.ActionHandler movieDomain
 
-module MovieExample where 
-  instance
-    NumFin : ∀ {n} → Number (Fin n)
-    NumFin {n} = FinLiterals.number n
+module MovieExample where
+  -- instance
+  --   NumFin : ∀ {n} → Number (Fin n)
+  --   NumFin {n} = FinLiterals.number n
+  
 
   initialWorld : World
   initialWorld = 
@@ -123,13 +121,16 @@ module MovieExample where
   open import Translations.State movieDomain
   open import Translations.Operator movieDomain
   open import ADJ.Core Proposition
-  open import ADJ.PrettyPrinter movieDomain
 
   -------------------------------------------------
   -- Define pretty printing predicates
   -------------------------------------------------
+  prettyLength = 300
+  open import Text.Pretty prettyLength
+  open import ADJ.PrettyPrinter movieDomain prettyLength
+
   prettyObj : Object → Doc
-  prettyObj (id x) = text (showf x)
+  prettyObj (id x) = text (show x)
   
   prettyPred : Predicate → Doc
   prettyPred movie-rewound = text "movie-rewound"
@@ -155,7 +156,7 @@ module MovieExample where
   {-
     Output: v[movie_rewound, true] ⊗ v[counter-at-zero, true] ⊗ v[have-chips, true] 
           ⊗ v[have-cheese, true] ⊗ v[have-dip, true] ⊗ v[have-crackers, true]
-          ⊗ v[have-pop, true] 
+          ⊗ v[have-pop, true] ⊗ 𝟙
   -}
 
   open import Utils.WorldState movieDomain
@@ -177,4 +178,4 @@ module MovieExample where
   open import Utils.PlanToList movieDomain
 
   tProb : Set
-  tProb = translP (planToList planₜ) initialWorld totalWorld goalState
+  tProb = translP (planToList planₜ) initialWorld totalWorld goalState 

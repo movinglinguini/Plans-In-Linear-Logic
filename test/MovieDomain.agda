@@ -2,12 +2,11 @@ open import Relation.Binary.Definitions using (DecidableEquality)
 open import Relation.Nullary using (¬_; Dec; yes; no; does; contradiction; contraposition)
 open import Data.List renaming ([] to ∅; _∷_ to _,_)
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
-open import Data.Nat using (ℕ; zero)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong)
 open import Data.Fin renaming (_≟_ to _≟f_)
 open import Data.Fin.Patterns
-open import Data.Nat using (ℕ) renaming (_≟_ to _≟n_)
+open import Data.Nat using (ℕ; zero) renaming (_≟_ to _≟n_)
 
 open import Plans.Domain
 open import Plans.Domain.Core
@@ -21,7 +20,7 @@ module MovieDomain where
   numberOfObjects = 5
 
   data Object : Set where
-    id : Fin numberOfObjects → Object
+    id : ℕ → Object
     -- var : ℕ → Object
 
   data Predicate : Set where
@@ -222,7 +221,7 @@ module MovieDomain where
   chips x ≟ₚ have-pop = no λ()
   chips x ≟ₚ have-cheese = no λ()
   chips x ≟ₚ have-crackers = no λ()
-  chips (id x) ≟ₚ chips (id y) with x ≟f y
+  chips (id x) ≟ₚ chips (id y) with x ≟n y
   ... | yes refl = yes refl
   ... | no ¬x=y = no (λ{ refl → ¬x=y refl})
   chips x ≟ₚ cheese x₁ = no λ()
@@ -239,7 +238,7 @@ module MovieDomain where
   cheese x ≟ₚ have-cheese = no λ()
   cheese x ≟ₚ have-crackers = no λ()
   cheese x ≟ₚ chips x₁ = no λ()
-  cheese (id x) ≟ₚ cheese (id y) with x ≟f y
+  cheese (id x) ≟ₚ cheese (id y) with x ≟n y
   ... | yes refl = yes refl
   ... | no ¬x=y = no (λ{ refl → ¬x=y refl})
   cheese x ≟ₚ dip x₁ = no λ()
@@ -256,7 +255,7 @@ module MovieDomain where
   dip x ≟ₚ have-crackers = no λ()
   dip x ≟ₚ chips x₁ = no λ()
   dip x ≟ₚ cheese x₁ = no λ()
-  dip (id x) ≟ₚ dip (id y) with x ≟f y
+  dip (id x) ≟ₚ dip (id y) with x ≟n y
   ... | yes refl = yes refl
   ... | no ¬x=y = no (λ{ refl → ¬x=y refl})
   dip x ≟ₚ pop x₁ = no λ()
@@ -273,7 +272,7 @@ module MovieDomain where
   pop x ≟ₚ chips x₁ = no λ()
   pop x ≟ₚ cheese x₁ = no λ()
   pop x ≟ₚ dip x₁ = no λ()
-  pop (id x) ≟ₚ pop (id y) with x ≟f y
+  pop (id x) ≟ₚ pop (id y) with x ≟n y
   ... | yes refl = yes refl
   ... | no ¬x=y = no (λ{ refl → ¬x=y refl})
   pop x ≟ₚ crackers x₁ = no λ()
@@ -290,7 +289,7 @@ module MovieDomain where
   crackers x ≟ₚ cheese x₁ = no λ()
   crackers x ≟ₚ dip x₁ = no λ()
   crackers x ≟ₚ pop x₁ = no λ()
-  crackers (id x) ≟ₚ crackers (id y) with x ≟f y
+  crackers (id x) ≟ₚ crackers (id y) with x ≟n y
   ... | yes refl = yes refl
   ... | no ¬x=y = no (λ{ refl → ¬x=y refl})
 

@@ -1,10 +1,11 @@
-open import Text.Pretty 80
+open import Data.Nat
 open import Data.Nat.Show
 open import Plans.Domain
 
-module ADJ.PrettyPrinter (domain : Domain) where
+module ADJ.PrettyPrinter (domain : Domain) (width : ℕ) where
 
   open Domain domain
+  open import Text.Pretty width
   open import Translations.State domain
   open import ADJ.Core Proposition
 
