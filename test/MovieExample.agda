@@ -169,6 +169,7 @@ module MovieExample where
   tState = translS totalState
   prettyState = (Data.List.map render (Data.List.map prettyProp tState))
 
+  -- Translation of an action/operator
   tAction : Prop Unrestricted
   tAction = translO (Γ rewind-movie)
   prettyAction = render (prettyProp tAction)
