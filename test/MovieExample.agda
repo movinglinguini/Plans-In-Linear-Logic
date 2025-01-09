@@ -15,11 +15,6 @@ open import Plans.Plan movieDomain
 open import Plans.ActionHandler movieDomain
 
 module MovieExample where
-  -- instance
-  --   NumFin : ∀ {n} → Number (Fin n)
-  --   NumFin {n} = FinLiterals.number n
-  
-
   initialWorld : World
   initialWorld = 
     (chips (id 0)) ∷
@@ -117,10 +112,13 @@ module MovieExample where
   finalState = execute planₜ (canonical-σ Γ) initialWorld
 
   -- Translation of goal state
+  open import Syntax.Core movieDomain
+
   open import Translations.Goal movieDomain
   open import Translations.State movieDomain
   open import Translations.Operator movieDomain
-  open import ADJ.Core Proposition
+  
+  open import ADJ.Core Proposition Term
 
   -------------------------------------------------
   -- Define pretty printing predicates
@@ -179,4 +177,5 @@ module MovieExample where
   open import Utils.PlanToList movieDomain
 
   tProb : Set
-  tProb = translP (planToList planₜ) initialWorld totalWorld goalState 
+  tProb = translP (planToList planₜ) initialWorld totalWorld goalState
+  

@@ -4,10 +4,10 @@ open import Plans.Domain
 
 module ADJ.PrettyPrinter (domain : Domain) (width : ℕ) where
 
-  open Domain domain
   open import Text.Pretty width
-  open import Translations.State domain
-  open import ADJ.Core Proposition
+  open Domain domain  
+  open import Syntax.Core domain
+  open import ADJ.Core Proposition Term renaming (Context to Ctxt)
 
   module PrettyPrint (prettyPred : Predicate → Doc) where
     prettyTerm : Term → Doc 
@@ -26,9 +26,10 @@ module ADJ.PrettyPrinter (domain : Domain) (width : ℕ) where
     prettyProp ⊤ = char '⊤'
     prettyProp (p ⊕ p₁) = prettyProp p <+> (char '⊕') <+> prettyProp p₁
     prettyProp (p & p₁) = prettyProp p <+> (char '&') <+> prettyProp p₁
-    prettyProp (Up[ x ] p) = text "↑." <> (parens (prettyProp p))
-    prettyProp (Down[ x ] p) = text "↓." <> (parens (prettyProp p))
-    prettyProp (all p) = text ("∀.") <> prettyProp p
+    prettyProp (Up[ x ] p) = text "↑" <> (parens (prettyProp p))
+    prettyProp (Down[ x ] p) = text "↓" <> (parens (prettyProp p))
+    prettyProp (∀[ p ]) = char ('∀') <> (parens (prettyProp p))
 
-    prettyHprop : HProp → Doc
-    prettyHprop (HProp.` x) = prettyProp x
+    prettyCtxt : Ctxt → Doc
+    prettyCtxt ∅ = char '∙'
+    prettyCtxt (Ψ , x) = (prettyCtxt Ψ) <> char ',' <+> (prettyProp x)

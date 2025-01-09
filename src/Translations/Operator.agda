@@ -18,9 +18,10 @@ module Translations.Operator (domain : Domain) where
 
   open Domain domain
   
-  open import Translations.State domain
-  open import ADJ.Core Proposition
-  open import Utils.BigTensor Proposition using (⨂_)
+  open import Syntax.Core domain
+  
+  open import ADJ.Core Proposition Term
+  open import Utils.BigTensor Proposition Term using (⨂_)
   open import Utils.PredMap.DecEquality domain
 
   private 
@@ -67,7 +68,7 @@ module Translations.Operator (domain : Domain) where
 
     buildProp : ∀ { m : Mode } → Prop m → ℕ → Prop m
     buildProp imp zero = imp
-    buildProp imp (suc c) = all (buildProp imp c)
+    buildProp imp (suc c) = ∀[ (buildProp imp c) ]
 
     translOhelper : ActionDescription       -- Original Action Description
                 → List Predicate            -- Conditions of action description
@@ -75,6 +76,7 @@ module Translations.Operator (domain : Domain) where
                 → Prop Linear               -- Right side of lolli, Initialized to 𝟙
                 → ℕ                         -- Variable counter, initialized to 0
                 → Prop Unrestricted
+
     translOhelper AD [] L R c = Up[ u≥l ] (buildProp (L ⊸ R) c)
     translOhelper AD (p ∷ conds) L R c with does (⟨ + , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
     ... | true = translOhelper AD conds (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R) c
@@ -94,3 +96,5 @@ module Translations.Operator (domain : Domain) where
 
   translO : ActionDescription → Prop Unrestricted
   translO AD = translOhelper AD (cond (ActionDescription.preconditions AD) ∪ cond (ActionDescription.effects AD)) 𝟙 𝟙 zero
+
+  

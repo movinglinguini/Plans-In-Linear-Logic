@@ -1,7 +1,7 @@
 open import Data.List
 
-module Utils.BigTensor (U : Set) where
-  open import ADJ.Core U
+module Utils.BigTensor (U : Set) (T : Set) where
+  open import ADJ.Core U T
 
   ⨂_ : List (Prop Linear) → Prop Linear
   ⨂ [] = 𝟙

@@ -12,17 +12,7 @@ open import Data.Nat.Show
 
 module Translations.State (domain : Domain) where
   open Domain domain
-
-  infixl 30 var
-  data Term : Set where
-    true : Term
-    false : Term
-    var : ℕ → Term
-
-  infix 10 v[_,_]
-  data Proposition : Set where
-    v[_,_] : Predicate → Term → Proposition
-
+  open import Syntax.Core domain
 
   private
     translPredmap : PredMap → Proposition
@@ -30,7 +20,7 @@ module Translations.State (domain : Domain) where
     ... | + = v[ pred , true ]
     ... | - = v[ pred , false ]
   
-  open import ADJ.Core Proposition using (Prop; Linear)
+  open import ADJ.Core Proposition Term using (Prop; Linear)
   
   translS : State → List (Prop Linear)
   translS S = Data.List.map (Prop.`_) (Data.List.map translPredmap S)

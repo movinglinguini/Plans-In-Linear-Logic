@@ -10,7 +10,7 @@ open import Data.List.Relation.Binary.Sublist.Propositional using (_⊇_)
 open import Relation.Binary.Definitions using (DecidableEquality)
 
 -- TODO: Decide if T needs to stay
-module ADJ.Core (U : Set) where
+module ADJ.Core (U : Set) (T : Set) where
   -- Bundle up and export pieces of ADJ
   open import ADJ.Mode using (Mode; StructRule) public
   
@@ -42,5 +42,5 @@ module ADJ.Core (U : Set) where
   ... | no ¬k⊆m = no  ¬k⊆m
 
   -- Make this instance of ADJ available
-  open import ADJ.ADJE U Linear _≥_ _≥?_ as ADJ-UL public
+  open import ADJ.ADJE U T Linear _≥_ _≥?_ as ADJ-UL public
   

@@ -305,9 +305,12 @@ module MovieDomain where
     hiding (Action; Predicate; Type; Γ; _≟ₚ_)
 
   -- Testing translation of an action definition
+  open import Syntax.Core movieDomain
+
   open import Translations.Operator movieDomain
   open import Translations.State movieDomain 
-  open import ADJ.Core Proposition
+
+  open import ADJ.Core Proposition Term
 
   AD = (Γ (rewind-movie))
   tAD : Prop Unrestricted
