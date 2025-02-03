@@ -1,5 +1,7 @@
 open import Plans.Domain
 open import Data.List hiding (_++_)
+open import Data.Vec hiding (length)
+open import Data.Product renaming (_,_ to ⟨_,_⟩)
 
 module Translations.Problem (domain : Domain) where
 
@@ -13,30 +15,22 @@ module Translations.Problem (domain : Domain) where
   open import Translations.Operator domain
 
   -- ADJ
-  open import ADJ.Core Proposition Term renaming (Context to Ctxt)
+  open import ADJ.Core domain renaming (Context to Ctxt)
 
   -- Utils 
   open import Utils.WorldState domain
   
   -- Translate actions to unrestricted context
-  Γₜ : List Action → Ctxt
-  Γₜ [] = ∅
-  Γₜ (a ∷ A) = (Γₜ A) , (translO (Γ a))
+  Γₜ : (A : List Action) → Ctxt 2 (length A)
+  Γₜ [] = ⟨ (term true ∷ (term false ∷ Vec.[])) , Vec.[] ⟩
+  Γₜ (x ∷ A) = ⟨ term true ∷ (term false ∷ []) , (translO (Γ x) ∷ proj₂ (Γₜ A)) ⟩
+
+  -- Translate the world state into a linear context
+  Δₜ : ∀ ( I W : World ) → Ctxt 0 (length (worldToState I W))
+  Δₜ I W = ⟨ [] , translS (worldToState I W) ⟩ 
+
+  translP : ∀ (A : List Action) (𝕀 : World) (𝕎 : World) (𝔾 : GoalState) → Set
+  translP A 𝕀 𝕎 𝔾 = (Γₜ A ++ᶜ Δₜ 𝕀 𝕎) ⊢ⁱ ⟨ translG 𝔾 ⊗ ⊤ , Linear ⟩
   
-  private
-    listToContext : ∀ { m } → List (Prop m) → Ctxt
-    listToContext [] = ∅
-    listToContext (x ∷ xs) = listToContext xs , x
-  -- Translate initial world to linear context
-  -- Requires tW, or the Total World, which is a list of all
-  -- possible predicates
-  Iₜ : World → World → Ctxt
-  Iₜ I tW = listToContext (translS (worldToState I tW))
-
-  Gₜ : GoalState → Prop Linear
-  Gₜ G = translG G
-
-  translP : ∀ (A : List Action) (I : World) (tW : World) (G : GoalState) → Set
-  translP A I tW G = ((Γₜ A) ++ (Iₜ I tW)) ⊢ (Gₜ G ⊗ ⊤)
-
-
+ 
+ 

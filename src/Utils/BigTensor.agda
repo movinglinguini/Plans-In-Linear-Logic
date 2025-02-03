@@ -1,8 +1,8 @@
 open import Data.List
 
-module Utils.BigTensor (U : Set) (T : Set) where
-  open import ADJ.Core U T
+module Utils.BigTensor (Atom : Set) where
+  open import Logic.Core.Props Atom
 
-  ⨂_ : List (Prop Linear) → Prop Linear
+  ⨂_ : List (Prop) → Prop
   ⨂ [] = 𝟙
   ⨂ (x ∷ xs) = x ⊗ (⨂ xs)

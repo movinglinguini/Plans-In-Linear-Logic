@@ -310,11 +310,11 @@ module MovieDomain where
   open import Translations.Operator movieDomain
   open import Translations.State movieDomain 
 
-  open import ADJ.Core Proposition Term
+  open import Logic.Adjoint Predicate
 
-  AD = (Γ (rewind-movie))
-  tAD : Prop Unrestricted
-  tAD = translO AD
+  -- AD = (Γ (rewind-movie))
+  -- tAD : Prop Unrestricted
+  -- tAD = translO AD
   {-
     Output: Up[ u≥l ] ∀ . ∀ . v[counter-at-other-than-two-hours, true] ⊗ v[movie-rewond, #0] ⊗ v[counter-at-zero, #1]
                             ⊸ v[counter-at-other-than-two-hours, true] ⊗ v[movie-rewound, true] ⊗ v[counter-at-zero, true]

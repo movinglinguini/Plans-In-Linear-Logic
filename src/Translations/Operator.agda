@@ -1,6 +1,6 @@
 -- Translation of action descriptions from Actions You Can Handle into open 
 -- lolli propositions in Adjoint Logic
-open import Data.List hiding (all)
+open import Data.List using (List; _++_; filterᵇ; unzip; map; []; _∷_)
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Data.Bool hiding (_≟_)
@@ -14,14 +14,12 @@ open import Data.String hiding (_++_) renaming (_≟_ to _≟ₛ_)
 open import Data.Nat using (ℕ; suc; zero) renaming (_≟_ to _≟ₙ_)
 
 module Translations.Operator (domain : Domain) where
-  open import Data.List using (_++_; filterᵇ; unzip; map)
-
   open Domain domain
   
   open import Syntax.Core domain
   
-  open import ADJ.Core Proposition Term
-  open import Utils.BigTensor Proposition Term using (⨂_)
+  open import ADJ.Core domain
+  open import Utils.BigTensor Proposition using (⨂_)
   open import Utils.PredMap.DecEquality domain
 
   private 
@@ -52,49 +50,37 @@ module Translations.Operator (domain : Domain) where
     _₋ : ActionDescription → List PredMap
     o ₋ = filterNegative (ActionDescription.effects o)
   
-    u≥l : Unrestricted ≥ Linear
-    u≥l = StructRule.W
-      Data.List.Relation.Binary.Sublist.Heterogeneous.Core.∷ʳ
-      StructRule.C
-      Data.List.Relation.Binary.Sublist.Heterogeneous.Core.∷ʳ ∅
-  
-  open import Utils.ListIntersection _≟_ public
-  open import Utils.ListUnion _≟ₚ_ public
+  open import Utils.ListIntersection _≟_
+  open import Utils.ListUnion _≟ₚ_
 
   private
     cond : List PredMap → List Predicate
     cond [] = []
-    cond (⟨ pol , pred ⟩ ∷ ps) = pred ∷ cond ps
+    cond (⟨ fst , snd ⟩ ∷ ps) = snd ∷ cond ps
 
-    buildProp : ∀ { m : Mode } → Prop m → ℕ → Prop m
-    buildProp imp zero = imp
-    buildProp imp (suc c) = ∀[ (buildProp imp c) ]
+    prependForAll : ℕ → Prop → Prop
+    prependForAll zero P = P
+    prependForAll (suc c) P = ∀[ prependForAll c P ]
 
-    translOhelper : ActionDescription       -- Original Action Description
-                → List Predicate            -- Conditions of action description
-                → Prop Linear               -- Left side of lolli, Initialized to 𝟙
-                → Prop Linear               -- Right side of lolli, Initialized to 𝟙
-                → ℕ                         -- Variable counter, initialized to 0
-                → Prop Unrestricted
-
-    translOhelper AD [] L R c = Up[ u≥l ] (buildProp (L ⊸ R) c)
-    translOhelper AD (p ∷ conds) L R c with does (⟨ + , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
-    ... | true = translOhelper AD conds (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R) c
+    translPs : ℕ → List Predicate → ActionDescription → Prop → Prop → Prop × Mode
+    translPs c [] AD L R = ⟨ prependForAll c (L ⊸ R) , Unrestricted ⟩
+    translPs c (p ∷ Ps) AD L R with does (⟨ + , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
+    ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R)
     ... | false with does (⟨ - , p ⟩ ∈? ((AD ⁻) ∩ (AD ₋)))
-    ... | true = translOhelper AD conds (` v[ p , false ] ⊗ L) (` v[ p , false ] ⊗ R) c
+    ... | true = translPs c Ps AD (` v[ p , false ] ⊗ L) (` v[ p , false ] ⊗ R)
     ... | false with does (⟨ + , p ⟩ ∈? (AD ⁺)) ∧ does (⟨ - , p ⟩ ∈? (AD ₋))
-    ... | true = translOhelper AD conds (` v[ p , true ] ⊗ L) (` v[ p , false ] ⊗ R) c
+    ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , false ] ⊗ R)
     ... | false with does (⟨ - , p ⟩ ∈? (AD ⁻)) ∧ does (⟨ + , p ⟩ ∈? (AD ₊))
-    ... | true = translOhelper AD conds (` v[ p , false ] ⊗ L) (` v[ p , true ] ⊗ R) c
+    ... | true = translPs c Ps AD (` v[ p , false ] ⊗ L) (` v[ p , true ] ⊗ R)
     ... | false with does (⟨ + , p ⟩ ∈? (AD ⁺))
-    ... | true = translOhelper AD conds (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R) c
+    ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R)
     ... | false with does (⟨ - , p ⟩ ∈? (AD ⁻))
-    ... | true = translOhelper AD conds (` v[ p , false ] ⊗ L) (` v[ p , false ] ⊗ R) c
+    ... | true = translPs c Ps AD  (` v[ p , false ] ⊗ L) (` v[ p , false ] ⊗ R)
     ... | false with does (⟨ + , p ⟩ ∈? (AD ₊))
-    ... | true = translOhelper AD conds (` v[ p , var c ] ⊗ L) (` v[ p , true ] ⊗ R) (suc c)
-    ... | false = translOhelper AD conds (` v[ p , var c ] ⊗ L) (` v[ p , false ] ⊗ R) (suc c)
+    ... | true = translPs (suc c) Ps AD (` v[ p , var c ] ⊗ L) (` v[ p , true ] ⊗ R)
+    ... | false = translPs (suc c) Ps AD (` v[ p , var c ] ⊗ L) (` v[ p , false ] ⊗ R)
 
-  translO : ActionDescription → Prop Unrestricted
-  translO AD = translOhelper AD (cond (ActionDescription.preconditions AD) ∪ cond (ActionDescription.effects AD)) 𝟙 𝟙 zero
+  translO : ActionDescription → Prop × Mode
+  translO AD = translPs zero ((cond (ActionDescription.preconditions AD)) ∪ cond (ActionDescription.effects AD)) AD 𝟙 𝟙
 
   
