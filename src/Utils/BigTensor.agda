@@ -1,7 +1,10 @@
 open import Data.List
 
-module Utils.BigTensor (Atom : Set) where
-  open import Logic.Core.Props Atom
+open import Plans.Domain
+
+module Utils.BigTensor (domain : Domain) where
+  open Domain domain
+  open import ADJ.Core domain
 
   ⨂_ : List (Prop) → Prop
   ⨂ [] = 𝟙

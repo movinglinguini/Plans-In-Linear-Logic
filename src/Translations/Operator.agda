@@ -1,6 +1,6 @@
 -- Translation of action descriptions from Actions You Can Handle into open 
 -- lolli propositions in Adjoint Logic
-open import Data.List using (List; _++_; filterᵇ; unzip; map; []; _∷_)
+open import Data.List using (List; _++_; filterᵇ; unzip; map; []; _∷_; length)
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Data.Bool hiding (_≟_)
@@ -10,17 +10,24 @@ open import Plans.Domain
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong)
 open import Data.List.Relation.Binary.Sublist.Heterogeneous.Core using (_∷ʳ_) renaming ([] to ∅)
-open import Data.String hiding (_++_) renaming (_≟_ to _≟ₛ_)
+open import Data.String hiding (_++_; length) renaming (_≟_ to _≟ₛ_)
 open import Data.Nat using (ℕ; suc; zero) renaming (_≟_ to _≟ₙ_)
+open import Data.Vec hiding (length)
 
 module Translations.Operator (domain : Domain) where
   open Domain domain
   
   open import Syntax.Core domain
   
-  open import ADJ.Core domain
-  open import Utils.BigTensor Proposition using (⨂_)
+  open import ADJ.Core domain renaming (Context to AdjContext)
+  open import Utils.BigTensor domain using (⨂_)
   open import Utils.PredMap.DecEquality domain
+
+  variable
+    𝕠 : ActionDescription
+    𝕆 : List ActionDescription
+    𝕆ᵗ : Vec (Prop × Mode) n
+    𝕠ᵗ : Prop × Mode
 
   private 
     isPos : PredMap → Bool
@@ -82,5 +89,20 @@ module Translations.Operator (domain : Domain) where
 
   translO : ActionDescription → Prop × Mode
   translO AD = translPs zero ((cond (ActionDescription.preconditions AD)) ∪ cond (ActionDescription.effects AD)) AD 𝟙 𝟙
+
+  data TranslOs : ∀ ( 𝕆 : List ActionDescription ) → Vec (Prop × Mode) (length 𝕆) → Set where
+    Z : TranslOs [] []
+
+    S : TranslOs 𝕆 𝕆ᵗ
+      -----------------------
+      → TranslOs (𝕠 ∷ 𝕆) (translO 𝕠 ∷ 𝕆ᵗ)
+
+  data OContext : Vec (Prop × Mode) n → AdjContext 2 n → Set where
+    Z : OContext [] ⟨ term true ∷ term false ∷ [] , [] ⟩
+
+    S : OContext 𝕆ᵗ Δ
+      -----------------------
+      → OContext (𝕠ᵗ ∷ 𝕆ᵗ) (⟨ term true ∷ term false ∷ [] , 𝕠ᵗ ∷ proj₂ Δ ⟩)
+    
 
   

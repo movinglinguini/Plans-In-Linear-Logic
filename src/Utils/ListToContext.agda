@@ -1,7 +1,8 @@
 open import Data.List
+open import Plans.Domain
 
-module Utils.ListToContext (U : Set) (T : Set) where
-  open import ADJ.Core U T
+module Utils.ListToContext (domain : Domain) where
+  open import ADJ.Core domain
 
   listToContext : ∀ { m } → List (Prop m) → Context
   listToContext [] = ∅ 
