@@ -1,11 +1,11 @@
 open import Data.List
 open import Relation.Binary.Definitions using (DecidableEquality)
 
-module STRIPS.Problem (TermAtom : Set) where
-  open import STRIPS.Core.Terms TermAtom public
-  open import STRIPS.Core.Conditions TermAtom public
-  open import STRIPS.Core.Operators TermAtom public
-  open import STRIPS.Core.Goals TermAtom public
+module STRIPS.Problem where
+  open import STRIPS.Core.Terms public
+  open import STRIPS.Core.Conditions public
+  open import STRIPS.Core.Operators public
+  open import STRIPS.Core.Goals public
 
   record PlanProblem : Set where
     field

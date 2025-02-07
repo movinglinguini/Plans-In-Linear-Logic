@@ -12,8 +12,8 @@ open import Relation.Nullary
 open import Data.Nat
 open import Data.Bool hiding (_≟_)
 
-module ADJ.Core (TermAtom : Set) where
-  open import Syntax.Core TermAtom
+module ADJ.Core where
+  -- open import Syntax.Core TermAtom
   open import Logic.Core.Props Proposition public
   open import Logic.Core.Terms TermAtom public
   open import Logic.Core.Modes public

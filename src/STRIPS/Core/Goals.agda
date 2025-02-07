@@ -1,7 +1,7 @@
 open import Data.List
 
-module STRIPS.Core.Goals (Term : Set) where
-  open import STRIPS.Core.Conditions Term
+module STRIPS.Core.Goals where
+  open import STRIPS.Core.Conditions
 
   record Goal : Set where
     field

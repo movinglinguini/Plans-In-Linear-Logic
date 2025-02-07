@@ -15,8 +15,8 @@ open import Relation.Nullary.Negation
 
 open import Utils.Variables
 
-module STRIPS.Core.Conditions (TermAtom : Set) where
-  open import STRIPS.Core.Terms TermAtom
+module STRIPS.Core.Conditions where
+  open import STRIPS.Core.Terms
 
   record Condition : Set where 
     field 
@@ -50,16 +50,58 @@ module STRIPS.Core.Conditions (TermAtom : Set) where
   isGroundCondition : Condition → Set
   isGroundCondition p = T (isGroundConditionᵇ p)
 
-  isGroundConditionᵇ? : ∀ (p : Condition) → Dec (isGroundCondition p)
-  isGroundConditionᵇ? p with isGroundConditionᵇ p
+  isGroundCondition? : ∀ (p : Condition) → Dec (isGroundCondition p)
+  isGroundCondition? p with isGroundConditionᵇ p
   ... | false = no (λ ())
   ... | true = yes tt
 
   {- Properties of sets of conditions -}
+  doSignaturesMatch : Condition → Condition → Bool
+  doSignaturesMatch p₁ p₂ = does ((Condition.name p₁) Data.String.≟ (Condition.name p₂)) ∧ does ((Condition.argLength p₁) Data.Nat.≟ (Condition.argLength p₂))
+
+  private
+    p1 : Condition
+    p2 : Condition
+    p3 : Condition
+
+    p1 = record { name = "test-condition" ; args = var 0 ∷ var 1 ∷ var 3 ∷ [] }
+    p2 = record { name = "test-condition" ; args = var 0 ∷ var 1 ∷ var 3 ∷ [] }
+    p3 = record { name = "test-condition" ; args = var 0 ∷ var 1 ∷ [] }
+
+    _ : doSignaturesMatch p1 p2 ≡ true
+    _ = refl
+
+    _ : doSignaturesMatch p1 p3 ≡ false
+    _ = refl
+
+  {- Operations on lists of conditions -}
   _∈ᶜᵇ_ : Condition → List Condition → Bool
   p ∈ᶜᵇ [] = false
-  p ∈ᶜᵇ (x ∷ ℂ) = (does ((Condition.name p) Data.String.≟ (Condition.name x)) ∧ does ((Condition.argLength p) Data.Nat.≟ (Condition.argLength x))) ∨ (p ∈ᶜᵇ ℂ)
+  p ∈ᶜᵇ (x ∷ ℂ) = (doSignaturesMatch p x) ∨ (p ∈ᶜᵇ ℂ)
 
+  _∈ᶜ_ : Condition → List Condition → Set
+  p ∈ᶜ ℂ = T (p ∈ᶜᵇ ℂ)
+
+  _∈ᶜ?_ : ( p : Condition ) ( ℂ : List Condition ) → Dec ( p ∈ᶜ ℂ )
+  p ∈ᶜ? ℂ with p ∈ᶜᵇ ℂ
+  ... | false = no (λ x → x)
+  ... | true = yes tt
+
+  -- Union
+  _∪ᶜ_ : List Condition → List Condition → List Condition
+  [] ∪ᶜ ℂ₂ = ℂ₂
+  (p ∷ ℂ₁) ∪ᶜ ℂ₂ with does (p ∈ᶜ? ℂ₂)
+  ... | false = p ∷ (ℂ₁ ∪ᶜ ℂ₂)
+  ... | true = ℂ₁ ∪ᶜ ℂ₂
+  
+  -- Intersection
+  _∩ᶜ_ : List Condition → List Condition → List Condition
+  [] ∩ᶜ ℂ₂ = []
+  (p ∷ ℂ₁) ∩ᶜ ℂ₂ with does (p ∈ᶜ? ℂ₂)
+  ... | false = ℂ₁ ∩ᶜ ℂ₂
+  ... | true = p ∷ ℂ₁ ∩ᶜ ℂ₂
+  
+  -- TODO: Rewrite this
   data Disjoint : List Condition → List Condition → Set where
     dis/conds/z : Disjoint [] []
 

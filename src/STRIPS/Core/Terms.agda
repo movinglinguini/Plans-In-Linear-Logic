@@ -1,13 +1,17 @@
 open import Data.Nat
 open import Data.Bool
+open import Data.String
 open import Relation.Nullary.Decidable
 open import Relation.Binary.PropositionalEquality
 open import Data.Unit
 open import Relation.Nullary.Negation
 
-module STRIPS.Core.Terms (Atom : Set) where
+module STRIPS.Core.Terms where
+  TermAtom = String
+
+
   data Term : Set where
-    term : Atom → Term
+    term : TermAtom → Term
     var : ℕ → Term
 
   variable

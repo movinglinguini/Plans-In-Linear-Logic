@@ -14,13 +14,42 @@ open import Data.String hiding (_++_; length) renaming (_≟_ to _≟ₛ_)
 open import Data.Nat using (ℕ; suc; zero) renaming (_≟_ to _≟ₙ_)
 open import Data.Vec hiding (length)
 
-module Translations.Operator (TermAtom : Set) where
-  open import STRIPS.Problem TermAtom
-  open import ADJ.Core TermAtom
+module Translations.Operator where
+  open import Syntax.Core
+  open import STRIPS.Problem
+  open import Logic.Core.Props Proposition
+  open import Logic.Core.Modes
+  open import Translations.Condition
 
+  private
+    prependForAll : ℕ → Prop → Prop
+    prependForAll zero P = P
+    prependForAll (suc c) P = ∀[ prependForAll c P ]
 
+    translPs : ℕ → List Condition → Operator → Prop → Prop → Prop × Mode
+    translPs varCount [] o P₁ P₂ = ⟨ prependForAll varCount (P₁ ⊸ P₂) , Unrestricted ⟩
+    translPs varCount (p ∷ Ps) o P₁ P₂ with does (p ∈ᶜ? (o ⁺ ∩ᶜ o ₊))
+    ... | false = translPs varCount Ps o (` v[ translC p , term "true" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
+    ... | true = {!   !}
+    -- translPs c [] AD L R = ⟨ prependForAll c (L ⊸ R) , Unrestricted ⟩
+    -- translPs c (p ∷ Ps) AD L R with does (⟨ + , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
+    -- ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R)
+    -- ... | false with does (⟨ - , p ⟩ ∈? ((AD ⁻) ∩ (AD ₋)))
+    -- ... | true = translPs c Ps AD (` v[ p , false ] ⊗ L) (` v[ p , false ] ⊗ R)
+    -- ... | false with does (⟨ + , p ⟩ ∈? (AD ⁺)) ∧ does (⟨ - , p ⟩ ∈? (AD ₋))
+    -- ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , false ] ⊗ R)
+    -- ... | false with does (⟨ - , p ⟩ ∈? (AD ⁻)) ∧ does (⟨ + , p ⟩ ∈? (AD ₊))
+    -- ... | true = translPs c Ps AD (` v[ p , false ] ⊗ L) (` v[ p , true ] ⊗ R)
+    -- ... | false with does (⟨ + , p ⟩ ∈? (AD ⁺))
+    -- ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R)
+    -- ... | false with does (⟨ - , p ⟩ ∈? (AD ⁻))
+    -- ... | true = translPs c Ps AD  (` v[ p , false ] ⊗ L) (` v[ p , false ] ⊗ R)
+    -- ... | false with does (⟨ + , p ⟩ ∈? (AD ₊))
+    -- ... | true = translPs (suc c) Ps AD (` v[ p , var c ] ⊗ L) (` v[ p , true ] ⊗ R)
+    -- ... | false = translPs (suc c) Ps AD (` v[ p , var c ] ⊗ L) (` v[ p , false ] ⊗ R)
   
   translO : Operator → Prop × Mode
+  translO o = translPs zero ((o ⁺ ∪ᶜ o ⁻) ∪ᶜ (o ₊ ∪ᶜ o ₋)) o 𝟙 𝟙
 
 -- module Translations.Operator (domain : Domain) where
 --   open Domain domain
@@ -112,5 +141,5 @@ module Translations.Operator (TermAtom : Set) where
 --       -----------------------
 --       → OContext (𝕠ᵗ ∷ 𝕆ᵗ) (⟨ term true ∷ term false ∷ [] , 𝕠ᵗ ∷ proj₂ Δ ⟩)
     
-
-  
+ 
+   

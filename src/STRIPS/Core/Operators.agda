@@ -4,8 +4,8 @@ open import Data.Unit
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Relation.Nullary.Decidable
 
-module STRIPS.Core.Operators (TermAtom : Set) where
-  open import STRIPS.Core.Conditions TermAtom
+module STRIPS.Core.Operators where
+  open import STRIPS.Core.Conditions
   
   record Operator : Set where
     field

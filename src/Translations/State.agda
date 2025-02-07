@@ -3,20 +3,28 @@ open import Data.List
 open import Data.Vec hiding (length)
 open import Relation.Binary.PropositionalEquality
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
+open import Relation.Nullary.Decidable
 
-module Translations.State (TermAtom : Set) where
-  open import STRIPS.Problem TermAtom hiding (Term)
-  open import Translations.Condition TermAtom
+module Translations.State where
+  open import Syntax.Core
+  open import STRIPS.Problem hiding (Term)
   open import Logic.Core.Terms TermAtom
+  open import Logic.Core.Props Proposition
+  open import Logic.Core.Modes
+  open import Translations.Condition
 
-  data Proposition : Set where
-    v[_,_] : TCondition → Term → Proposition
+  variable
+    𝕊 : List Condition
 
-  translS : (𝕊 ℙ : List Condition) → Vec Proposition (length ℙ)
+  translS : (𝕊 ℙ : List Condition) → Vec (Prop × Mode) (length ℙ) -- Vec Proposition (length ℙ)
   translS 𝕊 [] = []
-  translS 𝕊 (x ∷ ℙ) with x ∈ᶜᵇ 𝕊
-  ... | false = v[ translC x , term {!   !} ] ∷ translS 𝕊 ℙ
-  ... | true = {!   !}   
+  translS 𝕊 (x ∷ ℙ) with x ∈ᶜ? 𝕊
+  ... | yes p = ⟨ ` v[ (translC x) , term "true" ] , Linear ⟩ ∷ (translS 𝕊 ℙ)
+  ... | no p = ⟨ ` v[ (translC x) , term "false" ] , Linear ⟩ ∷ (translS 𝕊 ℙ)
+
+  {- Relation between state and its translation -}
+  data TranslS : ∀ (𝕊 ℙ : List Condition) → Vec (Prop × Mode) (length ℙ) → Set where
+    translS/s : TranslS 𝕊 ℙ (translS 𝕊 ℙ)
 
   -- open Domain domain
   -- open import Plans.Semantics domain
