@@ -1,10 +1,12 @@
 open import Data.List
+open import Data.Bool
+open import Data.Unit
 open import Relation.Binary.Definitions using (DecidableEquality)
+open import Relation.Nullary.Decidable
 
-module STRIPS.Core.Operators (Term : Set) where
-  open import STRIPS.Core.Conditions Term
-  -- open import Utils.ListUnion _≟ᶜ_
-
+module STRIPS.Core.Operators (TermAtom : Set) where
+  open import STRIPS.Core.Conditions TermAtom
+  
   record Operator : Set where
     field
       posPre : List (Condition)
@@ -12,17 +14,39 @@ module STRIPS.Core.Operators (Term : Set) where
       posPost : List (Condition)
       negPost : List (Condition)
 
-  -- conds : Operator → List (Condition Term)
-  -- conds o = (((Operator.posPre o) ∪ (Operator.negPre o)) ∪ (Operator.posPost o)) ∪ (Operator.negPost o)
-
   variable
-    o o₁ o₂ : Operator
+    o o₁ o₂ τ τ₁ τ₂ : Operator
 
-  private
-    postulate
-      posPre1 : Condition
-      posPre2 : Condition
-      negPost : Condition
-    
-    testOperator : Operator
-    testOperator = record { posPre = posPre1 ∷ posPre2 ∷ [] ; negPre = [] ; posPost = [] ; negPost = negPost ∷ [] }
+  {- Syntactic Sugar -}
+  infix 50 _⁺ _⁻ _₊ _₋
+
+  _⁺ : Operator → List Condition
+  o ⁺ = Operator.posPre o
+
+  _⁻ : Operator → List Condition
+  o ⁻ = Operator.negPre o
+
+  _₊ : Operator → List Condition
+  o ₊ = Operator.posPost o
+
+  _₋ : Operator → List Condition
+  o ₋ = Operator.negPost o
+
+  {- Operator Properties -}
+  isGroundOperatorᵇ : Operator → Bool
+  isGroundOperatorᵇ o = (conditionsGround (Operator.posPre o)) ∧ ((conditionsGround (Operator.negPre o)) ∧ ((conditionsGround (Operator.posPost o)) ∧ (conditionsGround (Operator.negPost o))))
+    where
+      conditionsGround : List Condition → Bool
+      conditionsGround ℂ = foldr (λ x acc → acc ∧ (isGroundConditionᵇ x)) true ℂ
+
+  isGroundOperator : Operator → Set
+  isGroundOperator o = T (isGroundOperatorᵇ o)
+
+  isGroundOperator? : ∀ ( o : Operator ) → Dec (isGroundOperator o)
+  isGroundOperator? o with isGroundOperatorᵇ o
+  ... | false = no (λ ())
+  ... | true = yes tt
+
+  data WFOperator : Operator → Set where
+    wf/operator : Disjoint (Operator.posPre o) (Operator.negPre o) → Disjoint (Operator.posPost o) (Operator.negPost o)  
+      → WFOperator o

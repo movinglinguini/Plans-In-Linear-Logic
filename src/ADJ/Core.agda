@@ -12,72 +12,67 @@ open import Relation.Nullary
 open import Data.Nat
 open import Data.Bool hiding (_≟_)
 
-open import Plans.Domain
-
-module ADJ.Core (domain : Domain) where
-  open Domain domain
-  
-  open import Syntax.Core domain renaming (Term to BaseTerm)
+module ADJ.Core (TermAtom : Set) where
+  open import Syntax.Core TermAtom
   open import Logic.Core.Props Proposition public
-  open import Logic.Core.Terms BaseTerm public
+  open import Logic.Core.Terms TermAtom public
   open import Logic.Core.Modes public
-  open import Logic.Core.Contexts Proposition BaseTerm public
+  open import Logic.Core.Contexts Proposition TermAtom public
 
+  -- private
+  --   rebase : Prop → Prop
+  --   rebase (` v[ x , true ]) = ` v[ x , true ]
+  --   rebase (` v[ x , false ]) = ` v[ x , false ]
+  --   rebase (` v[ x , var x₁ ]) with x₁
+  --   ... | zero = ` v[ x , var zero ]
+  --   ... | suc a = ` v[ x , var a ]
+  --   rebase (P ⊸ P₁) = (rebase P) ⊸ (rebase P₁)
+  --   rebase (P ⊗ P₁) = (rebase P) ⊗ (rebase P₁)
+  --   rebase 𝟙 = 𝟙
+  --   rebase ⊤ = ⊤
+  --   rebase (P ⊕ P₁) = (rebase P) ⊕ (rebase P₁)
+  --   rebase (P & P₁) = (rebase P) & (rebase P₁)
+  --   rebase (↑[ x ][ x₁ ] P) = ↑[ x ][ x₁ ] (rebase P)
+  --   rebase (↓[ x ][ x₁ ] P) = ↓[ x ][ x₁ ] (rebase P)
+  --   rebase ∀[ P ] = ∀[ rebase P ]
+
+  --   subst : Prop → Term → Prop
+  --   subst (` v[ x , true ]) t = ` v[ x , true ]
+  --   subst (` v[ x , false ]) t = ` v[ x , false ]
+  --   subst (` v[ x , var x₁ ]) t with does (x₁ ≟ zero)
+  --   ... | false = ` v[ x , var x₁ ]
+  --   ... | true with t
+  --   ... | term x₂ = ` v[ x , x₂ ]
+  --   subst (P ⊸ P₁) t = rebase ((subst P t) ⊸ (subst P₁ t))
+  --   subst (P ⊗ P₁) t = rebase ((subst P t) ⊗ (subst P₁ t))
+  --   subst 𝟙 t = 𝟙
+  --   subst ⊤ t = ⊤
+  --   subst (P ⊕ P₁) t = rebase((subst P t) ⊕ (subst P₁ t))
+  --   subst (P & P₁) t = rebase((subst P t) & (subst P₁ t))
+  --   subst (↑[ x ][ x₁ ] P) t = rebase (↑[ x ][ x₁ ] (subst P t))
+  --   subst (↓[ x ][ x₁ ] P) t = rebase (↓[ x ][ x₁ ] (subst P t))
+  --   subst ∀[ ` A ] t = subst ( ` A ) t
+  --   subst ∀[ P ⊸ P₁ ] t = subst (P ⊸ P₁) t
+  --   subst ∀[ P ⊗ P₁ ] t = subst (P ⊗ P₁) t
+  --   subst ∀[ 𝟙 ] t = 𝟙
+  --   subst ∀[ ⊤ ] t = ⊤
+  --   subst ∀[ P ⊕ P₁ ] t = subst (P ⊕ P₁) t
+  --   subst ∀[ P & P₁ ] t = subst (P & P₁) t
+  --   subst ∀[ ↑[ x ][ x₁ ] P ] t = ↑[ x ][ x₁ ] (subst P t)
+  --   subst ∀[ ↓[ x ][ x₁ ] P ] t = ↓[ x ][ x₁ ] (subst P t)
+  --   subst ∀[ ∀[ P ] ] t = ∀[ subst ∀[ P ] t ]
   private
-    rebase : Prop → Prop
-    rebase (` v[ x , true ]) = ` v[ x , true ]
-    rebase (` v[ x , false ]) = ` v[ x , false ]
-    rebase (` v[ x , var x₁ ]) with x₁
-    ... | zero = ` v[ x , var zero ]
-    ... | suc a = ` v[ x , var a ]
-    rebase (P ⊸ P₁) = (rebase P) ⊸ (rebase P₁)
-    rebase (P ⊗ P₁) = (rebase P) ⊗ (rebase P₁)
-    rebase 𝟙 = 𝟙
-    rebase ⊤ = ⊤
-    rebase (P ⊕ P₁) = (rebase P) ⊕ (rebase P₁)
-    rebase (P & P₁) = (rebase P) & (rebase P₁)
-    rebase (↑[ x ][ x₁ ] P) = ↑[ x ][ x₁ ] (rebase P)
-    rebase (↓[ x ][ x₁ ] P) = ↓[ x ][ x₁ ] (rebase P)
-    rebase ∀[ P ] = ∀[ rebase P ]
-
     subst : Prop → Term → Prop
-    subst (` v[ x , true ]) t = ` v[ x , true ]
-    subst (` v[ x , false ]) t = ` v[ x , false ]
-    subst (` v[ x , var x₁ ]) t with does (x₁ ≟ zero)
-    ... | false = ` v[ x , var x₁ ]
-    ... | true with t
-    ... | term x₂ = ` v[ x , x₂ ]
-    subst (P ⊸ P₁) t = rebase ((subst P t) ⊸ (subst P₁ t))
-    subst (P ⊗ P₁) t = rebase ((subst P t) ⊗ (subst P₁ t))
+    subst (` v[ p , b ]) t = {!   !}
+    subst (p₁ ⊸ p₂) t = (subst p₁ t) ⊸ (subst p₂ t)
+    subst (p₁ ⊗ p₂) t = ((subst p₁ t)) ⊗ subst p₂ t
     subst 𝟙 t = 𝟙
     subst ⊤ t = ⊤
-    subst (P ⊕ P₁) t = rebase((subst P t) ⊕ (subst P₁ t))
-    subst (P & P₁) t = rebase((subst P t) & (subst P₁ t))
-    subst (↑[ x ][ x₁ ] P) t = rebase (↑[ x ][ x₁ ] (subst P t))
-    subst (↓[ x ][ x₁ ] P) t = rebase (↓[ x ][ x₁ ] (subst P t))
-    subst ∀[ ` A ] t = subst ( ` A ) t
-    subst ∀[ P ⊸ P₁ ] t = subst (P ⊸ P₁) t
-    subst ∀[ P ⊗ P₁ ] t = subst (P ⊗ P₁) t
-    subst ∀[ 𝟙 ] t = 𝟙
-    subst ∀[ ⊤ ] t = ⊤
-    subst ∀[ P ⊕ P₁ ] t = subst (P ⊕ P₁) t
-    subst ∀[ P & P₁ ] t = subst (P & P₁) t
-    subst ∀[ ↑[ x ][ x₁ ] P ] t = ↑[ x ][ x₁ ] (subst P t)
-    subst ∀[ ↓[ x ][ x₁ ] P ] t = ↓[ x ][ x₁ ] (subst P t)
-    subst ∀[ ∀[ P ] ] t = ∀[ subst ∀[ P ] t ]
+    subst (p₁ ⊕ p₂) t = subst p₁ t ⊕ subst p₂ t
+    subst (p₁ & p₂) t = (subst p₁ t) & subst p₂ t
+    subst (↑[ x ][ x₁ ] p) t = ↑[ x ][ x₁ ] (subst p t)
+    subst (↓[ x ][ x₁ ] p) t = ↓[ x ][ x₁ ] (subst p t)
+    subst ∀[ ∀[ p ] ] t = ∀[ subst ∀[ p ] t ]
+    subst ∀[ p ] t = subst p t
 
-  open import Logic.Adjoint Proposition BaseTerm subst public
-  
-
-  -- Testing substitution
-  postulate
-    p[t] : Predicate
-
-  testProp : Prop
-  testProp = ∀[ ∀[ (` v[ p[t] , var zero ]) ⊸ (` v[ p[t] , var 1 ]) ] ]
-
-  _ : subst testProp (term true) ≡  ∀[ (` v[ p[t] , true ]) ⊸ (` v[ p[t] , var 0 ]) ]
-  _ = refl
-
-  _ : subst (subst testProp (term true)) (term false) ≡  (` v[ p[t] , true ]) ⊸ (` v[ p[t] , false ])
-  _ = refl
+  open import Logic.Adjoint Proposition TermAtom subst public
