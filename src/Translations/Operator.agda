@@ -1,6 +1,6 @@
 -- Translation of action descriptions from Actions You Can Handle into open 
 -- lolli propositions in Adjoint Logic
-open import Data.List using (List; _++_; filterᵇ; unzip; map; []; _∷_; length)
+open import Data.List
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Data.Bool hiding (_≟_)
@@ -11,46 +11,65 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong)
 open import Data.List.Relation.Binary.Sublist.Heterogeneous.Core using (_∷ʳ_) renaming ([] to ∅)
 open import Data.String hiding (_++_; length) renaming (_≟_ to _≟ₛ_)
-open import Data.Nat using (ℕ; suc; zero) renaming (_≟_ to _≟ₙ_)
-open import Data.Vec hiding (length)
+open import Data.Nat using (ℕ; suc; zero; _+_) renaming (_≟_ to _≟ₙ_)
+open import Data.Vec hiding (length; here; there)
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Unary.Any
 
 module Translations.Operator where
   open import Syntax.Core
   open import STRIPS.Problem
   open import Logic.Core.Props Proposition
   open import Logic.Core.Modes
+  open import Logic.Utils.ModeOf Proposition
   open import Translations.Condition
+
+  variable
+    oᵗ : Prop × Mode
+    Oᵗ : List (Prop × Mode)
 
   private
     prependForAll : ℕ → Prop → Prop
     prependForAll zero P = P
     prependForAll (suc c) P = ∀[ prependForAll c P ]
 
-    translPs : ℕ → List Condition → Operator → Prop → Prop → Prop × Mode
-    translPs varCount [] o P₁ P₂ = ⟨ prependForAll varCount (P₁ ⊸ P₂) , Unrestricted ⟩
+    translPs : ℕ → List Condition → Operator → Prop → Prop → Prop
+    translPs varCount [] o P₁ P₂ = prependForAll varCount (P₁ ⊸ P₂)
     translPs varCount (p ∷ Ps) o P₁ P₂ with does (p ∈ᶜ? (o ⁺ ∩ᶜ o ₊))
-    ... | false = translPs varCount Ps o (` v[ translC p , term "true" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
-    ... | true = {!   !}
-    -- translPs c [] AD L R = ⟨ prependForAll c (L ⊸ R) , Unrestricted ⟩
-    -- translPs c (p ∷ Ps) AD L R with does (⟨ + , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
-    -- ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R)
-    -- ... | false with does (⟨ - , p ⟩ ∈? ((AD ⁻) ∩ (AD ₋)))
-    -- ... | true = translPs c Ps AD (` v[ p , false ] ⊗ L) (` v[ p , false ] ⊗ R)
-    -- ... | false with does (⟨ + , p ⟩ ∈? (AD ⁺)) ∧ does (⟨ - , p ⟩ ∈? (AD ₋))
-    -- ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , false ] ⊗ R)
-    -- ... | false with does (⟨ - , p ⟩ ∈? (AD ⁻)) ∧ does (⟨ + , p ⟩ ∈? (AD ₊))
-    -- ... | true = translPs c Ps AD (` v[ p , false ] ⊗ L) (` v[ p , true ] ⊗ R)
-    -- ... | false with does (⟨ + , p ⟩ ∈? (AD ⁺))
-    -- ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R)
-    -- ... | false with does (⟨ - , p ⟩ ∈? (AD ⁻))
-    -- ... | true = translPs c Ps AD  (` v[ p , false ] ⊗ L) (` v[ p , false ] ⊗ R)
-    -- ... | false with does (⟨ + , p ⟩ ∈? (AD ₊))
-    -- ... | true = translPs (suc c) Ps AD (` v[ p , var c ] ⊗ L) (` v[ p , true ] ⊗ R)
-    -- ... | false = translPs (suc c) Ps AD (` v[ p , var c ] ⊗ L) (` v[ p , false ] ⊗ R)
+    ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "true" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
+    ... | false with does (p ∈ᶜ? (o ⁻ ∩ᶜ o ₊))
+    ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "false" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
+    ... | false with does (p ∈ᶜ? (o ⁺ ∩ᶜ o ₋))
+    ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "true" ] ⊗ P₁) (` v[ translC p , term "false" ] ⊗ P₂)
+    ... | false with does (p ∈ᶜ? (o ₋ ∩ᶜ o ₋))
+    ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "false" ] ⊗ P₁) (` v[ translC p , term "false" ] ⊗ P₂)
+    ... | false with (does (p ∈ᶜ? o ⁺)) ∧ (not (does (p ∈ᶜ? posts o)))
+    ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "true" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
+    ... | false with (does (p ∈ᶜ? o ⁻)) ∧ (not (does (p ∈ᶜ? posts o)))
+    ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "false" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
+    ... | false with (does (p ∈ᶜ? o ₊)) ∧ (not (does (p ∈ᶜ? pres o)))
+    ... | true = translPs (suc (varCount + (countVars p))) Ps o (` v[ translC p , var (varCount + (countVars p)) ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
+    ... | false = translPs (suc (varCount + (countVars p))) Ps o (` v[ translC p , var (varCount + (countVars p)) ] ⊗ P₁) (` v[ translC p , term "false" ] ⊗ P₂)
   
   translO : Operator → Prop × Mode
-  translO o = translPs zero ((o ⁺ ∪ᶜ o ⁻) ∪ᶜ (o ₊ ∪ᶜ o ₋)) o 𝟙 𝟙
+  translO o = ⟨ translPs zero ((o ⁺ ∪ᶜ o ⁻) ∪ᶜ (o ₊ ∪ᶜ o ₋)) o 𝟙 𝟙 , Unrestricted ⟩
 
+  {- Properties of the translation -}
+  data TranslO : Operator → Prop × Mode → Set where
+    transl/op : TranslO o (translO o)
+
+  data TranslOs : List Operator → List (Prop × Mode) → Set where
+    transl/ops/z : TranslOs [] []
+    transl/ops/s : TranslOs O Oᵗ → TranslO o oᵗ
+      ----------------------
+      → TranslOs (o ∷ O) (oᵗ ∷ Oᵗ)
+  private
+    translOUnrestricted : TranslO o oᵗ → modeOf oᵗ ≡ Unrestricted
+    translOUnrestricted {o} {oᵗ = oᵗ} transl/op = refl
+
+    allUnrestricted : TranslOs O Oᵗ → oᵗ ∈ Oᵗ → modeOf oᵗ ≡ Unrestricted
+    allUnrestricted {oᵗ = ⟨ fst , snd ⟩} (transl/ops/s oTrans transl/op) (here refl) = refl
+    allUnrestricted (transl/ops/s oTrans x) (there listMem) = allUnrestricted oTrans listMem
 -- module Translations.Operator (domain : Domain) where
 --   open Domain domain
   
@@ -140,6 +159,6 @@ module Translations.Operator where
 --     S : OContext 𝕆ᵗ Δ
 --       -----------------------
 --       → OContext (𝕠ᵗ ∷ 𝕆ᵗ) (⟨ term true ∷ term false ∷ [] , 𝕠ᵗ ∷ proj₂ Δ ⟩)
-    
- 
-   
+       
+      
+         

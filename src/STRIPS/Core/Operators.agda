@@ -16,6 +16,7 @@ module STRIPS.Core.Operators where
 
   variable
     o o₁ o₂ τ τ₁ τ₂ : Operator
+    O O₁ O₂ : List Operator
 
   {- Syntactic Sugar -}
   infix 50 _⁺ _⁻ _₊ _₋
@@ -31,6 +32,12 @@ module STRIPS.Core.Operators where
 
   _₋ : Operator → List Condition
   o ₋ = Operator.negPost o
+
+  pres : Operator → List Condition
+  pres o = (Operator.posPre o) ∪ᶜ (Operator.negPre o)
+
+  posts : Operator → List Condition
+  posts o = (Operator.posPost o) ∪ᶜ (Operator.negPost o)
 
   {- Operator Properties -}
   isGroundOperatorᵇ : Operator → Bool

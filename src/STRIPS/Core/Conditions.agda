@@ -30,7 +30,10 @@ module STRIPS.Core.Conditions where
 
   {- Operations on conditions -}
   varArgsOf : ∀ ( p : Condition ) → Vec≤ Term (Condition.argLength p)
-  varArgsOf record { name = name ; args = args } = Data.Vec.filter (isConst?) args
+  varArgsOf record { name = name ; args = args } = Data.Vec.filter (isVar?) args
+
+  countVars : Condition → ℕ
+  countVars p = Data.Vec.length (Vec≤.vec (varArgsOf p))
 
   ground : ∀ ( p : Condition ) ( T : Vec≤ Term (Condition.argLength p) ) 
     → All isConst (Vec≤.vec T) 

@@ -35,6 +35,10 @@ module STRIPS.Core.Terms where
   isConst? (term x) = yes (λ ())
   isConst? (var x) = no (λ x₁ → x₁ tt)
 
+  isVar? : ∀ (t : Term) → Dec (isVar t)
+  isVar? (term x) = no (λ ())
+  isVar? (var x) = yes tt
+
   private
     _ : isVar (var 0) ≡ ⊤
     _ = refl
