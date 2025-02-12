@@ -1,6 +1,7 @@
 open import Data.List
 open import Data.Bool
 open import Data.Unit
+open import Data.String
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Relation.Nullary.Decidable
 
@@ -9,6 +10,7 @@ module STRIPS.Core.Operators where
   
   record Operator : Set where
     field
+      label : String
       posPre : List (Condition)
       negPre : List (Condition)
       posPost : List (Condition)

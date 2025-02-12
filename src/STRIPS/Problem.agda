@@ -6,6 +6,7 @@ module STRIPS.Problem where
   open import STRIPS.Core.Conditions public
   open import STRIPS.Core.Operators public
   open import STRIPS.Core.Goals public
+  open import STRIPS.Core.Plans public
 
   record PlanProblem : Set where
     field

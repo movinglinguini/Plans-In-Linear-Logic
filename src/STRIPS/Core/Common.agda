@@ -1,6 +1,8 @@
 open import Data.List
 open import Data.Bool
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
+open import Relation.Nullary.Decidable
+open import Data.Unit
 
 module STRIPS.Core.Common where
   open import STRIPS.Core.Conditions
@@ -17,3 +19,8 @@ module STRIPS.Core.Common where
 
   sat : List Condition → (List Condition) × (List Condition) → Set
   sat ℂ 𝔾 = T (satᵇ ℂ 𝔾) 
+
+  sat? : (S : List Condition) → (G : (List Condition) × (List Condition)) → Dec (sat S G)
+  sat? S G with satᵇ S G
+  ... | false = no λ ()
+  ... | true = yes tt

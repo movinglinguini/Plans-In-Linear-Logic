@@ -1,28 +1,36 @@
 open import Plans.Domain
 open import Data.List
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
+open import Relation.Binary.PropositionalEquality
 
-module Translations.Goal (domain : Domain) where
-
-  open Domain domain
-
-  open import Syntax.Core domain
-  open import ADJ.Core domain
-  open import Utils.BigTensor domain using (⨂_)
-  open import Utils.PredMapToProposition domain
+module Translations.Goal where
+  open import STRIPS.Problem
+  open import Syntax.Core
+  open import Logic.Core.Props Proposition
+  open import Logic.Core.Modes
+  open import Logic.Utils.ModeOf Proposition
+  open import Translations.Condition
+  open import Utils.BigTensor Proposition
 
   variable
-    𝔾 : GoalState
-    𝔾ᵗ : Prop
-    g : PredMap
+    𝔾ᵗ : Prop × Mode
 
-  translG : GoalState → Prop
-  translG G = ⨂ Data.List.map `_ (Data.List.map translPredmap G) 
+  translG : Goal → Prop × Mode
+  translG g = ⟨  (⨂ translg g) ⊗ ⊤ , Linear ⟩ 
+    where
+      translatePos : Goal → List Prop
+      translatePos g = Data.List.map (λ p → ` v[ (translC p) , (term "true") ]) (Goal.pos g) 
 
-  data TranslG : GoalState → Prop → Set where
-    Z : TranslG [] 𝟙
-    
-    S : 
-      TranslG 𝔾 𝔾ᵗ
-      ------------------------------------------
-      → TranslG (g ∷ 𝔾) (` (translPredmap g) ⊗ 𝔾ᵗ)
+      translateNeg : Goal → List Prop
+      translateNeg g = Data.List.map (λ p → ` v[ (translC p) , (term "false") ]) (Goal.pos g) 
+
+      translg : Goal → List Prop
+      translg g = (translatePos g) ++ (translateNeg g) 
+
+  data TranslG : Goal → Prop × Mode → Set where
+    transl/goal : TranslG 𝔾 (translG 𝔾)
+
+  {- Properties of translation -}
+  private
+    isLinear : TranslG 𝔾 𝔾ᵗ → modeOf 𝔾ᵗ ≡ Linear
+    isLinear transl/goal = refl
