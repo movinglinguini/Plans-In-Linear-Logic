@@ -3,13 +3,14 @@ open import Data.List
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality
 
-module Translations.Goal where
-  open import STRIPS.Problem
-  open import Syntax.Core
+module Translations.Core.Goal where
+  open import STRIPS.Problem hiding (Term)
+  open import Translations.Core.Condition
+  open import Translations.Core.State
   open import Logic.Core.Props Proposition
+  open import Logic.Core.Terms TermAtom
   open import Logic.Core.Modes
   open import Logic.Utils.ModeOf Proposition
-  open import Translations.Condition
   open import Utils.BigTensor Proposition
 
   variable

@@ -16,13 +16,14 @@ open import Data.Vec hiding (length; here; there)
 open import Data.List.Membership.Propositional
 open import Data.List.Relation.Unary.Any
 
-module Translations.Operator where
-  open import Syntax.Core
-  open import STRIPS.Problem
+module Translations.Core.Operator where
+  open import STRIPS.Problem hiding (Term)
+  open import Translations.Core.Condition
+  open import Translations.Core.State
   open import Logic.Core.Props Proposition
+  open import Logic.Core.Terms TermAtom
   open import Logic.Core.Modes
   open import Logic.Utils.ModeOf Proposition
-  open import Translations.Condition
 
   variable
     oᵗ : Prop × Mode

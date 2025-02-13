@@ -2,9 +2,9 @@ open import Data.Vec
 open import Data.Nat
 open import Data.String hiding (map)
 
-module Translations.Condition where
+module Translations.Core.Condition where
   open import STRIPS.Problem hiding (Term)
-  open import Translations.Term
+  open import Translations.Core.Term
   open import Logic.Core.Terms TermAtom
 
   record TCondition : Set where

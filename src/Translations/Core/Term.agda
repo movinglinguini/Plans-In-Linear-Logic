@@ -1,6 +1,6 @@
 open import Data.String
 
-module Translations.Term where
+module Translations.Core.Term where
   open import STRIPS.Problem renaming (Term to STRIPSTerm)
   open import Logic.Core.Terms TermAtom renaming (Term to ADJTerm)
 

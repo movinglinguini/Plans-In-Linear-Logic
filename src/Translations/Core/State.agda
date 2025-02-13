@@ -5,13 +5,17 @@ open import Relation.Binary.PropositionalEquality
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Nullary.Decidable
 
-module Translations.State where
-  open import Syntax.Core
+module Translations.Core.State where
+  open import Translations.Core.Condition
   open import STRIPS.Problem hiding (Term)
   open import Logic.Core.Terms TermAtom
+  
+  infix 10 v[_,_]
+  data Proposition : Set where
+    v[_,_] : TCondition → Term → Proposition
+
   open import Logic.Core.Props Proposition
   open import Logic.Core.Modes
-  open import Translations.Condition
 
   variable
     𝕊 : List Condition

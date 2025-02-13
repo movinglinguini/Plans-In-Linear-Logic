@@ -17,11 +17,11 @@ module MovieExample where
       (record { name = "have-pop" ; args = [] }) ∷ 
       (record { name = "have-cheese" ; args = [] }) ∷ 
       (record { name = "have-crackers" ; args = [] }) ∷ 
-      (record { name = "chips" ; args = (var 0) ∷ [] }) ∷
-      (record { name = "dip" ; args = (var 0) ∷ [] }) ∷ 
-      (record { name = "pop" ; args = (var 0) ∷ [] }) ∷ 
-      (record { name = "cheese" ; args = (var 0) ∷ [] }) ∷
-      (record { name = "crackers" ; args = (var 0) ∷ [] }) ∷ []
+      (record { name = "chips" ; args = (term "c1") ∷ [] }) ∷
+      (record { name = "dip" ; args = (term "d1") ∷ [] }) ∷ 
+      (record { name = "pop" ; args = (term "p1") ∷ [] }) ∷ 
+      (record { name = "cheese" ; args = (term "z1") ∷ [] }) ∷
+      (record { name = "crackers" ; args = (term "k1") ∷ [] }) ∷ []
   
   operators : List Operator
   operators = (record { label = "rewind-movie-2"; posPre = record { name = "counter-at-two-hours" ; args = [] } ∷ [] ; negPre = [] ; posPost = record { name = "movie-rewound" ; args = [] } ∷ [] ; negPost = [] }) ∷ 
@@ -108,4 +108,10 @@ module MovieExample where
 
   plan-is-valid : Solves initialState plan goal
   plan-is-valid = from-just (solver initialState plan goal)
-  
+
+  {-
+    TRANSLATIONS 
+  -}
+  open import Translations.State
+  open import ADJ.Core
+  stateTrans : Vec  
