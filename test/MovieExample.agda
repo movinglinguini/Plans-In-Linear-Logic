@@ -2,6 +2,7 @@ open import Data.List
 open import Data.Vec
 open import Data.Irrelevant
 open import Data.Maybe
+open import Data.Fin
 
 open import STRIPS.Problem
 
@@ -105,5 +106,6 @@ module MovieExample where
         ; neg = [] 
         }
 
-  -- plan-is-valid : Solves initialState plan goal
-  plan-is-valid = solver initialState plan goal
+  plan-is-valid : Solves initialState plan goal
+  plan-is-valid = from-just (solver initialState plan goal)
+  

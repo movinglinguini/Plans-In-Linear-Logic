@@ -62,13 +62,14 @@ module STRIPS.Core.Operators where
 
   {- The Update Function -}
   update : ∀ ( 𝕊 : List Condition ) ( 𝕠 : Operator ) → List Condition
-  update 𝕊 𝕠 = add (remove 𝕊 (𝕠 ₋)) (𝕠 ⁺)
+  update 𝕊 𝕠 = add (remove 𝕊 (𝕠 ₋)) (𝕠 ₊)
     where
       add : List Condition → List Condition → List Condition
       add 𝕊 A = A ∪ᶜ 𝕊
 
       remove : List Condition → List Condition → List Condition
       remove [] R = [] 
+      remove 𝕊 [] = 𝕊
       remove (s ∷ 𝕊) R with s ∈ᶜᵇ R
       ... | false = s ∷ remove 𝕊 R 
       ... | true = remove 𝕊 R
