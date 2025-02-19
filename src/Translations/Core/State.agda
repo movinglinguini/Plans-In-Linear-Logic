@@ -28,7 +28,7 @@ module Translations.Core.State where
 
   {- Relation between state and its translation -}
   data TranslS : ∀ (𝕊 ℙ : List Condition) → Vec (Prop × Mode) (length ℙ) → Set where
-    translS/s : TranslS 𝕊 ℙ (translS 𝕊 ℙ)
+    translS/s : ∀ { 𝕊 ℙ : List Condition } → TranslS 𝕊 ℙ (translS 𝕊 ℙ)
 
   -- open Domain domain
   -- open import Plans.Semantics domain

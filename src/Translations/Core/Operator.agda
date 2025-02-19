@@ -13,8 +13,8 @@ open import Data.List.Relation.Binary.Sublist.Heterogeneous.Core using (_∷ʳ_)
 open import Data.String hiding (_++_; length) renaming (_≟_ to _≟ₛ_)
 open import Data.Nat using (ℕ; suc; zero; _+_) renaming (_≟_ to _≟ₙ_)
 open import Data.Vec hiding (length; here; there)
-open import Data.List.Membership.Propositional
-open import Data.List.Relation.Unary.Any
+open import Data.Vec.Membership.Propositional
+open import Data.Vec.Relation.Unary.Any
 
 module Translations.Core.Operator where
   open import STRIPS.Problem hiding (Term)
@@ -26,8 +26,9 @@ module Translations.Core.Operator where
   open import Logic.Utils.ModeOf Proposition
 
   variable
+    n : ℕ
     oᵗ : Prop × Mode
-    Oᵗ : List (Prop × Mode)
+    Oᵗ : Vec (Prop × Mode) n
 
   private
     prependForAll : ℕ → Prop → Prop
@@ -59,7 +60,7 @@ module Translations.Core.Operator where
   data TranslO : Operator → Prop × Mode → Set where
     transl/op : TranslO o (translO o)
 
-  data TranslOs : List Operator → List (Prop × Mode) → Set where
+  data TranslOs : ∀ ( O : List Operator ) → Vec (Prop × Mode) (Data.List.length O) → Set where
     transl/ops/z : TranslOs [] []
     transl/ops/s : TranslOs O Oᵗ → TranslO o oᵗ
       ----------------------
@@ -71,95 +72,3 @@ module Translations.Core.Operator where
     allUnrestricted : TranslOs O Oᵗ → oᵗ ∈ Oᵗ → modeOf oᵗ ≡ Unrestricted
     allUnrestricted {oᵗ = ⟨ fst , snd ⟩} (transl/ops/s oTrans transl/op) (here refl) = refl
     allUnrestricted (transl/ops/s oTrans x) (there listMem) = allUnrestricted oTrans listMem
--- module Translations.Operator (domain : Domain) where
---   open Domain domain
-  
---   open import Syntax.Core domain
-  
---   open import ADJ.Core domain renaming (Context to AdjContext)
---   open import Utils.BigTensor domain using (⨂_)
---   open import Utils.PredMap.DecEquality domain
-
---   variable
---     𝕠 : ActionDescription
---     𝕆 : List ActionDescription
---     𝕆ᵗ : Vec (Prop × Mode) n
---     𝕠ᵗ : Prop × Mode
-
---   private 
---     isPos : PredMap → Bool
---     isPos ⟨ + , p ⟩ = true
---     isPos ⟨ - , p ⟩ = false
-
---     isNeg : PredMap → Bool
---     isNeg p with isPos p
---     ... | true = false
---     ... | false = true
-
---     filterPositive : List PredMap → List PredMap
---     filterPositive L = filterᵇ isPos L
-        
---     filterNegative : List PredMap → List PredMap
---     filterNegative L = filterᵇ isNeg L
-
---     _⁺ : ActionDescription → List PredMap
---     o ⁺ = filterPositive (ActionDescription.preconditions o)
-
---     _⁻ : ActionDescription → List PredMap
---     o ⁻ = filterNegative (ActionDescription.preconditions o)
-
---     _₊ : ActionDescription → List PredMap
---     o ₊ = filterPositive (ActionDescription.effects o)
-
---     _₋ : ActionDescription → List PredMap
---     o ₋ = filterNegative (ActionDescription.effects o)
-  
---   open import Utils.ListIntersection _≟_
---   open import Utils.ListUnion _≟ₚ_
-
---   private
---     cond : List PredMap → List Predicate
---     cond [] = []
---     cond (⟨ fst , snd ⟩ ∷ ps) = snd ∷ cond ps
-
---     prependForAll : ℕ → Prop → Prop
---     prependForAll zero P = P
---     prependForAll (suc c) P = ∀[ prependForAll c P ]
-
---     translPs : ℕ → List Predicate → ActionDescription → Prop → Prop → Prop × Mode
---     translPs c [] AD L R = ⟨ prependForAll c (L ⊸ R) , Unrestricted ⟩
---     translPs c (p ∷ Ps) AD L R with does (⟨ + , p ⟩ ∈? ((AD ⁺) ∩ (AD ₊)))
---     ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R)
---     ... | false with does (⟨ - , p ⟩ ∈? ((AD ⁻) ∩ (AD ₋)))
---     ... | true = translPs c Ps AD (` v[ p , false ] ⊗ L) (` v[ p , false ] ⊗ R)
---     ... | false with does (⟨ + , p ⟩ ∈? (AD ⁺)) ∧ does (⟨ - , p ⟩ ∈? (AD ₋))
---     ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , false ] ⊗ R)
---     ... | false with does (⟨ - , p ⟩ ∈? (AD ⁻)) ∧ does (⟨ + , p ⟩ ∈? (AD ₊))
---     ... | true = translPs c Ps AD (` v[ p , false ] ⊗ L) (` v[ p , true ] ⊗ R)
---     ... | false with does (⟨ + , p ⟩ ∈? (AD ⁺))
---     ... | true = translPs c Ps AD (` v[ p , true ] ⊗ L) (` v[ p , true ] ⊗ R)
---     ... | false with does (⟨ - , p ⟩ ∈? (AD ⁻))
---     ... | true = translPs c Ps AD  (` v[ p , false ] ⊗ L) (` v[ p , false ] ⊗ R)
---     ... | false with does (⟨ + , p ⟩ ∈? (AD ₊))
---     ... | true = translPs (suc c) Ps AD (` v[ p , var c ] ⊗ L) (` v[ p , true ] ⊗ R)
---     ... | false = translPs (suc c) Ps AD (` v[ p , var c ] ⊗ L) (` v[ p , false ] ⊗ R)
-
---   translO : ActionDescription → Prop × Mode
---   translO AD = translPs zero ((cond (ActionDescription.preconditions AD)) ∪ cond (ActionDescription.effects AD)) AD 𝟙 𝟙
-
---   data TranslOs : ∀ ( 𝕆 : List ActionDescription ) → Vec (Prop × Mode) (length 𝕆) → Set where
---     Z : TranslOs [] []
-
---     S : TranslOs 𝕆 𝕆ᵗ
---       -----------------------
---       → TranslOs (𝕠 ∷ 𝕆) (translO 𝕠 ∷ 𝕆ᵗ)
-
---   data OContext : Vec (Prop × Mode) n → AdjContext 2 n → Set where
---     Z : OContext [] ⟨ term true ∷ term false ∷ [] , [] ⟩
-
---     S : OContext 𝕆ᵗ Δ
---       -----------------------
---       → OContext (𝕠ᵗ ∷ 𝕆ᵗ) (⟨ term true ∷ term false ∷ [] , 𝕠ᵗ ∷ proj₂ Δ ⟩)
-       
-      
-         

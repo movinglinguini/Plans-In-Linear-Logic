@@ -1,139 +1,86 @@
-open import Data.List using (List; _∷_; []; map)
+-- open import Data.List using (List; _∷_; []; map)
+-- open import Data.Vec
+-- open import Data.Product renaming (_,_ to ⟨_,_⟩)
+-- open import Plans.Domain
+-- open import Relation.Binary.PropositionalEquality
+-- open import Data.List.Membership.Propositional
+-- open import Data.List.Relation.Binary.Sublist.Propositional
+-- open import Data.List.Relation.Unary.Any using (Any; here; there)
+open import Data.List hiding (merge)
 open import Data.Vec
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
-open import Plans.Domain
-open import Relation.Binary.PropositionalEquality
-open import Data.List.Membership.Propositional
-open import Data.List.Relation.Binary.Sublist.Propositional
-open import Data.List.Relation.Unary.Any using (Any; here; there)
 
-module Proofs.Correctness (domain : Domain) where
-  -- Planning
-  open Domain domain
-  open import Plans.Plan domain
-  open import Plans.Semantics domain
-  
-  -- Syntax
-  open import Syntax.Core domain
+module Proofs.Correctness where
+  open import STRIPS.Problem renaming (Term to STRIPSTerm)
+  open import Translations.Translations
+  open import ADJ.Core renaming (Term to AdjointTerm)
 
-  -- Translations
-  open import Translations.Problem domain
-  open import Translations.State domain
-  open import Translations.Goal domain
-  open import Translations.Operator domain
+  {- Helper functions -}
+  makeAllIrrel : ∀ { n m } → Context n m → Context n m
+  makeAllIrrel ⟨ fst , snd ⟩ = ⟨ fst , irrelify snd ⟩
+    where
+      irrelify : ∀ { n } → Vec (Prop × Mode) n → Vec (Prop × Mode) n
+      irrelify [] = []
+      irrelify (x ∷ xs) = ⟨ proj₁ x , Irrelevant ⟩ ∷ irrelify xs 
 
-  -- ADJ
-  open import ADJ.Core domain renaming (Context to AdjContext)
-
-  open import Utils.BigTensor domain
-  open import Utils.PlanToList domain
-  open import Utils.WorldState domain
-
-  variable
-    ℙ : Plan
-
-  {--
-    Helper functions
-  --}
-  makeAllIrrelevant : AdjContext y n → AdjContext y n
-  makeAllIrrelevant ⟨ fst , snd ⟩ = ⟨ fst , (Data.Vec.map (λ (⟨ p , m ⟩) → ⟨ p , Irrelevant ⟩) (snd)) ⟩
-
-  data AllIrrelevant : AdjContext y n → AdjContext y n → Set where
-    Z : AllIrrelevant ⟨ 𝕋 , [] ⟩ ⟨ 𝕋 , [] ⟩
-
-    S : AllIrrelevant Δ₁ Δ₂
-      -------------------------------
-      → AllIrrelevant ⟨ proj₁ Δ₁ , ⟨ A , m ⟩ ∷ proj₂ Δ₁ ⟩ ⟨ proj₁ Δ₂ , ⟨ A , Irrelevant ⟩ ∷ proj₂ Δ₂ ⟩
-
-  data AllLinear : AdjContext y n → Set where
-    Z : AllLinear ⟨ 𝕋 , [] ⟩
-    S : AllLinear ⟨ proj₁ Δ , proj₂ Δ ⟩
+  data Irrelified : ∀ { n m } → Context n m → Context n m → Set where
+    irrelify/z : ∀ { n } → { T : Vec AdjointTerm n } → Irrelified ⟨ T , [] ⟩ ⟨ T , [] ⟩
+    irrelify/s : ∀ { n m A k } → { T : Vec AdjointTerm n } { Δ IΔ : Vec (Prop × Mode) m }
+      → Irrelified ⟨ T , Δ ⟩ ⟨ T , IΔ ⟩
       -----------------------
-      → AllLinear ⟨ proj₁ Δ , ⟨ A , Linear ⟩ ∷ proj₂ Δ ⟩
+      → Irrelified ⟨ T , ⟨ A , k ⟩ ∷ Δ ⟩ ⟨ T , ⟨ A , Irrelevant ⟩ ∷ IΔ ⟩
   
-  data AllUnrestricted : AdjContext y n → Set where 
-    Z : AllUnrestricted ⟨ 𝕋 , [] ⟩
-    S : AllUnrestricted ⟨ proj₁ Δ , proj₂ Δ ⟩
-      -----------------------
-      → AllUnrestricted ⟨ proj₁ Δ , ⟨ A , Unrestricted ⟩ ∷ proj₂ Δ ⟩
+  private 
+    variable
+      𝕀 ℙ : List Condition
+      𝕀ᵗ : Vec (Prop × Mode) (Data.List.length ℙ)
+      𝔾 : Goal
+      𝔾ᵗ : Prop × Mode
+      𝕋 : List STRIPSTerm
+      𝕋ᵗ : Vec AdjointTerm (Data.List.length 𝕋)
 
-  isIrrel : Δ₂ ≡ (makeAllIrrelevant Δ₁) → AllIrrelevant Δ₁ Δ₂
-  isIrrel {Δ₁ = ⟨ fst , [] ⟩} refl = Z
-  isIrrel {Δ₁ = ⟨ fst , x ∷ snd ⟩} refl = S (isIrrel refl)
-  
-  irrelWeak : AllIrrelevant Δ₁ Δ₂ → cWeakenable Δ₂
-  irrelWeak Z = cWeakenable.weak/n
-  irrelWeak (S irrel) = cWeakenable.weak/c (irrelWeak irrel) mweak/i
-
-  irrelContr : AllIrrelevant Δ₁ Δ₂ → cContractable Δ₂
-  irrelContr Z = cContractable.cont/n
-  irrelContr (S irrel) = cContractable.cont/c (irrelContr irrel) mcontract/i
-
-  irrelMerge : AllIrrelevant Δ₁ Δ₂ → AllLinear Δ₁ → merge Δ₂ Δ₁ Δ₁
-  irrelMerge Z linear = merge.mg/n
-  irrelMerge (S {m = Linear} irrel) (S linear) = merge.mg/c (irrelMerge irrel linear) i∙l
-
-  SContextIsLinear : TranslS 𝕊 𝕊ᵗ → SContext 𝕊ᵗ Δ → AllLinear Δ
-  SContextIsLinear {[]} wfS Z = Z
-  SContextIsLinear {x ∷ 𝕊} (S {𝕊ᵗ = 𝕊ᵗ} wfS) (S {Δ = ⟨ [] , snd ⟩} wfΔ) = S (SContextIsLinear wfS wfΔ)
-
-  {---------
-    Lemmas
-  ----------}
-  satS-to-proveS : ∀ (𝕎 : World ) ( Δ₁ : AdjContext y n)
-    → 𝕀 ∈⟨ 𝔾 ⟩ 
-    → 𝕊 ≡ worldToState 𝕀 𝕎
-    → TranslG 𝔾 𝔾ᵗ 
-    → TranslS 𝕊 𝕊ᵗ
-    → SContext 𝕊ᵗ Δ₂
-    → Concat Δ₁ Δ₂ Δ
-    → Δ ⊢ⁱ ⟨ 𝔾ᵗ ⊗ ⊤ , Linear ⟩
-
-  satS-to-proveS {𝔾 = 𝔾} {𝔾ᵗ = 𝕘ᵗ ⊗ 𝔾ᵗ} {Δ = Δ} �� Δ₁ satG WtS (S wfG) wfS wfΔ₂ wfΔ = ⊗-assoc (⊗R {!   !} {!   !} {!   !} {!   !} (id {!   !} {!   !}) (satS-to-proveS �� Δ₁ ⟨ (λ a x → satG .proj₁ a (there x)) , (λ a z → satG .proj₂ a (there z)) ⟩ WtS wfG wfS wfΔ₂ wfΔ))
-  satS-to-proveS {𝔾 = 𝔾} {𝔾ᵗ = 𝟙} {Δ = ⟨ fst , snd ⟩} �� Δ₁ satG WtS wfG wfS wfΔ₁ wfΔ = {!   !}
-  -- satS-to-proveS {𝔾 = 𝔾} {𝔾ᵗ = 𝕘ᵗ ⊗ �ᵗ} 𝕎 Δ₂ satG WtS (S wfG) wfS wfΔ = ? -- ⊗-assoc (⊗R {!   !} {!   !} {!   !} {!   !} {!   !} (satS-to-proveS 𝕎 ⟨ (λ a z → satG .proj₁ a (there z)) , (λ a z → satG .proj₂ a (there z)) ⟩ WtS wfG wfS wfΔ))
-  -- satS-to-proveS {𝔾 = 𝔾} {[]} {𝔾ᵗ = 𝟙} {Δ = ⟨ fst , [] ⟩} 𝕎 Δ₂ satG WtS Z wfS wfΔ = ⊗R M12 M23 M cContractable.cont/n (𝟙R cWeakenable.weak/n) ⊤R
-  --   where
-  --     ΔI = makeAllIrrelevant ⟨ fst , [] ⟩
-  --     M12 : merge ΔI ΔI ΔI
-  --     M12 = merge.mg/n
-  --     M23 : merge ΔI ⟨ fst , [] ⟩ ⟨ fst , [] ⟩
-  --     M23 = merge.mg/n
-  --     M : merge ΔI ⟨ fst , [] ⟩ ⟨ fst , [] ⟩
-  --     M = merge.mg/n
-  -- satS-to-proveS {𝔾 = 𝔾} {x ∷ 𝕊} {𝔾ᵗ = 𝟙} {Δ = ⟨ fst , x₁ ∷ snd ⟩} 𝕎 satG WtS Z wfS wfΔ = ⊗R M12 M23 M ΔIcont (𝟙R ΔIweak) ⊤R
-  --   where
-  --     ΔI = makeAllIrrelevant ⟨ fst , x₁ ∷ snd ⟩
-  --     ΔIisIrrel : AllIrrelevant ⟨ fst , x₁ ∷ snd ⟩ ΔI
-  --     ΔIisIrrel = isIrrel refl
-
-  --     ΔisLinear : AllLinear ⟨ fst , x₁ ∷ snd ⟩
-  --     ΔisLinear = SContextIsLinear wfS wfΔ
-                  
-  --     M12 : merge ΔI ΔI ΔI
-  --     M12 = irrelMerge {! ΔIisIrrel  !} {!   !}
-  --     M23 : merge ΔI ⟨ fst , x₁ ∷ snd ⟩ ⟨ fst , x₁ ∷ snd ⟩
-  --     M : merge ΔI ⟨ fst , x₁ ∷ snd ⟩ ⟨ fst , x₁ ∷ snd ⟩
-  --     M = {!   !}
-
-  --     ΔIweak : cWeakenable ΔI
-  --     ΔIweak = irrelWeak ΔIisIrrel
-
-  --     ΔIcont : cContractable ΔI
-  --     ΔIcont = irrelContr ΔIisIrrel
-  {--
-    Correctness Theorem
-  --}
-  correctness : ∀ (𝕎 : World)
-    → Γ ⊢ ℙ ∶ 𝕀 ↝ 𝔾
-    → 𝕊 ≡ worldToState 𝕀 𝕎
+  sat𝕀⟨𝔾⟩⇒proof : ∀ { n m } → { Δ : Context n m } 
+    → TranslTs 𝕋 𝕋ᵗ
+    → TranslS 𝕀 ℙ 𝕀ᵗ
     → TranslG 𝔾 𝔾ᵗ
-    → TranslOs (Data.List.map Γ (planToList ℙ)) 𝕆ᵗ
-    → TranslS 𝕊 𝕀ᵗ
-    → OContext 𝕆ᵗ Δ₁
-    → SContext 𝕀ᵗ Δ₂ 
-    → Concat Δ₁ Δ₂ Δ
-    → Δ ⊢ⁱ ⟨ 𝔾ᵗ ⊗ ⊤ , Linear ⟩ 
-  
-  correctness {Δ₁ = Δ₁} 𝕎 (halt IsatG) state wfG wfO wfS wfΔ₁ wfΔ₂ wfΔ = satS-to-proveS 𝕎 Δ₁ IsatG state wfG wfS wfΔ₂ wfΔ
-  correctness 𝕎 (seq x plan) state wfG wfO wfS wfΔ₁ wfΔ₂ wfΔ = {!   !}    
+    → sat 𝕀 ⟨ Goal.pos 𝔾 , Goal.neg 𝔾 ⟩
+    → Δ ⊢ⁱ 𝔾ᵗ
+
+  sat𝕀⟨𝔾⟩⇒proof {n = n} {m = m} {Δ = ⟨ fst , [] ⟩} tT tS translG/z sat = {!   !}
+    where
+      IΔ : Context n m
+      IΔ = makeAllIrrel ⟨ fst , [] ⟩
+
+      isIrrel : Irrelified ⟨ fst , [] ⟩ IΔ
+      isIrrel = irrelify/z
+
+      contractableIΔ : cContractable IΔ
+      contractableIΔ = cont/n
+
+      M12 : merge IΔ IΔ IΔ
+      M12 = mg/n
+      M23 : merge IΔ Δ Δ
+      M23 = {!   !}
+      M : merge IΔ Δ Δ
+
+  sat𝕀⟨𝔾⟩⇒proof {n = n} {m = m} {Δ = ⟨ fst , x ∷ snd ⟩} tT tS translG/z sat = {!   !} -- ⊗R M12 M23 M {!   !} (𝟙R {!   !}) ⊤R
+
+  sat𝕀⟨𝔾⟩⇒proof tT tS translG/s sat = {!   !}
+  {-
+    This is the main theorem we want to prove. If we have a planning solution, we have a proof of
+    the problem's translation.
+  -}
+  correctness : ∀ { P : Plan } { 𝕀 ℙ : List Condition } { 𝕋 : List STRIPSTerm } { 𝕆 : List Operator } { 𝔾 : Goal }
+    { 𝕋ᵗ : Vec AdjointTerm (Data.List.length 𝕋)} { 𝕀ᵗ : Vec (Prop × Mode) (Data.List.length ℙ) } { 𝔾ᵗ : Prop × Mode } { 𝕆ᵗ : Vec (Prop × Mode) (Data.List.length 𝕆) }
+    { Γ : Context (Data.Vec.length 𝕋ᵗ) (Data.Vec.length 𝕆ᵗ) } { Δ : Context 0 (Data.Vec.length 𝕀ᵗ) }   
+    → TranslTs 𝕋 𝕋ᵗ
+    → TranslS 𝕀 ℙ 𝕀ᵗ
+    → TranslOs 𝕆 𝕆ᵗ
+    → TranslG 𝔾 𝔾ᵗ
+    → Contextify 𝕋ᵗ 𝕆ᵗ Γ
+    → Contextify [] 𝕀ᵗ Δ
+    → Solves 𝕀 P 𝔾
+    → (Γ ++ᶜ Δ) ⊢ⁱ 𝔾ᵗ
+   
+  correctness tT tS tO tG cΓ cΔ (solves/z x) = sat𝕀⟨𝔾⟩⇒proof tT tS tG x 
+  correctness _ _ _ _ _ _ (solves/s plan-solves x) = {!   !}   
