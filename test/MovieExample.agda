@@ -3,6 +3,8 @@ open import Data.Vec
 open import Data.Irrelevant
 open import Data.Maybe
 open import Data.Fin
+open import Data.Product
+open import Data.String
 
 open import STRIPS.Problem
 
@@ -112,6 +114,12 @@ module MovieExample where
   {-
     TRANSLATIONS 
   -}
-  open import Translations.State
+  open import Translations.Translations
   open import ADJ.Core
-  stateTrans : Vec  
+  open import PrettyPrinter.PrettyPrinter 300
+  
+  stateTrans : Vec (Prop × Mode) (Data.List.length predicates)
+  stateTrans = translS initialState predicates
+
+  operatorTrans : String
+  operatorTrans = render (prettyProp (proj₁ (translO (Data.List.lookup operators (suc zero)))))

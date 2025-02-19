@@ -42,7 +42,7 @@ module Translations.Core.Operator where
     ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "false" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
     ... | false with does (p ∈ᶜ? (o ⁺ ∩ᶜ o ₋))
     ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "true" ] ⊗ P₁) (` v[ translC p , term "false" ] ⊗ P₂)
-    ... | false with does (p ∈ᶜ? (o ₋ ∩ᶜ o ₋))
+    ... | false with does (p ∈ᶜ? (o ⁻ ∩ᶜ o ₋))
     ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "false" ] ⊗ P₁) (` v[ translC p , term "false" ] ⊗ P₂)
     ... | false with (does (p ∈ᶜ? o ⁺)) ∧ (not (does (p ∈ᶜ? posts o)))
     ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "true" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
