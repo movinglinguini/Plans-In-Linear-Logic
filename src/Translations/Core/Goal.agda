@@ -15,6 +15,7 @@ module Translations.Core.Goal where
 
   private 
     variable
+      G-pos G-neg : List Condition
       𝔾 : Goal
       𝔾ᵗ : Prop × Mode
     
@@ -22,7 +23,7 @@ module Translations.Core.Goal where
     translatePos g = Data.List.map (λ p → ` v[ (translC p) , (term "true") ]) (Goal.pos g) 
 
     translateNeg : Goal → List Prop
-    translateNeg g = Data.List.map (λ p → ` v[ (translC p) , (term "false") ]) (Goal.pos g) 
+    translateNeg g = Data.List.map (λ p → ` v[ (translC p) , (term "false") ]) (Goal.neg g) 
 
     translg : Goal → List Prop
     translg G = (translatePos G) ++ (translateNeg G) 
@@ -30,9 +31,16 @@ module Translations.Core.Goal where
   translG : Goal → Prop × Mode
   translG G = ⟨  (⨂ translg G) ⊗ ⊤ , Linear ⟩ 
 
-  data TranslG : Goal → Prop × Mode → Set where
-    translG/z : TranslG record { pos = [] ; neg = [] } ⟨ 𝟙 ⊗ ⊤ , Linear ⟩
-    translG/s : TranslG 𝔾 (translG 𝔾)
+  {- Properties of the translation -}
+  translG-linear : ∀ { 𝔾 𝔾ᵗ } → 𝔾ᵗ ≡ translG 𝔾 → modeOf 𝔾ᵗ ≡ Linear
+  translG-linear refl = refl
+
+  translG-wf : ∀ { 𝔾 𝔾ᵗ } → 𝔾ᵗ ≡ translG 𝔾 → 𝔾ᵗ ≡ ⟨ (⨂ translg 𝔾) ⊗ ⊤ , Linear ⟩
+  translG-wf refl = refl  
+
+  data WfTranslG : Goal → Prop × Mode → Set where
+    translG/z : WfTranslG record { pos = [] ; neg = [] } ⟨ 𝟙 ⊗ ⊤ , Linear ⟩
+    translG/s : WfTranslG 𝔾 (translG 𝔾)
 
   {- Properties of translation -}
   -- private

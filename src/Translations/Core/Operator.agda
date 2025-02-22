@@ -25,10 +25,11 @@ module Translations.Core.Operator where
   open import Logic.Core.Modes
   open import Logic.Utils.ModeOf Proposition
 
-  variable
-    n : ℕ
-    oᵗ : Prop × Mode
-    Oᵗ : Vec (Prop × Mode) n
+  private
+    variable
+      n : ℕ
+      oᵗ : Prop × Mode
+      Oᵗ : Vec (Prop × Mode) n
 
   private
     prependForAll : ℕ → Prop → Prop
@@ -56,6 +57,10 @@ module Translations.Core.Operator where
   translO : Operator → Prop × Mode
   translO o = ⟨ translPs zero ((o ⁺ ∪ᶜ o ⁻) ∪ᶜ (o ₊ ∪ᶜ o ₋)) o 𝟙 𝟙 , Unrestricted ⟩
 
+  translOs : (O : List Operator) → Vec (Prop × Mode) (Data.List.length O)
+  translOs [] = []
+  translOs (x ∷ O) = translO x ∷ translOs O 
+
   {- Properties of the translation -}
   data TranslO : Operator → Prop × Mode → Set where
     transl/op : TranslO o (translO o)
@@ -65,10 +70,17 @@ module Translations.Core.Operator where
     transl/ops/s : TranslOs O Oᵗ → TranslO o oᵗ
       ----------------------
       → TranslOs (o ∷ O) (oᵗ ∷ Oᵗ)
+
+  data AllUnrestricted : ∀ { n } → Vec (Prop × Mode) n → Set where
+    allUnr/z : AllUnrestricted []
+    allUnr/s : ∀ { n } { o : Prop × Mode } { O : Vec (Prop × Mode) n }  
+      → AllUnrestricted O → modeOf o ≡ Unrestricted
+      → AllUnrestricted (o ∷ O)
+
   private
     translOUnrestricted : TranslO o oᵗ → modeOf oᵗ ≡ Unrestricted
     translOUnrestricted {o} {oᵗ = oᵗ} transl/op = refl
 
     allUnrestricted : TranslOs O Oᵗ → oᵗ ∈ Oᵗ → modeOf oᵗ ≡ Unrestricted
-    allUnrestricted {oᵗ = ⟨ fst , snd ⟩} (transl/ops/s oTrans transl/op) (here refl) = refl
+    allUnrestricted {oᵗ = ⟨ fst , snd ⟩} (transl/ops/s oTrans transl/op) (here refl) = refl 
     allUnrestricted (transl/ops/s oTrans x) (there listMem) = allUnrestricted oTrans listMem

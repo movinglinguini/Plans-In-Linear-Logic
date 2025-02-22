@@ -16,5 +16,4 @@ module STRIPS.Problem where
       initialState : List Condition
       operators : List Operator
       goals : Goal
-      _≟ᶜ_ : DecidableEquality Condition
 

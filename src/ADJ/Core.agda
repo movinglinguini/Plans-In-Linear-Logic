@@ -10,54 +10,14 @@ open import Data.Bool hiding (_≟_)
 
 module ADJ.Core where
   open import STRIPS.Problem hiding (Term)
-  open import Translations.Translations
+  open import Translations.Core.Condition
+  open import Translations.Core.State
   open import Logic.Core.Props Proposition public
   open import Logic.Core.Terms TermAtom public
   open import Logic.Core.Modes public
   open import Logic.Core.Contexts Proposition TermAtom public
+  open import Logic.Utils.ModeOf Proposition public
 
-  -- private
-  --   rebase : Prop → Prop
-  --   rebase (` v[ x , true ]) = ` v[ x , true ]
-  --   rebase (` v[ x , false ]) = ` v[ x , false ]
-  --   rebase (` v[ x , var x₁ ]) with x₁
-  --   ... | zero = ` v[ x , var zero ]
-  --   ... | suc a = ` v[ x , var a ]
-  --   rebase (P ⊸ P₁) = (rebase P) ⊸ (rebase P₁)
-  --   rebase (P ⊗ P₁) = (rebase P) ⊗ (rebase P₁)
-  --   rebase 𝟙 = 𝟙
-  --   rebase ⊤ = ⊤
-  --   rebase (P ⊕ P₁) = (rebase P) ⊕ (rebase P₁)
-  --   rebase (P & P₁) = (rebase P) & (rebase P₁)
-  --   rebase (↑[ x ][ x₁ ] P) = ↑[ x ][ x₁ ] (rebase P)
-  --   rebase (↓[ x ][ x₁ ] P) = ↓[ x ][ x₁ ] (rebase P)
-  --   rebase ∀[ P ] = ∀[ rebase P ]
-
-  --   subst : Prop → Term → Prop
-  --   subst (` v[ x , true ]) t = ` v[ x , true ]
-  --   subst (` v[ x , false ]) t = ` v[ x , false ]
-  --   subst (` v[ x , var x₁ ]) t with does (x₁ ≟ zero)
-  --   ... | false = ` v[ x , var x₁ ]
-  --   ... | true with t
-  --   ... | term x₂ = ` v[ x , x₂ ]
-  --   subst (P ⊸ P₁) t = rebase ((subst P t) ⊸ (subst P₁ t))
-  --   subst (P ⊗ P₁) t = rebase ((subst P t) ⊗ (subst P₁ t))
-  --   subst 𝟙 t = 𝟙
-  --   subst ⊤ t = ⊤
-  --   subst (P ⊕ P₁) t = rebase((subst P t) ⊕ (subst P₁ t))
-  --   subst (P & P₁) t = rebase((subst P t) & (subst P₁ t))
-  --   subst (↑[ x ][ x₁ ] P) t = rebase (↑[ x ][ x₁ ] (subst P t))
-  --   subst (↓[ x ][ x₁ ] P) t = rebase (↓[ x ][ x₁ ] (subst P t))
-  --   subst ∀[ ` A ] t = subst ( ` A ) t
-  --   subst ∀[ P ⊸ P₁ ] t = subst (P ⊸ P₁) t
-  --   subst ∀[ P ⊗ P₁ ] t = subst (P ⊗ P₁) t
-  --   subst ∀[ 𝟙 ] t = 𝟙
-  --   subst ∀[ ⊤ ] t = ⊤
-  --   subst ∀[ P ⊕ P₁ ] t = subst (P ⊕ P₁) t
-  --   subst ∀[ P & P₁ ] t = subst (P & P₁) t
-  --   subst ∀[ ↑[ x ][ x₁ ] P ] t = ↑[ x ][ x₁ ] (subst P t)
-  --   subst ∀[ ↓[ x ][ x₁ ] P ] t = ↓[ x ][ x₁ ] (subst P t)
-  --   subst ∀[ ∀[ P ] ] t = ∀[ subst ∀[ P ] t ]
   private
     subst-TCondition-Terms : ∀ { n } → Vec Term n → Term → Vec Term n
     subst-TCondition-Terms [] t = []

@@ -10,6 +10,10 @@ module Translations.Core.Term where
   translT (term x) = term x
   translT (var x) = var x
 
+  translTs : (T : List STRIPSTerm) → Vec ADJTerm (Data.List.length T)
+  translTs [] = []
+  translTs (x ∷ T) = translT x ∷ translTs T
+
   -- Relation between a strips term and its translation into an adjoint term
   data TranslT : STRIPSTerm → ADJTerm → Set where
     translT/z : ∀ { t : STRIPSTerm } → TranslT t (translT t)

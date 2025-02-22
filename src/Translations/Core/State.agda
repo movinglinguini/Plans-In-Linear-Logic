@@ -1,9 +1,12 @@
 open import Data.Nat
 open import Data.List
+open import Data.Bool
 open import Data.Vec hiding (length)
 open import Relation.Binary.PropositionalEquality
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Nullary.Decidable
+open import Relation.Nullary.Negation
+open import Data.Vec.Membership.Propositional
 
 module Translations.Core.State where
   open import Translations.Core.Condition
@@ -16,52 +19,46 @@ module Translations.Core.State where
 
   open import Logic.Core.Props Proposition
   open import Logic.Core.Modes
+  open import Logic.Utils.ModeOf Proposition
 
-  variable
-    𝕊 : List Condition
+  private
+    variable
+      𝕊 ℙ : List Condition
+
+    translS-helper : Condition → Bool → Prop
+    translS-helper c false = ` v[ (translC c) , term "false" ]
+    translS-helper c true = ` v[ (translC c) , term "true" ]
 
   translS : (𝕊 ℙ : List Condition) → Vec (Prop × Mode) (length ℙ) -- Vec Proposition (length ℙ)
   translS 𝕊 [] = []
-  translS 𝕊 (x ∷ ℙ) with x ∈ᶜ? 𝕊
-  ... | yes p = ⟨ ` v[ (translC x) , term "true" ] , Linear ⟩ ∷ (translS 𝕊 ℙ)
-  ... | no p = ⟨ ` v[ (translC x) , term "false" ] , Linear ⟩ ∷ (translS 𝕊 ℙ)
+  translS 𝕊 (x ∷ ℙ) = ⟨ translS-helper x (does (x ∈ᶜ? 𝕊)) , Linear ⟩ ∷ translS 𝕊 ℙ
 
   {- Relation between state and its translation -}
   data TranslS : ∀ (𝕊 ℙ : List Condition) → Vec (Prop × Mode) (length ℙ) → Set where
-    translS/s : ∀ { 𝕊 ℙ : List Condition } → TranslS 𝕊 ℙ (translS 𝕊 ℙ)
+    translS/z : ∀ { 𝕊 : List Condition } → TranslS 𝕊 [] []
 
-  -- open Domain domain
-  -- open import Plans.Semantics domain
+    translS/s/true : ∀ { 𝕡 : Condition } { 𝕊 ℙ : List Condition } { 𝕊ᵗ : Vec (Prop × Mode) (length ℙ) } 
+      → TranslS 𝕊 ℙ 𝕊ᵗ → 𝕡 ∈ᶜ 𝕊
+      --------------------
+      → TranslS 𝕊 (𝕡 ∷ ℙ) (⟨ ` v[ translC 𝕡 , term "true" ] , Linear ⟩ ∷ 𝕊ᵗ)
 
-  -- open import Syntax.Core domain
-  -- open import Utils.PredMapToProposition domain
-  -- open import ADJ.Core domain renaming (Context to AdjContext)
+    translS/s/false : ∀ { 𝕡 : Condition } { 𝕊 ℙ : List Condition } { 𝕊ᵗ : Vec (Prop × Mode) (length ℙ) } 
+      → TranslS 𝕊 ℙ 𝕊ᵗ → ¬ (𝕡 ∈ᶜ 𝕊)
+      --------------------
+      → TranslS 𝕊 (𝕡 ∷ ℙ) (⟨ ` v[ translC 𝕡 , term "false" ] , Linear ⟩ ∷ 𝕊ᵗ)
 
-  -- open import Utils.WorldState domain
+  {- Unary relation on state translations -}
+  data AllLinear : ∀ { n } → Vec (Prop × Mode) n → Set where
+    allLinear/z : AllLinear []
 
-  -- variable
-  --   𝕀 𝕎 : World
-  --   𝕊 : State
-  --   𝕊ᵗ 𝕀ᵗ : Vec (Prop × Mode) n
-  --   𝕤 : PredMap
-  --   𝕤ᵗ : Prop × Mode
-  
-  -- translS : ∀ (S : State) → Vec (Prop × Mode) (length S)
-  -- translS [] = []
-  -- translS (x ∷ 𝕊) = ⟨ ` (translPredmap x) , Linear ⟩ ∷ (translS 𝕊)
+    allLinear/s : ∀ { n } { 𝕤ᵗ : Prop × Mode } { 𝕊ᵗ : Vec (Prop × Mode) n }
+      → AllLinear 𝕊ᵗ → modeOf 𝕤ᵗ ≡ Linear
+      -------------------------------------
+      → AllLinear (𝕤ᵗ ∷ 𝕊ᵗ)
 
-  -- translW : ∀ (W : World) → (Wt : World) → Vec (Prop × Mode) (length (worldToState W Wt))
-  -- translW W Wt = translS (worldToState W Wt)
+  {- Properties of the translation -}
+  translS-all-linear : ∀ { 𝕊ᵗ : Vec (Prop × Mode) (length ℙ) } → TranslS 𝕊 ℙ 𝕊ᵗ → AllLinear 𝕊ᵗ
+  translS-all-linear {ℙ = []} {𝕊ᵗ = []} trans = allLinear/z
+  translS-all-linear {ℙ = 𝕡 ∷ ℙ} {𝕊ᵗ = ⟨ fst , snd ⟩ ∷ 𝕊ᵗ} (translS/s/true trans₁ x) = allLinear/s (translS-all-linear trans₁) refl
+  translS-all-linear {ℙ = 𝕡 ∷ ℙ} {𝕊ᵗ = ⟨ fst , snd ⟩ ∷ 𝕊ᵗ} (translS/s/false trans₁ x) = allLinear/s (translS-all-linear trans₁) refl 
 
-  -- data TranslS : ∀ ( S : State ) → Vec (Prop × Mode) (length S) → Set where
-  --   Z : TranslS [] []
-  --   S : TranslS 𝕊 𝕊ᵗ
-  --     ---------------------- 
-  --     → TranslS (𝕤 ∷ 𝕊) (⟨ ` translPredmap 𝕤 , Linear ⟩ ∷ 𝕊ᵗ)
-
-
-  -- data SContext : Vec (Prop × Mode) n → AdjContext 0 n → Set where
-  --   Z : SContext [] ⟨ [] , [] ⟩
-  --   S : SContext 𝕊ᵗ Δ
-  --     ---------------------   
-  --     → SContext (𝕤ᵗ ∷ 𝕊ᵗ) (⟨ [] , 𝕤ᵗ ∷ proj₂ Δ ⟩) 

@@ -1,7 +1,8 @@
 open import Data.Nat
 open import Data.Nat.Show
-open import Data.Vec using (toList)
+open import Data.Vec using (toList; Vec)
 open import Data.List
+open import Data.Product renaming (_,_ to ⟨_,_⟩)
 
 module PrettyPrinter.PrettyPrinter (width : ℕ) where
   open import Text.Pretty width public
@@ -38,3 +39,16 @@ module PrettyPrinter.PrettyPrinter (width : ℕ) where
   prettyProp (↑[ x ][ x₁ ] A) = char '↑' <> (prettyProp A)
   prettyProp (↓[ x ][ x₁ ] A) = char '↓' <> (prettyProp A)
   prettyProp ∀[ A ] = char '∀' <> parens (prettyProp A)
+
+  prettyPropxMode : (Prop × Mode) → Doc
+  prettyPropxMode ⟨ A , m ⟩ = prettyProp A
+
+  prettyContext : ∀ { x y } → Context x y → Doc
+  prettyContext ⟨ fst , snd ⟩ = prettyContext-helper fst prettyTerm <> char ';' <+> prettyContext-helper snd prettyPropxMode
+    where
+      prettyContext-helper : ∀ { A n } → Vec A n → (A → Doc) → Doc 
+      prettyContext-helper Vec.[] f = empty
+      prettyContext-helper (x Vec.∷ V) f = f x <> char ',' <+> prettyContext-helper V f
+
+  prettySeq : Δ ⊢ⁱ ⟨ A , m ⟩ → Doc  
+  prettySeq {Δ = Δ} {A} {m} seq = prettyContext Δ <+> char '⊢' <+> prettyProp A  

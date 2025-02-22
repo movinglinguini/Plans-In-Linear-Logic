@@ -9,8 +9,8 @@ open import Data.String
 open import STRIPS.Problem
 
 module MovieExample where
-  predicates : List Condition
-  predicates = (record { name = "movie-rewound" ; args = [] }) ∷
+  conditions : List Condition
+  conditions = (record { name = "movie-rewound" ; args = [] }) ∷
       (record { name = "counter-at-two-hours" ; args = [] }) ∷ 
       (record { name = "counter-at-other-than-two-hours" ; args = [] }) ∷ 
       (record { name = "counter-at-zero" ; args = [] }) ∷ 
@@ -95,8 +95,8 @@ module MovieExample where
       }
     ∷ (record { label = "reset-counter"; posPre = [] ; negPre = [] ; posPost = record { name = "counter-at-zero" ; args = [] } ∷ [] ; negPost = [] } ∷ [])
   
-  goal : Goal
-  goal = record 
+  goals : Goal
+  goals = record 
         { 
           pos = record { name = "movie-rewound" ; args = [] } ∷ 
                 record { name = "counter-at-zero" ; args = [] } ∷ 
@@ -108,18 +108,30 @@ module MovieExample where
         ; neg = [] 
         }
 
-  plan-is-valid : Solves initialState plan goal
-  plan-is-valid = from-just (solver initialState plan goal)
+  planProblem : PlanProblem
+  planProblem = record
+    { terms = term "c1" ∷ term "d1" ∷ term "p1" ∷ term "z1" ∷ term "k1" ∷ []
+    ; conditions = conditions
+    ; initialState = initialState
+    ; operators = operators
+    ; goals = goals
+    }
+
+  plan-is-valid : Solves initialState plan goals
+  plan-is-valid = from-just (solver initialState plan goals)
 
   {-
     TRANSLATIONS 
   -}
   open import Translations.Translations
   open import ADJ.Core
-  open import PrettyPrinter.PrettyPrinter 300
+  open import PrettyPrinter.PrettyPrinter 3000
   
-  stateTrans : Vec (Prop × Mode) (Data.List.length predicates)
-  stateTrans = translS initialState predicates
+  stateTrans : Vec (Prop × Mode) (Data.List.length conditions)
+  stateTrans = translS initialState conditions
 
   operatorTrans : String
   operatorTrans = render (prettyProp (proj₁ (translO (Data.List.lookup operators (suc zero)))))
+
+  goalTrans : String
+  goalTrans = render (prettyProp (proj₁ (translG goals)))
