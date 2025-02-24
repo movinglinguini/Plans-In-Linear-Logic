@@ -70,10 +70,9 @@ module Proofs.Correctness where
   sat𝕀⟨𝔾⟩⇒proof : ∀ { P : PlanProblem }
     → sat (PlanProblem.initialState P) (⟨ Goal.pos (PlanProblem.goals P) , Goal.neg (PlanProblem.goals P) ⟩)
     → translProb P
-  sat𝕀⟨𝔾⟩⇒proof { P = record { terms = terms ; goals = goals ; conditions = conditions ; initialState = initialState ; operators = operators } } sats with goals
+  sat𝕀⟨𝔾⟩⇒proof { P = P } sats with PlanProblem.goals P
   ... | record { pos = [] ; neg = [] } = ⊗R M12 M23 M23 Δ12-cContr (𝟙R Δ12-cWeak) ⊤R
         where
-          P = record { terms = terms ; goals = goals ; conditions = conditions ; initialState = initialState ; operators = operators }
           Δₛ = contextify-state P
           Δₒ = contextify-operators P
           IΔ = makeAllIrrel Δₛ
@@ -97,7 +96,9 @@ module Proofs.Correctness where
           M23 : merge Δ12 (Δₒ ++ᶜ Δₛ) (Δₒ ++ᶜ Δₛ)
           M23 = concat-merge { Δ₁ = Δₒ } { Δ₄ = IΔ } { Δ₅ = Δₛ } { Δ₆ = Δₛ } (context-operator-merge { P } refl) (irrelify-merge-l refl (context-state-all-lin { P }))
 
-  ... | record { pos = [] ; neg = x ∷ neg } = {!   !}
+  ... | record { pos = [] ; neg = x ∷ neg } = ⊗-assoc (⊗R {!   !} {!   !} {!   !} {!   !} (id {!   !} {!   !}) (sat𝕀⟨𝔾⟩⇒proof { P = P' } ⟨ {!   !} , {!   !} ⟩))
+    where
+      P' = record P { goals = record { pos = [] ; neg = neg } }  
   ... | record { pos = x ∷ pos ; neg = [] } = {!   !}
   ... | record { pos = x ∷ pos ; neg = x₁ ∷ neg } = {!   !}
     
@@ -107,4 +108,4 @@ module Proofs.Correctness where
 
   correctness { P = P } (solves/z x) = sat𝕀⟨𝔾⟩⇒proof { P } x
   correctness (solves/s sol x) = {!   !}
- 
+  

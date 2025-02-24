@@ -26,12 +26,12 @@ module STRIPS.Core.Common where
       noneIn ℂ₁ ℂ₂ = foldr (λ x acc → acc ∧ (not (x ∈ᶜᵇ ℂ₁))) true ℂ₂ 
 
   sat : List Condition → (List Condition) × (List Condition) → Set
-  sat ℂ 𝔾 = T (satᵇ ℂ 𝔾)
+  sat 𝕊 𝔾 = (∀ p → p ∈ proj₁ 𝔾 → p ∈ 𝕊) × (∀ p → p ∈ proj₂ 𝔾 → p ∉ 𝕊)
 
-  sat? : (𝕊 : List Condition) (𝔾 : (List Condition) × (List Condition)) → Dec (sat 𝕊 𝔾)
-  sat? 𝕊 𝔾 with satᵇ 𝕊 𝔾
-  ... | false = no λ x → x
-  ... | true = yes tt
+  -- sat? : (𝕊 : List Condition) (𝔾 : (List Condition) × (List Condition)) → Dec (sat 𝕊 𝔾)
+  -- sat? 𝕊 𝔾 with satᵇ 𝕊 𝔾
+  -- ... | false = no λ x → x
+  -- ... | true = yes tt
 
   private
     conds : List Condition
