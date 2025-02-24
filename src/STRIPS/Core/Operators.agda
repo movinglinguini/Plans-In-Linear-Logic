@@ -56,10 +56,6 @@ module STRIPS.Core.Operators where
   ... | false = no (λ ())
   ... | true = yes tt
 
-  data WFOperator : Operator → Set where
-    wf/operator : Disjoint (Operator.posPre o) (Operator.negPre o) → Disjoint (Operator.posPost o) (Operator.negPost o)  
-      → WFOperator o
-
   {- The Update Function -}
   update : ∀ ( 𝕊 : List Condition ) ( 𝕠 : Operator ) → List Condition
   update 𝕊 𝕠 = add (remove 𝕊 (𝕠 ₋)) (𝕠 ₊)

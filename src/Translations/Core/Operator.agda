@@ -6,7 +6,6 @@ open import Relation.Binary.Definitions using (DecidableEquality)
 open import Data.Bool hiding (_≟_)
 open import Relation.Nullary using (¬_; Dec; yes; no; does; contradiction; contraposition)
 open import Relation.Nullary.Negation
-open import Plans.Domain
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong)
 open import Data.List.Relation.Binary.Sublist.Heterogeneous.Core using (_∷ʳ_) renaming ([] to ∅)
@@ -38,19 +37,19 @@ module Translations.Core.Operator where
 
     translPs : ℕ → List Condition → Operator → Prop → Prop → Prop
     translPs varCount [] o P₁ P₂ = prependForAll varCount (P₁ ⊸ P₂)
-    translPs varCount (p ∷ Ps) o P₁ P₂ with does (p ∈ᶜ? (o ⁺ ∩ᶜ o ₊))
+    translPs varCount (p ∷ Ps) o P₁ P₂ with (p ∈ᶜᵇ (o ⁺ ∩ᶜ o ₊))
     ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "true" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
-    ... | false with does (p ∈ᶜ? (o ⁻ ∩ᶜ o ₊))
+    ... | false with (p ∈ᶜᵇ (o ⁻ ∩ᶜ o ₊))
     ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "false" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
-    ... | false with does (p ∈ᶜ? (o ⁺ ∩ᶜ o ₋))
+    ... | false with (p ∈ᶜᵇ (o ⁺ ∩ᶜ o ₋))
     ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "true" ] ⊗ P₁) (` v[ translC p , term "false" ] ⊗ P₂)
-    ... | false with does (p ∈ᶜ? (o ⁻ ∩ᶜ o ₋))
+    ... | false with (p ∈ᶜᵇ (o ⁻ ∩ᶜ o ₋))
     ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "false" ] ⊗ P₁) (` v[ translC p , term "false" ] ⊗ P₂)
-    ... | false with (does (p ∈ᶜ? o ⁺)) ∧ (not (does (p ∈ᶜ? posts o)))
+    ... | false with ((p ∈ᶜᵇ o ⁺)) ∧ (not ((p ∈ᶜᵇ posts o)))
     ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "true" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
-    ... | false with (does (p ∈ᶜ? o ⁻)) ∧ (not (does (p ∈ᶜ? posts o)))
+    ... | false with ((p ∈ᶜᵇ o ⁻)) ∧ (not ((p ∈ᶜᵇ posts o)))
     ... | true = translPs (varCount + (countVars p)) Ps o (` v[ translC p , term "false" ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
-    ... | false with (does (p ∈ᶜ? o ₊)) ∧ (not (does (p ∈ᶜ? pres o)))
+    ... | false with ((p ∈ᶜᵇ o ₊)) ∧ (not ((p ∈ᶜᵇ pres o)))
     ... | true = translPs (suc (varCount + (countVars p))) Ps o (` v[ translC p , var (varCount + (countVars p)) ] ⊗ P₁) (` v[ translC p , term "true" ] ⊗ P₂)
     ... | false = translPs (suc (varCount + (countVars p))) Ps o (` v[ translC p , var (varCount + (countVars p)) ] ⊗ P₁) (` v[ translC p , term "false" ] ⊗ P₂)
   
@@ -70,17 +69,3 @@ module Translations.Core.Operator where
     transl/ops/s : TranslOs O Oᵗ → TranslO o oᵗ
       ----------------------
       → TranslOs (o ∷ O) (oᵗ ∷ Oᵗ)
-
-  data AllUnrestricted : ∀ { n } → Vec (Prop × Mode) n → Set where
-    allUnr/z : AllUnrestricted []
-    allUnr/s : ∀ { n } { o : Prop × Mode } { O : Vec (Prop × Mode) n }  
-      → AllUnrestricted O → modeOf o ≡ Unrestricted
-      → AllUnrestricted (o ∷ O)
-
-  private
-    translOUnrestricted : TranslO o oᵗ → modeOf oᵗ ≡ Unrestricted
-    translOUnrestricted {o} {oᵗ = oᵗ} transl/op = refl
-
-    allUnrestricted : TranslOs O Oᵗ → oᵗ ∈ Oᵗ → modeOf oᵗ ≡ Unrestricted
-    allUnrestricted {oᵗ = ⟨ fst , snd ⟩} (transl/ops/s oTrans transl/op) (here refl) = refl 
-    allUnrestricted (transl/ops/s oTrans x) (there listMem) = allUnrestricted oTrans listMem

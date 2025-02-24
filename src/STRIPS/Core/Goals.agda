@@ -10,7 +10,3 @@ module STRIPS.Core.Goals where
 
   variable
     g g₁ g₂ : Goal
-
-  data WFGoal : Goal → Set where
-    wf/goal : Disjoint (Goal.pos g) (Goal.neg g)
-      → WFGoal g

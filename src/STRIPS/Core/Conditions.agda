@@ -85,6 +85,9 @@ module STRIPS.Core.Conditions where
   _∈ᶜ_ : Condition → List Condition → Set
   p ∈ᶜ ℂ = T (p ∈ᶜᵇ ℂ)
 
+  _∉ᶜ_ : Condition → List Condition → Set
+  p ∉ᶜ ℂ = ¬ (p ∈ᶜ ℂ)
+
   _∈ᶜ?_ : ( p : Condition ) ( ℂ : List Condition ) → Dec ( p ∈ᶜ ℂ )
   p ∈ᶜ? ℂ with p ∈ᶜᵇ ℂ
   ... | false = no (λ x → x)

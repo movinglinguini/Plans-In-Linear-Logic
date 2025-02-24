@@ -10,6 +10,9 @@ module STRIPS.Problem where
   open import STRIPS.Core.Plans public
 
   record PlanProblem : Set where
+    no-eta-equality
+    pattern
+    inductive
     field
       terms : List Term
       conditions : List Condition

@@ -16,21 +16,7 @@ module Proofs.Correctness where
   open import Translations.Translations
   open import ADJ.Core renaming (Term to AdjointTerm)
   open import Utils.BigTensor Proposition
-
-  {- Helper functions -}
-  makeAllIrrel : ∀ { n m } → Context n m → Context n m
-  makeAllIrrel ⟨ fst , snd ⟩ = ⟨ fst , irrelify snd ⟩
-    where
-      irrelify : ∀ { n } → Vec (Prop × Mode) n → Vec (Prop × Mode) n
-      irrelify [] = []
-      irrelify (x ∷ xs) = ⟨ proj₁ x , Irrelevant ⟩ ∷ irrelify xs 
-
-  data Irrelified : ∀ { n m } → Context n m → Context n m → Set where
-    irrelify/z : ∀ { n } → { T : Vec AdjointTerm n } → Irrelified ⟨ T , [] ⟩ ⟨ T , [] ⟩
-    irrelify/s : ∀ { n m A k } → { T : Vec AdjointTerm n } { Δ IΔ : Vec (Prop × Mode) m }
-      → Irrelified ⟨ T , Δ ⟩ ⟨ T , IΔ ⟩
-      -----------------------
-      → Irrelified ⟨ T , ⟨ A , k ⟩ ∷ Δ ⟩ ⟨ T , ⟨ A , Irrelevant ⟩ ∷ IΔ ⟩
+  open import Utils.IrrelifyContext
 
   -- sat𝕀⟨𝔾⟩⇒proof : ∀ { n m } → { Δ : Context n m } 
   --   → TranslTs 𝕋 𝕋ᵗ
@@ -80,24 +66,40 @@ module Proofs.Correctness where
 
   -- Some helper functions
   
-
+  {-# TERMINATING #-}
   sat𝕀⟨𝔾⟩⇒proof : ∀ { P : PlanProblem }
     → sat (PlanProblem.initialState P) (⟨ Goal.pos (PlanProblem.goals P) , Goal.neg (PlanProblem.goals P) ⟩)
     → translProb P
-  sat𝕀⟨𝔾⟩⇒proof {P = P} sat with (PlanProblem.goals P)
-  ... | record { pos = [] ; neg = [] } = ⊗R  
-                                          {!   !} {!   !} {!   !} {!   !} (𝟙R {!   !}) ⊤R
+  sat𝕀⟨𝔾⟩⇒proof { P = record { terms = terms ; goals = goals ; conditions = conditions ; initialState = initialState ; operators = operators } } sats with goals
+  ... | record { pos = [] ; neg = [] } = ⊗R M12 M23 M23 Δ12-cContr (𝟙R Δ12-cWeak) ⊤R
         where
-          IΔ = makeAllIrrel (contextify-state P)
-          IΔ-weakenable : cWeakenable IΔ
-          IΔ-weakenable with (contextify-state P)
-          ... | ⟨ fst , snd ⟩ = {! snd  !}
+          P = record { terms = terms ; goals = goals ; conditions = conditions ; initialState = initialState ; operators = operators }
+          Δₛ = contextify-state P
+          Δₒ = contextify-operators P
+          IΔ = makeAllIrrel Δₛ
+          Δ12 = Δₒ ++ᶜ IΔ
+          
+          IΔ-cWeak : cWeakenable IΔ
+          IΔ-cWeak = irrelify-is-cWeak { Δ = Δₛ } refl
+
+          Δₒ-cWeak : cWeakenable Δₒ
+          Δₒ-cWeak = context-operator-cWeak { P = P }  
+
+          Δ12-cWeak : cWeakenable Δ12
+          Δ12-cWeak = concat-cWeak { Δ₁ = Δₒ } { Δ₂ = IΔ } refl Δₒ-cWeak IΔ-cWeak
+
+          Δ12-cContr : cContractable Δ12
+          Δ12-cContr = concat-cContr { Δ₁ = Δₒ } { Δ₂ = IΔ } refl (context-operator-cContr { P = P }) (irrelify-is-cContr { Δ = Δₛ } refl)
+
+          M12 : merge Δ12 Δ12 Δ12
+          M12 = concat-merge { Δ₄ = IΔ } (context-operator-merge { P = P } refl) (irrelify-merge-i { Δ = Δₛ } refl)
+
+          M23 : merge Δ12 (Δₒ ++ᶜ Δₛ) (Δₒ ++ᶜ Δₛ)
+          M23 = concat-merge { Δ₁ = Δₒ } { Δ₄ = IΔ } { Δ₅ = Δₛ } { Δ₆ = Δₛ } (context-operator-merge { P } refl) (irrelify-merge-l refl (context-state-all-lin { P }))
+
   ... | record { pos = [] ; neg = x ∷ neg } = {!   !}
   ... | record { pos = x ∷ pos ; neg = [] } = {!   !}
   ... | record { pos = x ∷ pos ; neg = x₁ ∷ neg } = {!   !}
-
-      -- 𝔾ᵗ-linear : modeOf 𝔾ᵗ ≡ Linear
-      -- 𝔾ᵗ-linear = translG-linear { 𝔾 = (PlanProblem.goals P) } { 𝔾ᵗ = 𝔾ᵗ } refl
     
   correctness : ∀ { P : PlanProblem } { Τ : Plan }
     → Solves (PlanProblem.initialState P) Τ (PlanProblem.goals P)
