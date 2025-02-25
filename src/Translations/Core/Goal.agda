@@ -12,12 +12,7 @@ module Translations.Core.Goal where
   open import Logic.Utils.ModeOf Proposition
   open import Utils.BigTensor Proposition
 
-  private 
-    variable
-      G-pos G-neg : List Condition
-      𝔾 : Goal
-      𝔾ᵗ : Prop × Mode
-    
+  private     
     translatePos : Goal → List Prop
     translatePos g = Data.List.map (λ p → ` v[ (translC p) , (term "true") ]) (Goal.pos g) 
 

@@ -6,7 +6,8 @@ open import Relation.Binary.PropositionalEquality
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Nullary.Decidable
 open import Relation.Nullary.Negation
-open import Data.Vec.Membership.Propositional
+open import Data.Vec.Membership.Propositional 
+open import Data.Vec.Relation.Unary.Any
 
 module Translations.Core.State where
   open import Translations.Core.Condition
@@ -33,25 +34,17 @@ module Translations.Core.State where
   translS 𝕊 [] = []
   translS 𝕊 (x ∷ ℙ) = ⟨ translS-helper x (x ∈ᶜᵇ 𝕊) , Linear ⟩ ∷ translS 𝕊 ℙ
 
-  {- Relation between state and its translation -}
-  data TranslS : ∀ (𝕊 ℙ : List Condition) → Vec (Prop × Mode) (length ℙ) → Set where
-    translS/z : ∀ { 𝕊 : List Condition } → TranslS 𝕊 [] []
+  private
+    translS-pos : ∀ { P s } → WfProblem P → s ∈ (fromList (PlanProblem.initialState P)) → ⟨ ` v[ translC s , term "true" ] , Linear ⟩ ∈ (translS (PlanProblem.initialState P) (PlanProblem.conditions P)) 
+    translS-pos {P} WfP mem with PlanProblem.initialState P | PlanProblem.conditions P | translS (PlanProblem.initialState P) (PlanProblem.conditions P)
+    ... | x ∷ a | [] | c = {!   !}
+    ... | x ∷ a | x₁ ∷ b | c = {!   !}
 
-    translS/s/true : ∀ { 𝕡 : Condition } { 𝕊 ℙ : List Condition } { 𝕊ᵗ : Vec (Prop × Mode) (length ℙ) } 
-      → TranslS 𝕊 ℙ 𝕊ᵗ → 𝕡 ∈ᶜ 𝕊
-      --------------------
-      → TranslS 𝕊 (𝕡 ∷ ℙ) (⟨ ` v[ translC 𝕡 , term "true" ] , Linear ⟩ ∷ 𝕊ᵗ)
-
-    translS/s/false : ∀ { 𝕡 : Condition } { 𝕊 ℙ : List Condition } { 𝕊ᵗ : Vec (Prop × Mode) (length ℙ) } 
-      → TranslS 𝕊 ℙ 𝕊ᵗ → ¬ (𝕡 ∈ᶜ 𝕊)
-      --------------------
-      → TranslS 𝕊 (𝕡 ∷ ℙ) (⟨ ` v[ translC 𝕡 , term "false" ] , Linear ⟩ ∷ 𝕊ᵗ)
-
-
-
-  -- {- Properties of the translation -}
-  -- translS-all-linear : ∀ { 𝕊ᵗ : Vec (Prop × Mode) (length ℙ) } → TranslS 𝕊 ℙ 𝕊ᵗ → AllLinear 𝕊ᵗ
-  -- translS-all-linear {ℙ = []} {𝕊ᵗ = []} trans = allLinear/z
-  -- translS-all-linear {ℙ = 𝕡 ∷ ℙ} {𝕊ᵗ = ⟨ fst , snd ⟩ ∷ 𝕊ᵗ} (translS/s/true trans₁ x) = allLinear/s (translS-all-linear trans₁) refl
-  -- translS-all-linear {ℙ = 𝕡 ∷ ℙ} {𝕊ᵗ = ⟨ fst , snd ⟩ ∷ 𝕊ᵗ} (translS/s/false trans₁ x) = allLinear/s (translS-all-linear trans₁) refl 
+  translS-sat-pos : ∀ { 𝕘 } { P : PlanProblem } 
+    → WfProblem P
+    → sat (PlanProblem.initialState P) ⟨ Goal.pos (PlanProblem.goals P) , Goal.neg (PlanProblem.goals P) ⟩
+    → 𝕘 ∈ (fromList (Goal.pos (PlanProblem.goals P)))
+    → ⟨ ` v[ translC 𝕘 , term "true" ] , Linear ⟩ ∈ (translS (PlanProblem.initialState P) (PlanProblem.conditions P))
+  translS-sat-pos {𝕊} {P = P} ⟨ fst₁ , ⟨ fst₂ , ⟨ fst , snd ⟩ ⟩ ⟩ sat mem with (PlanProblem.goals P) | (PlanProblem.conditions P)
+  ... | a | b = {!   !}
 

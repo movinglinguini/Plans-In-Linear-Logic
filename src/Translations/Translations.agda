@@ -30,7 +30,11 @@ module Translations.Translations where
   contextOfProblem P = contextify-operators P ++ᶜ contextify-state P
 
   translProb : ∀ (P : PlanProblem) → Set 
-  translProb P = (contextify-operators P ++ᶜ contextify-state P) ⊢ⁱ translG (PlanProblem.goals P)
+  translProb P = (contextOfProblem P) ⊢ⁱ translG (PlanProblem.goals P)
+
+  {------
+  - Properties of translations
+  ------}
 
   {- Properties of problem translation -}
 
@@ -71,5 +75,3 @@ module Translations.Translations where
         ; goals = goals
         }}
        refl) u∙u
- 
- 
