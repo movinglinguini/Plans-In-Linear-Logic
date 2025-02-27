@@ -24,18 +24,6 @@ module STRIPS.Core.Conditions where
       name : String
       terms : List (Term Scope)
 
-  {- Operations on conditions -}
-  -- ground : ∀ ( p : Condition ) ( T : Vec≤ Term (Condition.argLength p) ) 
-  --   → All isConst (Vec≤.vec T) 
-  --   → Condition
-  -- ground record { name = name ; args = args } T allConstant = record { name = name ; args = groundVec args (Vec≤.vec T) }
-  --   where
-  --     groundVec : ∀ { n y } (args : Vec Term n) ( T : Vec Term y ) →  Vec Term n
-  --     groundVec args [] = args
-  --     groundVec [] (x ∷ T) = []
-  --     groundVec (term a ∷ args) (x ∷ T) = (term a) ∷ (groundVec args (x ∷ T))
-  --     groundVec (var a ∷ args) (x ∷ T) = x ∷ (groundVec args T)
-
   {- Properties of sets of conditions -}
 
   -- Boolean equality over conditions. This is basically syntactic equality squashed to the
@@ -70,7 +58,7 @@ module STRIPS.Core.Conditions where
   c ∈ᶜᵇ [] = false
   c ∈ᶜᵇ (x ∷ C) = (x ≟ᶜᵇ c) ∨ (c ∈ᶜᵇ C)
 
-  -- -- Union
+  -- Union
   _∪ᶜ_ : ∀ { s } → List (Condition s) → List (Condition s) → List (Condition s)
   [] ∪ᶜ C₂ = C₂
   (c ∷ C₁) ∪ᶜ C₂ with c ∈ᶜᵇ (C₂)
