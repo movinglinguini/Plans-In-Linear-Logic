@@ -1,6 +1,7 @@
 open import Data.List
 open import Data.Bool
 open import Data.Unit
+open import Data.Nat
 open import Data.String
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Relation.Nullary.Decidable
@@ -8,6 +9,7 @@ open import Relation.Nullary.Decidable
 module STRIPS.Core.Operators where
   open import STRIPS.Core.Conditions
   
+  -- An operator comes with its own scope and arity
   record Operator : Set where
     field
       label : String
@@ -17,54 +19,53 @@ module STRIPS.Core.Operators where
       posPost : List (Condition arity)
       negPost : List (Condition arity)
 
-  variable
-    o o₁ o₂ τ τ₁ τ₂ : Operator
-    O O₁ O₂ : List Operator
-
-  {- Syntactic Sugar -}
+  {- Some syntactic sugar for extracting parts of operators -}
   infix 50 _⁺ _⁻ _₊ _₋
 
-  _⁺ : Operator → List Condition
+  -- Positive preconditions
+  _⁺ : (o : Operator) → List (Condition (Operator.arity o))
   o ⁺ = Operator.posPre o
 
-  _⁻ : Operator → List Condition
+  -- Negative preconditions
+  _⁻ : (o : Operator) → List (Condition (Operator.arity o))
   o ⁻ = Operator.negPre o
 
-  _₊ : Operator → List Condition
+  -- Positive postconditions
+  _₊ : (o : Operator) → List (Condition (Operator.arity o))
   o ₊ = Operator.posPost o
 
-  _₋ : Operator → List Condition
+  -- Negative postconditions
+  _₋ : (o : Operator) → List (Condition (Operator.arity o))
   o ₋ = Operator.negPost o
 
-  pres : Operator → List Condition
+  -- All preconditions
+  pres : (o : Operator) → List (Condition (Operator.arity o))
   pres o = (Operator.posPre o) ∪ᶜ (Operator.negPre o)
 
-  posts : Operator → List Condition
+  -- All postconditions
+  posts : (o : Operator) → List (Condition (Operator.arity o))
   posts o = (Operator.posPost o) ∪ᶜ (Operator.negPost o)
 
-  {- Operator Properties -}
-  isGroundOperatorᵇ : Operator → Bool
-  isGroundOperatorᵇ o = (conditionsGround (Operator.posPre o)) ∧ ((conditionsGround (Operator.negPre o)) ∧ ((conditionsGround (Operator.posPost o)) ∧ (conditionsGround (Operator.negPost o))))
-    where
-      conditionsGround : List Condition → Bool
-      conditionsGround ℂ = foldr (λ x acc → acc ∧ (isGroundConditionᵇ x)) true ℂ
+  {--
+  - Ground Operators
+  --}
 
-  isGroundOperator : Operator → Set
-  isGroundOperator o = T (isGroundOperatorᵇ o)
-
-  isGroundOperator? : ∀ ( o : Operator ) → Dec (isGroundOperator o)
-  isGroundOperator? o with isGroundOperatorᵇ o
-  ... | false = no (λ ())
-  ... | true = yes tt
+  record GroundOperator : Set where
+    field
+      label : String
+      posPre : List (Condition 0)
+      negPre : List (Condition 0)
+      posPost : List (Condition 0)
+      negPost : List (Condition 0)
 
   {- The Update Function -}
-  update : ∀ ( 𝕊 : List Condition ) ( 𝕠 : Operator ) → List Condition
-  update 𝕊 𝕠 = add (remove 𝕊 (𝕠 ₋)) (𝕠 ₊)
+  update : ∀ ( τ : GroundOperator ) ( S : List (Condition 0) ) → List (Condition 0)
+  update τ S = add (remove S (GroundOperator.negPost τ)) (GroundOperator.posPost τ)
     where
-      add : List Condition → List Condition → List Condition
+      add : ∀ { s } → List (Condition s) → List (Condition s) → List (Condition s)
       add 𝕊 A = A ∪ᶜ 𝕊
 
-      remove : List Condition → List Condition → List Condition
+      remove : ∀ { s } → List (Condition s) → List (Condition s) → List (Condition s)
       remove [] R = [] 
       remove 𝕊 [] = 𝕊
       remove (s ∷ 𝕊) R with s ∈ᶜᵇ R

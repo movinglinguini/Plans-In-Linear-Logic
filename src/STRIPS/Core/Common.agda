@@ -11,40 +11,38 @@ open import Data.List.Membership.Propositional
 module STRIPS.Core.Common where
   open import STRIPS.Core.Conditions
 
-  private
-    variable
-      𝕊 𝔾⁺ 𝔾⁻ : List Condition
-
   {- Satisfaction of conditions -}
-  satᵇ : List Condition → (List Condition) × (List Condition) → Bool
-  satᵇ ℂ ⟨ ℂ⁺ , ℂ⁻ ⟩ = (allIn ℂ ℂ⁺) ∧ (noneIn ℂ ℂ⁻)
+
+  -- Boolean satisfaction: a condition satisfies a pair of lists of conditions if
+  -- 1. all of the left part of the pair (the positive side) can be found in the condition
+  -- 2. none of the right part of the pair (the negative side) can be found in the condition
+  satᵇ : List (Condition 0) → (List (Condition 0)) × (List (Condition 0)) → Bool
+  satᵇ C ⟨ G⁺ , G⁻ ⟩ = (allIn C G⁺) ∧ (noneIn C G⁻)
     where
-      allIn : List Condition → List Condition → Bool
+      allIn : List (Condition 0) → List (Condition 0) → Bool
       allIn ℂ₁ ℂ₂ = foldr (λ x acc → acc ∧ (x ∈ᶜᵇ ℂ₁)) true ℂ₂
 
-      noneIn : List Condition → List Condition → Bool
+      noneIn : List (Condition 0) → List (Condition 0) → Bool
       noneIn ℂ₁ ℂ₂ = foldr (λ x acc → acc ∧ (not (x ∈ᶜᵇ ℂ₁))) true ℂ₂ 
 
-  sat : List Condition → (List Condition) × (List Condition) → Set
+
+  -- Propositional satisfaction: Similar to above, but we use propositional list membership.
+  sat : List (Condition 0) → (List (Condition 0)) × (List (Condition 0)) → Set
   sat 𝕊 𝔾 = (∀ p → p ∈ proj₁ 𝔾 → p ∈ 𝕊) × (∀ p → p ∈ proj₂ 𝔾 → p ∉ 𝕊)
 
-  -- sat? : (𝕊 : List Condition) (𝔾 : (List Condition) × (List Condition)) → Dec (sat 𝕊 𝔾)
-  -- sat? 𝕊 𝔾 with satᵇ 𝕊 𝔾
-  -- ... | false = no λ x → x
-  -- ... | true = yes tt
-
   private
-    conds : List Condition
-    conds = (record { name = "test-cond" ; args = [] }) ∷ []
+    conds : List (Condition 0)
+    conds = (record { name = "cond-1" ; terms = [] }) ∷ (record { name = "cond-2" ; terms = [] }) ∷ []
 
-    goals1 : (List Condition) × (List Condition)
-    goals1 = ⟨ conds , [] ⟩
+    goal1 : (List (Condition 0)) × (List (Condition 0))
+    goal1 = ⟨ record { name = "cond-1" ; terms = [] } ∷ [] , [] ⟩
 
-    goals2 : (List Condition) × (List Condition)
-    goals2 = ⟨ [] , conds ⟩
+    goal2 : (List (Condition 0)) × (List (Condition 0))
+    goal2 = ⟨ record { name = "cond-1" ; terms = [] } ∷ [] , record { name = "cond-2" ; terms = [] } ∷ [] ⟩
 
-    _ : satᵇ conds goals1 ≡ true
+    _ : (satᵇ conds goal1) ≡ true
     _ = refl
 
-    _ : satᵇ conds goals2 ≡ false
-    _ = refl 
+    _ : (satᵇ conds goal2) ≡ false
+    _ = refl
+

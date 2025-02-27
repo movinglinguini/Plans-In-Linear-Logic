@@ -1,9 +1,10 @@
 open import Relation.Binary.Definitions
 open import Relation.Nullary.Decidable
 open import Relation.Binary.PropositionalEquality
-open import Data.String
-open import Data.Vec
-open import Data.Nat
+open import Data.String hiding (toList) renaming (_≟_ to _≟ˢ_)
+open import Data.Vec hiding (foldr)
+open import Data.Nat renaming (_≟_ to _≟ⁿ_)
+open import Data.Fin
 open import Data.List
 open import Data.Bool
 open import Data.Unit
@@ -18,99 +19,68 @@ open import Utils.Variables
 module STRIPS.Core.Conditions where
   open import STRIPS.Core.Terms
 
-  record Condition : ( Scope : ℕ ) → Set where 
-    field 
-      {argLength} : ℕ
+  record Condition ( Scope : ℕ ) : Set where 
+    field
       name : String
-      args : Vec (Term Scope) argLength
-
-  variable
-    p p₁ p₂ : Condition
-    ℂ₁ ℂ₂ : List Condition
+      terms : List (Term Scope)
 
   {- Operations on conditions -}
-  varArgsOf : ∀ ( p : Condition ) → Vec≤ Term (Condition.argLength p)
-  varArgsOf record { name = name ; args = args } = Data.Vec.filter (isVar?) args
-
-  countVars : Condition → ℕ
-  countVars p = Data.Vec.length (Vec≤.vec (varArgsOf p))
-
-  ground : ∀ ( p : Condition ) ( T : Vec≤ Term (Condition.argLength p) ) 
-    → All isConst (Vec≤.vec T) 
-    → Condition
-  ground record { name = name ; args = args } T allConstant = record { name = name ; args = groundVec args (Vec≤.vec T) }
-    where
-      groundVec : ∀ { n y } (args : Vec Term n) ( T : Vec Term y ) →  Vec Term n
-      groundVec args [] = args
-      groundVec [] (x ∷ T) = []
-      groundVec (term a ∷ args) (x ∷ T) = (term a) ∷ (groundVec args (x ∷ T))
-      groundVec (var a ∷ args) (x ∷ T) = x ∷ (groundVec args T)
-
-  {- Properties of conditions -}
-  isGroundConditionᵇ : Condition → Bool
-  isGroundConditionᵇ p = Data.List.foldr (λ x acc → acc ∧ (isConstᵇ x)) true (Data.Vec.toList (Condition.args p))
-
-  isGroundCondition : Condition → Set
-  isGroundCondition p = T (isGroundConditionᵇ p)
-
-  isGroundCondition? : ∀ (p : Condition) → Dec (isGroundCondition p)
-  isGroundCondition? p with isGroundConditionᵇ p
-  ... | false = no (λ ())
-  ... | true = yes tt
+  -- ground : ∀ ( p : Condition ) ( T : Vec≤ Term (Condition.argLength p) ) 
+  --   → All isConst (Vec≤.vec T) 
+  --   → Condition
+  -- ground record { name = name ; args = args } T allConstant = record { name = name ; args = groundVec args (Vec≤.vec T) }
+  --   where
+  --     groundVec : ∀ { n y } (args : Vec Term n) ( T : Vec Term y ) →  Vec Term n
+  --     groundVec args [] = args
+  --     groundVec [] (x ∷ T) = []
+  --     groundVec (term a ∷ args) (x ∷ T) = (term a) ∷ (groundVec args (x ∷ T))
+  --     groundVec (var a ∷ args) (x ∷ T) = x ∷ (groundVec args T)
 
   {- Properties of sets of conditions -}
-  doSignaturesMatch : Condition → Condition → Bool
-  doSignaturesMatch p₁ p₂ = does ((Condition.name p₁) Data.String.≟ (Condition.name p₂)) ∧ does ((Condition.argLength p₁) Data.Nat.≟ (Condition.argLength p₂))
 
+  -- Boolean equality over conditions. This is basically syntactic equality squashed to the
+  -- level of booleans
+  _≟ᶜᵇ_ : ∀ { s } ( c₁ c₂ : Condition s ) → Bool
+  c₁ ≟ᶜᵇ c₂ = (does ((Condition.name c₁) ≟ˢ (Condition.name c₂))) 
+              ∧ ((Condition.terms c₁) ≗ᵗ (Condition.terms c₂))
+
+  -- Let's test this equality
   private
-    p1 : Condition
-    p2 : Condition
-    p3 : Condition
+    c₁ : Condition 2
+    c₁ = record { name = "test-condition" ; terms = var zero ∷ var (suc (zero)) ∷ const "const" ∷ [] } 
+    c₂ : Condition 2
+    c₂ = record { name = "test-condition" ; terms = var zero ∷ var (suc (zero)) ∷ const "const" ∷ [] } 
 
-    p1 = record { name = "test-condition" ; args = var 0 ∷ var 1 ∷ var 3 ∷ [] }
-    p2 = record { name = "test-condition" ; args = var 0 ∷ var 1 ∷ var 3 ∷ [] }
-    p3 = record { name = "test-condition" ; args = var 0 ∷ var 1 ∷ [] }
-
-    _ : doSignaturesMatch p1 p2 ≡ true
+    -- c₁ and c₂ are syntactically equivalent, so we expect them to be boolean equivalent
+    _ : c₁ ≟ᶜᵇ c₂ ≡ true
     _ = refl
 
-    _ : doSignaturesMatch p1 p3 ≡ false
+    -- c₃ is different from the other two syntactically, so we expect the comparison to return false
+    c₃ : Condition 2
+    c₃ = record { name = "test-condition" ; terms = var zero ∷ const "const" ∷ const "const" ∷ [] } 
+    _ : c₃ ≟ᶜᵇ c₂ ≡ false
     _ = refl
 
-  {- Operations on lists of conditions -}
-  _∈ᶜᵇ_ : Condition → List Condition → Bool
-  p ∈ᶜᵇ [] = false
-  p ∈ᶜᵇ (x ∷ ℂ) = (doSignaturesMatch p x) ∨ (p ∈ᶜᵇ ℂ)
-
-  _∈ᶜ_ : Condition → List Condition → Set
-  p ∈ᶜ ℂ = T (p ∈ᶜᵇ ℂ)
-
-  _∉ᶜ_ : Condition → List Condition → Set
-  p ∉ᶜ ℂ = ¬ (p ∈ᶜ ℂ)
-
-  _∈ᶜ?_ : ( p : Condition ) ( ℂ : List Condition ) → Dec ( p ∈ᶜ ℂ )
-  p ∈ᶜ? ℂ with p ∈ᶜᵇ ℂ
-  ... | false = no (λ x → x)
-  ... | true = yes tt
-
-  -- Union
-  _∪ᶜ_ : List Condition → List Condition → List Condition
-  [] ∪ᶜ ℂ₂ = ℂ₂
-  (p ∷ ℂ₁) ∪ᶜ ℂ₂ with does (p ∈ᶜ? ℂ₂)
-  ... | false = p ∷ (ℂ₁ ∪ᶜ ℂ₂)
-  ... | true = ℂ₁ ∪ᶜ ℂ₂
+  -- {- Operations on vectors of conditions -}
   
+  -- List membership squashed to the level of bools
+  -- A condition is a member of a list of conditions if it is syntactically
+  -- equivalent to at least one.
+  _∈ᶜᵇ_ : ∀ { s } → Condition s → List (Condition s) → Bool 
+  c ∈ᶜᵇ [] = false
+  c ∈ᶜᵇ (x ∷ C) = (x ≟ᶜᵇ c) ∨ (c ∈ᶜᵇ C)
+
+  -- -- Union
+  _∪ᶜ_ : ∀ { s } → List (Condition s) → List (Condition s) → List (Condition s)
+  [] ∪ᶜ C₂ = C₂
+  (c ∷ C₁) ∪ᶜ C₂ with c ∈ᶜᵇ (C₂)
+  ... | false = c ∷ (C₁ ∪ᶜ C₂)
+  ... | true = C₁ ∪ᶜ C₂
+
   -- Intersection
-  _∩ᶜ_ : List Condition → List Condition → List Condition
-  [] ∩ᶜ ℂ₂ = []
-  (p ∷ ℂ₁) ∩ᶜ ℂ₂ with does (p ∈ᶜ? ℂ₂)
-  ... | false = ℂ₁ ∩ᶜ ℂ₂
-  ... | true = p ∷ ℂ₁ ∩ᶜ ℂ₂
+  _∩ᶜ_ : ∀ { s } → List (Condition s) → List (Condition s) → List (Condition s)
+  [] ∩ᶜ C₂ = []
+  (x ∷ C₁) ∩ᶜ C₂ with x ∈ᶜᵇ C₂
+  ... | false = C₁ ∩ᶜ C₂
+  ... | true = x ∷ C₁ ∩ᶜ C₂
   
-  -- TODO: Rewrite this
-  data Disjoint : List Condition → List Condition → Set where
-    dis/conds/z : Disjoint [] []
-
-    dis/conds/s : p₁ ∉ ℂ₂ → p₂ ∉ ℂ₁ → Disjoint ℂ₁ ℂ₂ 
-      → Disjoint (p₁ ∷ ℂ₁) (p₂ ∷ ℂ₂) 
-   
