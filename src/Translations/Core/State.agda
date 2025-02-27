@@ -34,17 +34,17 @@ module Translations.Core.State where
   translS 𝕊 [] = []
   translS 𝕊 (x ∷ ℙ) = ⟨ translS-helper x (x ∈ᶜᵇ 𝕊) , Linear ⟩ ∷ translS 𝕊 ℙ
 
-  private
-    translS-pos : ∀ { P s } → WfProblem P → s ∈ (fromList (PlanProblem.initialState P)) → ⟨ ` v[ translC s , term "true" ] , Linear ⟩ ∈ (translS (PlanProblem.initialState P) (PlanProblem.conditions P)) 
-    translS-pos {P} WfP mem with PlanProblem.initialState P | PlanProblem.conditions P | translS (PlanProblem.initialState P) (PlanProblem.conditions P)
-    ... | x ∷ a | [] | c = {!   !}
-    ... | x ∷ a | x₁ ∷ b | c = {!   !}
+  -- private
+  --   translS-pos : ∀ { P s } → WfProblem P → s ∈ (fromList (PlanProblem.initialState P)) → ⟨ ` v[ translC s , term "true" ] , Linear ⟩ ∈ (translS (PlanProblem.initialState P) (PlanProblem.conditions P)) 
+  --   translS-pos {P} WfP mem with PlanProblem.initialState P | PlanProblem.conditions P | translS (PlanProblem.initialState P) (PlanProblem.conditions P)
+  --   ... | x ∷ a | [] | c = {!   !}
+  --   ... | x ∷ a | x₁ ∷ b | c = {!   !}
 
-  translS-sat-pos : ∀ { 𝕘 } { P : PlanProblem } 
-    → WfProblem P
-    → sat (PlanProblem.initialState P) ⟨ Goal.pos (PlanProblem.goals P) , Goal.neg (PlanProblem.goals P) ⟩
-    → 𝕘 ∈ (fromList (Goal.pos (PlanProblem.goals P)))
-    → ⟨ ` v[ translC 𝕘 , term "true" ] , Linear ⟩ ∈ (translS (PlanProblem.initialState P) (PlanProblem.conditions P))
-  translS-sat-pos {𝕊} {P = P} ⟨ fst₁ , ⟨ fst₂ , ⟨ fst , snd ⟩ ⟩ ⟩ sat mem with (PlanProblem.goals P) | (PlanProblem.conditions P)
-  ... | a | b = {!   !}
+  -- translS-sat-pos : ∀ { 𝕘 } { P : PlanProblem } 
+  --   → WfProblem P
+  --   → sat (PlanProblem.initialState P) ⟨ Goal.pos (PlanProblem.goals P) , Goal.neg (PlanProblem.goals P) ⟩
+  --   → 𝕘 ∈ (fromList (Goal.pos (PlanProblem.goals P)))
+  --   → ⟨ ` v[ translC 𝕘 , term "true" ] , Linear ⟩ ∈ (translS (PlanProblem.initialState P) (PlanProblem.conditions P))
+  -- translS-sat-pos {𝕊} {P = P} ⟨ fst₁ , ⟨ fst₂ , ⟨ fst , snd ⟩ ⟩ ⟩ sat mem with (PlanProblem.goals P) | (PlanProblem.conditions P)
+  -- ... | a | b = {!   !}
 

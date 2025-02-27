@@ -11,10 +11,11 @@ module STRIPS.Core.Operators where
   record Operator : Set where
     field
       label : String
-      posPre : List (Condition)
-      negPre : List (Condition)
-      posPost : List (Condition)
-      negPost : List (Condition)
+      arity : ℕ
+      posPre : List (Condition arity)
+      negPre : List (Condition arity)
+      posPost : List (Condition arity)
+      negPost : List (Condition arity)
 
   variable
     o o₁ o₂ τ τ₁ τ₂ : Operator

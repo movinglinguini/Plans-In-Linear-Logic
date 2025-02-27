@@ -22,6 +22,10 @@ module Utils.IrrelifyContext where
   makeAllIrrelExcept A ⟨ fst , (B ∷ Bs) ⟩ (here px) = ⟨ [] , B ∷ [] ⟩ ++ᶜ (makeAllIrrel ⟨ fst , Bs ⟩)
   makeAllIrrelExcept A ⟨ fst , (B ∷ Bs) ⟩ (there AinΔ) = ⟨ [] , ⟨ proj₁ B , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ (makeAllIrrelExcept A ⟨ fst , Bs ⟩ AinΔ)
 
+  onlyIrrelify : ∀ { n m } ( A : Prop × Mode ) ( Δ : Context n m ) → A ∈ (proj₂ Δ)  → Context n m
+  onlyIrrelify A ⟨ fst , B ∷ Bs ⟩ (here px) = ⟨ [] , ⟨ proj₁ B , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ ⟨ fst , Bs ⟩
+  onlyIrrelify A ⟨ fst , B ∷ Bs ⟩ (there mem) = ⟨ [] , B ∷ [] ⟩ ++ᶜ onlyIrrelify A ⟨ fst , Bs ⟩ mem
+
   {- Properties of irrelification -}
   irrelify-is-cWeak : ∀ { n m } { IΔ Δ : Context n m } → IΔ ≡ (makeAllIrrel Δ) → cWeakenable IΔ
   irrelify-is-cWeak {Δ = ⟨ fst , [] ⟩} refl = weak/n 
@@ -38,3 +42,13 @@ module Utils.IrrelifyContext where
   irrelify-merge-l : ∀ { n m } { IΔ Δ : Context n m } → IΔ ≡ (makeAllIrrel Δ) → AllOfMode Linear Δ → merge IΔ Δ Δ
   irrelify-merge-l refl all-mode/z = mg/n  
   irrelify-merge-l refl (all-mode/s {A = ⟨ fst , Linear ⟩} lin x) = mg/c (irrelify-merge-l refl lin) i∙l 
+
+  {- Properties of near total irrelification -}
+  -- almost-irrelify-merge-i : ∀ { n m } { IΔ Δ : Context n m } { A : Prop × Mode } { AinΔ : A ∈ proj₂ Δ }
+  --   → IΔ ≡ (makeAllIrrelExcept A Δ AinΔ)
+  --   → merge IΔ IΔ IΔ
+
+  -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {⟨ fst₁ , Linear ⟩} {AinΔ = here px} refl = mg/c {!   !} {!   !}
+  -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {⟨ fst₁ , Unrestricted ⟩} {AinΔ = here px} refl = {!   !}
+  -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {⟨ fst₁ , Irrelevant ⟩} {AinΔ = here px} refl = {!   !} 
+  -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {AinΔ = there AinΔ} refl = {!   !} 

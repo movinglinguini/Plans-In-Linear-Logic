@@ -9,10 +9,10 @@ open import Relation.Nullary.Negation
 module STRIPS.Core.Terms where
   TermAtom = String
 
-
-  data Term : Set where
-    term : TermAtom → Term
-    var : ℕ → Term
+  -- A term n is a term that's well-formed in a scope with n variables
+  data Term : ℕ → Set where 
+    const : ∀ { n } → TermAtom → Term n
+    var : ∀ { n } ( m : Fin n ) → Term n
 
   variable
     t t₁ t₂ x x₁ x₂ : Term

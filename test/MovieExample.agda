@@ -29,7 +29,12 @@ module MovieExample where
   operators = (record { label = "rewind-movie-2"; posPre = record { name = "counter-at-two-hours" ; args = [] } ∷ [] ; negPre = [] ; posPost = record { name = "movie-rewound" ; args = [] } ∷ [] ; negPost = [] }) ∷ 
               (record { label = "rewind-movie"; posPre = record { name = "counter-at-other-than-two-hours" ; args = [] } ∷ [] ; negPre = [] ; posPost = record { name = "movie-rewound" ; args = [] } ∷ [] ; negPost = record { name = "counter-at-zero" ; args = [] } ∷ [] }) ∷ 
               (record { label = "reset-counter"; posPre = [] ; negPre = [] ; posPost = record { name = "counter-at-zero" ; args = [] } ∷ [] ; negPost = [] }) ∷ 
-              (record { label = "get-chips"; posPre = record { name = "chips" ; args = (var 0) ∷ [] } ∷ [] ; negPre = [] ; posPost = record { name = "have-chips" ; args = [] } ∷ [] ; negPost = [] }) ∷
+              (record { 
+                label = "get-chips"; 
+                posPre = record { name = "chips" ; args = (var 0) ∷ [] } ∷ [] ; 
+                negPre = [] ; 
+                posPost = record { name = "have-chips" ; args = [] } ∷ [] ; 
+                negPost = [] }) ∷
               (record { label = "get-dip"; posPre = record { name = "dip" ; args = (var 0) ∷ [] } ∷ [] ; negPre = [] ; posPost = record { name = "have-dip" ; args = [] } ∷ [] ; negPost = [] }) ∷
               (record { label = "get-pop"; posPre = record { name = "pop" ; args = (var 0) ∷ [] } ∷ [] ; negPre = [] ; posPost = record { name = "have-pop" ; args = [] } ∷ [] ; negPost = [] }) ∷
               (record { label = "get-cheese"; posPre = record { name = "cheese" ; args = (var 0) ∷ [] } ∷ [] ; negPre = [] ; posPost = record { name = "have-cheese" ; args = [] } ∷ [] ; negPost = [] }) ∷

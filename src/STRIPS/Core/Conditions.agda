@@ -18,11 +18,11 @@ open import Utils.Variables
 module STRIPS.Core.Conditions where
   open import STRIPS.Core.Terms
 
-  record Condition : Set where 
+  record Condition : ( Scope : ℕ ) → Set where 
     field 
       {argLength} : ℕ
       name : String
-      args : Vec Term argLength
+      args : Vec (Term Scope) argLength
 
   variable
     p p₁ p₂ : Condition

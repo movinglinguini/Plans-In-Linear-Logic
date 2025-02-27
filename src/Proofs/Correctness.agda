@@ -11,56 +11,7 @@ module Proofs.Correctness where
   open import Translations.Translations 
   open import ADJ.Core renaming (Term to AdjointTerm)
   open import Utils.BigTensor Proposition
-  open import Utils.IrrelifyContext
-
-  -- sat𝕀⟨𝔾⟩⇒proof : ∀ { n m } → { Δ : Context n m } 
-  --   → TranslTs 𝕋 𝕋ᵗ
-  --   → TranslS 𝕀 ℙ 𝕀ᵗ
-  --   → TranslG 𝔾 𝔾ᵗ
-  --   → sat 𝕀 ⟨ Goal.pos 𝔾 , Goal.neg 𝔾 ⟩
-  --   → Δ ⊢ⁱ 𝔾ᵗ
-
-  -- sat𝕀⟨𝔾⟩⇒proof {n = n} {m = m} {Δ = ⟨ fst , [] ⟩} tT tS translG/z sat = {!   !}
-  --   where
-  --     IΔ : Context n m
-  --     IΔ = makeAllIrrel ⟨ fst , [] ⟩
-
-  --     isIrrel : Irrelified ⟨ fst , [] ⟩ IΔ
-  --     isIrrel = irrelify/z
-
-  --     contractableIΔ : cContractable IΔ
-  --     contractableIΔ = cont/n
-
-  --     M12 : merge IΔ IΔ IΔ
-  --     M12 = mg/n
-  --     M23 : merge IΔ Δ Δ
-  --     M23 = {!   !}
-  --     M : merge IΔ Δ Δ
-
-  -- sat𝕀⟨𝔾⟩⇒proof {n = n} {m = m} {Δ = ⟨ fst , x ∷ snd ⟩} tT tS translG/z sat = {!   !} -- ⊗R M12 M23 M {!   !} (𝟙R {!   !}) ⊤R
-
-  -- sat𝕀⟨𝔾⟩⇒proof tT tS translG/s sat = {!   !}
-  {-
-    This is the main theorem we want to prove. If we have a planning solution, we have a proof of
-    the problem's translation.
-  -}
-  -- correctness : ∀ { P : Plan } { 𝕀 ℙ : List Condition } { 𝕋 : List STRIPSTerm } { 𝕆 : List Operator } { 𝔾 : Goal }
-  --   { 𝕋ᵗ : Vec AdjointTerm (Data.List.length 𝕋)} { 𝕀ᵗ : Vec (Prop × Mode) (Data.List.length ℙ) } { 𝔾ᵗ : Prop × Mode } { 𝕆ᵗ : Vec (Prop × Mode) (Data.List.length 𝕆) }
-  --   { Γ : Context (Data.Vec.length 𝕋ᵗ) (Data.Vec.length 𝕆ᵗ) } { Δ : Context 0 (Data.Vec.length 𝕀ᵗ) }   
-  --   → TranslTs 𝕋 𝕋ᵗ
-  --   → TranslS 𝕀 ℙ 𝕀ᵗ
-  --   → TranslOs 𝕆 𝕆ᵗ
-  --   → TranslG 𝔾 𝔾ᵗ
-  --   → Contextify 𝕋ᵗ 𝕆ᵗ Γ
-  --   → Contextify [] 𝕀ᵗ Δ
-  --   → Solves 𝕀 P 𝔾
-  --   → (Γ ++ᶜ Δ) ⊢ⁱ 𝔾ᵗ
-   
-  -- correctness tT tS tO tG cΓ cΔ (solves/z x) = sat𝕀⟨𝔾⟩⇒proof tT tS tG x 
-  -- correctness _ _ _ _ _ _ (solves/s plan-solves x) = {!   !}   
-
-  -- Some helper functions
-      
+  open import Utils.IrrelifyContext      
   
   {-# TERMINATING #-}
   sat𝕀⟨𝔾⟩⇒proof : ∀ ( P : PlanProblem )
@@ -92,8 +43,9 @@ module Proofs.Correctness where
 
         M23 : merge Δ12 (Δₒ ++ᶜ Δₛ) (Δₒ ++ᶜ Δₛ)
         M23 = concat-merge { Δ₁ = Δₒ } { Δ₄ = IΔ } { Δ₅ = Δₛ } { Δ₆ = Δₛ } (context-operator-merge { P } refl) (irrelify-merge-l refl (context-state-all-lin { P }))
+  
   sat𝕀⟨𝔾⟩⇒proof record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = record { pos = [] ; neg = (x ∷ neg) } } sats 
-    = ⊗-assoc (⊗R {!   !} {!   !} {!   !} {!   !} (id {!   !} {!   !}) (sat𝕀⟨𝔾⟩⇒proof P' sat'))
+    = ⊗-assoc (⊗R M12 M23 M Δ12'-cContr (id 𝕘-usable Δ12'-cWeak) (sat𝕀⟨𝔾⟩⇒proof P' sat'))
       where
         -- For the IH, we need proof that the initial state of P still satisfies the goal even after we've removed a condition of the goal
         P = record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = record { pos = [] ; neg = (x ∷ neg) } }
@@ -105,21 +57,55 @@ module Proofs.Correctness where
         𝕘 : Prop
         𝕘 = ` v[ translC x , term "false" ]
 
-        Δₛ = contextify-state P
-        Δₒ = contextify-operators P
+        Δₛ = contextify-state P'
+        Δₒ = contextify-operators P'
 
         gInState : ⟨ 𝕘 , Linear ⟩ ∈ (proj₂ Δₛ)
         gInState = {!   !}
 
-        IΔ = makeAllIrrelExcept ⟨ 𝕘 , Linear ⟩ Δₛ gInState  
+        IΔ-mostly = makeAllIrrelExcept ⟨ 𝕘 , Linear ⟩ Δₛ gInState  
+        IΔ-total = makeAllIrrel Δₛ
+        IΔ-one = onlyIrrelify ⟨ 𝕘 , Linear ⟩ Δₛ gInState
         
+        Δ12 = Δₒ ++ᶜ IΔ-mostly
+        Δ12' = Δₒ ++ᶜ IΔ-total
+
+        Δ12'-cWeak : cWeakenable Δ12'
+        Δ12'-cWeak = concat-cWeak { Δ₁ = Δₒ } { Δ₂ = IΔ-total } refl (context-operator-cWeak { P = P' }) (irrelify-is-cWeak refl)
+        
+        Δ12'-cContr : cContractable Δ12'
+        Δ12'-cContr = concat-cContr { Δ₁ = Δₒ } { Δ₂ = IΔ-total } refl (context-operator-cContr { P = P' }) (irrelify-is-cContr refl) 
+
+        Δ1 = Δ12
+        Δ2 = Δ12'
+        Δ3 = Δₒ ++ᶜ IΔ-one
+        
+        𝕘-usable : update Δ12 ⟨ 𝕘 , Linear ⟩ ⟨ 𝕘 , Irrelevant ⟩ Δ12'
+        𝕘-usable = {!   !}
+
+        M12-lemma : merge IΔ-mostly IΔ-total IΔ-mostly
+        M12-lemma = {!   !}
+
+        M12 : merge Δ1 Δ2 Δ12
+        M12 = concat-merge (context-operator-merge { P' } refl) M12-lemma
+
+        M23-lemma : merge IΔ-total IΔ-one Δₛ
+        M23-lemma = {!   !}
+        
+        M23 : merge Δ2 Δ3 (contextOfProblem P')
+        M23 = concat-merge (context-operator-merge { P' } refl) M23-lemma
+
+        M : merge Δ12 Δ3 (contextOfProblem P')
+        M = {!   !}
+
 
   sat𝕀⟨𝔾⟩⇒proof record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = record { pos = (x ∷ pos) ; neg = [] } } sat = {!   !}
+  
   sat𝕀⟨𝔾⟩⇒proof record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = record { pos = (x ∷ pos) ; neg = (x₁ ∷ neg) } } sat = {!   !}
     
   correctness : ∀ { P : PlanProblem } { Τ : Plan }
     → Solves (PlanProblem.initialState P) Τ (PlanProblem.goals P)
-    → translProb P
+    → Σ (Context × Prop) (λ ⟨ Γ , 𝔾 ⟩ → ⟨ Γ , 𝔾 ⟩ ≡ translProb P × Γ ⊢ⁱ 𝔾)
 
   correctness { P = P } (solves/z x) = sat𝕀⟨𝔾⟩⇒proof P x
   correctness (solves/s sol x) = {!   !}
