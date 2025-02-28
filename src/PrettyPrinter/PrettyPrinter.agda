@@ -50,3 +50,6 @@ module PrettyPrinter.PrettyPrinter (width : ℕ) where
       prettyContext-helper : ∀ { A n } → Vec A n → (A → Doc) → Doc 
       prettyContext-helper Vec.[] f = empty
       prettyContext-helper (x Vec.∷ V) f = f x <> char ',' <+> prettyContext-helper V f
+
+  prettyProblem : ∀ { x y } → (Context x y) × Prop → Doc
+  prettyProblem ⟨ fst , snd ⟩ = prettyContext fst <+> char '⊢' <+> prettyProp snd <+> char '⊗' <+> char '⊤'

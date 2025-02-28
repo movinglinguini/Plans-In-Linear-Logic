@@ -18,7 +18,7 @@ module Translations.Translations where
   open import ADJ.Core
 
   open import Utils.AllOfMode
-  open import Utils.BigTensor Proposition
+  open import Utils.BigTensor
 
   {-
     Here, we define the problem translation function in pieces.
@@ -28,8 +28,8 @@ module Translations.Translations where
     Translation of operators into an unrestricted context.
     We prove that this part of the context is indeed unrestricted below.
   -}
-  contextify-operators : (P : PlanProblem) → Context (length (PlanProblem.terms P)) (length (PlanProblem.operators P))
-  contextify-operators P = ⟨ translTs (PlanProblem.terms P) , translOs (PlanProblem.operators P) ⟩
+  contextify-operators : (P : PlanProblem) → Context (2 + length (PlanProblem.terms P)) (length (PlanProblem.operators P))
+  contextify-operators P = ⟨ (const "true") ∷ (const "false") ∷ translTs (PlanProblem.terms P) , translOs (PlanProblem.operators P) ⟩
 
   {-
     Translation of state into a linear context.
@@ -43,7 +43,7 @@ module Translations.Translations where
   -}
   contextOfProblem : (P : PlanProblem) 
                     → Context 
-                        (length (PlanProblem.terms P) + 0) 
+                        (2 + length (PlanProblem.terms P) + 0) 
                         ((length (PlanProblem.operators P)) + (length (PlanProblem.conditions P)))
   contextOfProblem P = contextify-operators P ++ᶜ contextify-state P
 
@@ -54,7 +54,7 @@ module Translations.Translations where
   -}
   translProb : ∀ (P : PlanProblem) 
               → (Context 
-                    (length (PlanProblem.terms P) + 0) 
+                    (2 + length (PlanProblem.terms P) + 0) 
                     ((length (PlanProblem.operators P)) + (length (PlanProblem.conditions P)))
                 ) 
                   × Prop 

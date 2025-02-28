@@ -10,7 +10,6 @@ module Proofs.Correctness where
   open import STRIPS.Problem renaming (Term to STRIPSTerm) hiding (update)
   open import Translations.Translations 
   open import ADJ.Core renaming (Term to AdjointTerm)
-  open import Utils.BigTensor Proposition
   open import Utils.IrrelifyContext      
   
   {-# TERMINATING #-}

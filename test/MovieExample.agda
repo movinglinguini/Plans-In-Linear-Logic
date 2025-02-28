@@ -9,121 +9,138 @@ open import Data.String
 open import STRIPS.Problem
 
 module MovieExample where
-  conditions : List Condition
-  conditions = (record { name = "movie-rewound" ; args = [] }) ∷
-      (record { name = "counter-at-two-hours" ; args = [] }) ∷ 
-      (record { name = "counter-at-other-than-two-hours" ; args = [] }) ∷ 
-      (record { name = "counter-at-zero" ; args = [] }) ∷ 
-      (record { name = "have-chips" ; args = [] }) ∷ 
-      (record { name = "have-dip" ; args = [] }) ∷ 
-      (record { name = "have-pop" ; args = [] }) ∷ 
-      (record { name = "have-cheese" ; args = [] }) ∷ 
-      (record { name = "have-crackers" ; args = [] }) ∷ 
-      (record { name = "chips" ; args = (term "c1") ∷ [] }) ∷
-      (record { name = "dip" ; args = (term "d1") ∷ [] }) ∷ 
-      (record { name = "pop" ; args = (term "p1") ∷ [] }) ∷ 
-      (record { name = "cheese" ; args = (term "z1") ∷ [] }) ∷
-      (record { name = "crackers" ; args = (term "k1") ∷ [] }) ∷ []
+  conditions : List (Condition 0)
+  conditions = (record { name = "movie-rewound" ; terms = [] }) ∷
+      (record { name = "counter-at-two-hours" ; terms = [] }) ∷ 
+      (record { name = "counter-at-other-than-two-hours" ; terms = [] }) ∷ 
+      (record { name = "counter-at-zero" ; terms = [] }) ∷ 
+      (record { name = "have-chips" ; terms = [] }) ∷ 
+      (record { name = "have-dip" ; terms = [] }) ∷ 
+      (record { name = "have-pop" ; terms = [] }) ∷ 
+      (record { name = "have-cheese" ; terms = [] }) ∷ 
+      (record { name = "have-crackers" ; terms = [] }) ∷ 
+      (record { name = "chips" ; terms = (const "c1") ∷ [] }) ∷
+      (record { name = "dip" ; terms = (const "d1") ∷ [] }) ∷ 
+      (record { name = "pop" ; terms = (const "p1") ∷ [] }) ∷ 
+      (record { name = "cheese" ; terms = (const "z1") ∷ [] }) ∷
+      (record { name = "crackers" ; terms = (const "k1") ∷ [] }) ∷ []
   
   operators : List Operator
-  operators = (record { label = "rewind-movie-2"; posPre = record { name = "counter-at-two-hours" ; args = [] } ∷ [] ; negPre = [] ; posPost = record { name = "movie-rewound" ; args = [] } ∷ [] ; negPost = [] }) ∷ 
-              (record { label = "rewind-movie"; posPre = record { name = "counter-at-other-than-two-hours" ; args = [] } ∷ [] ; negPre = [] ; posPost = record { name = "movie-rewound" ; args = [] } ∷ [] ; negPost = record { name = "counter-at-zero" ; args = [] } ∷ [] }) ∷ 
-              (record { label = "reset-counter"; posPre = [] ; negPre = [] ; posPost = record { name = "counter-at-zero" ; args = [] } ∷ [] ; negPost = [] }) ∷ 
+  operators = (record { label = "rewind-movie-2"; arity = 0; posPre = record { name = "counter-at-two-hours" ; terms = [] } ∷ [] ; negPre = [] ; posPost = record { name = "movie-rewound" ; terms = [] } ∷ [] ; negPost = [] }) ∷ 
+              (record { label = "rewind-movie"; arity = 0; posPre = record { name = "counter-at-other-than-two-hours" ; terms = [] } ∷ [] ; negPre = [] ; posPost = record { name = "movie-rewound" ; terms = [] } ∷ [] ; negPost = record { name = "counter-at-zero" ; terms = [] } ∷ [] }) ∷ 
+              (record { label = "reset-counter"; arity = 0; posPre = [] ; negPre = [] ; posPost = record { name = "counter-at-zero" ; terms = [] } ∷ [] ; negPost = [] }) ∷ 
               (record { 
                 label = "get-chips"; 
-                posPre = record { name = "chips" ; args = (var 0) ∷ [] } ∷ [] ; 
+                arity = 1 ;
+                posPre = record { name = "chips" ; terms = (var zero) ∷ [] } ∷ [] ; 
                 negPre = [] ; 
-                posPost = record { name = "have-chips" ; args = [] } ∷ [] ; 
+                posPost = record { name = "have-chips" ; terms = [] } ∷ [] ; 
                 negPost = [] }) ∷
-              (record { label = "get-dip"; posPre = record { name = "dip" ; args = (var 0) ∷ [] } ∷ [] ; negPre = [] ; posPost = record { name = "have-dip" ; args = [] } ∷ [] ; negPost = [] }) ∷
-              (record { label = "get-pop"; posPre = record { name = "pop" ; args = (var 0) ∷ [] } ∷ [] ; negPre = [] ; posPost = record { name = "have-pop" ; args = [] } ∷ [] ; negPost = [] }) ∷
-              (record { label = "get-cheese"; posPre = record { name = "cheese" ; args = (var 0) ∷ [] } ∷ [] ; negPre = [] ; posPost = record { name = "have-cheese" ; args = [] } ∷ [] ; negPost = [] }) ∷
-              (record { label = "get-crackers"; posPre = record { name = "crackers" ; args = (var 0) ∷ [] } ∷ [] ; negPre = [] ; posPost = record { name = "have-crackers" ; args = [] } ∷ [] ; negPost = [] }) ∷ []
+              (record { label = "get-dip";
+                        arity = 1 ;
+                        posPre = record { name = "dip" ; terms = (var zero) ∷ [] } ∷ [] ;
+                        negPre = [] ;
+                        posPost = record { name = "have-dip" ; terms = [] } ∷ [] ; negPost = [] }) ∷
+              (record { label = "get-pop";
+                        arity = 1 ;
+                        posPre = record { name = "pop" ; terms = (var zero) ∷ [] } ∷ [] ;
+                        negPre = [] ;
+                        posPost = record { name = "have-pop" ; terms = [] } ∷ [] ;
+                        negPost = [] }) ∷
+              (record { label = "get-cheese";
+                        arity = 1 ;
+                        posPre = record { name = "cheese" ; terms = (var zero) ∷ [] } ∷ [] ;
+                        negPre = [] ;
+                        posPost = record { name = "have-cheese" ; terms = [] } ∷ [] ;
+                        negPost = [] }) ∷
+              (record { label = "get-crackers" ;
+                        arity = 1 ;
+                        posPre = record { name = "crackers" ; terms = (var zero) ∷ [] } ∷ [] ;
+                        negPre = [] ;
+                        posPost = record { name = "have-crackers" ; terms = [] } ∷ [] ;
+                        negPost = [] }) ∷ []
 
-  initialState : List Condition
-  initialState = record { name = "chips" ; args = term "c1" ∷ [] } ∷ 
-                  record { name = "dip" ; args = (term "d1") ∷ [] } ∷ 
-                  record { name = "pop" ; args = term "p1" ∷ [] } ∷ 
-                  record { name = "cheese" ; args = term "z1" ∷ [] } ∷ 
-                  record { name = "crackers" ; args = term "k1" ∷ [] } ∷ 
-                  record { name = "counter-at-other-than-two-hours" ; args = [] } ∷ []
+  initialState : List (Condition 0)
+  initialState = record { name = "chips" ; terms = const "c1" ∷ [] } ∷ 
+                  record { name = "dip" ; terms = (const "d1") ∷ [] } ∷ 
+                  record { name = "pop" ; terms = const "p1" ∷ [] } ∷ 
+                  record { name = "cheese" ; terms = const "z1" ∷ [] } ∷ 
+                  record { name = "crackers" ; terms = const "k1" ∷ [] } ∷ 
+                  record { name = "counter-at-other-than-two-hours" ; terms = [] } ∷ []
 
   plan : Plan
   plan = record
     { label = "get-crackers"
     ; posPre =
-        record { name = "crackers" ; args = term "k1" ∷ [] } ∷ []
+        record { name = "crackers" ; terms = const "k1" ∷ [] } ∷ []
     ; negPre = []
-    ; posPost = record { name = "have-crackers" ; args = [] } ∷ []
+    ; posPost = record { name = "have-crackers" ; terms = [] } ∷ []
     ; negPost = []
     }
     ∷ record
       { label = "get-cheese"
       ; posPre =
-          record { name = "cheese" ; args = term "z1" ∷ [] } ∷ []
+          record { name = "cheese" ; terms = const "z1" ∷ [] } ∷ []
       ; negPre = []
-      ; posPost = record { name = "have-cheese" ; args = [] } ∷ []
+      ; posPost = record { name = "have-cheese" ; terms = [] } ∷ []
       ; negPost = []
       }
     ∷ record
       { label = "get-pop"
       ; posPre =
-          record { name = "pop" ; args = term "p1" ∷ [] } ∷ []
+          record { name = "pop" ; terms = const "p1" ∷ [] } ∷ []
       ; negPre = []
-      ; posPost = record { name = "have-pop" ; args = [] } ∷ []
+      ; posPost = record { name = "have-pop" ; terms = [] } ∷ []
       ; negPost = []
       }
     ∷ record
       { label = "get-dip"
       ; posPre =
-          record { name = "dip" ; args = term "d1" ∷ [] } ∷ []
+          record { name = "dip" ; terms = const "d1" ∷ [] } ∷ []
       ; negPre = []
-      ; posPost = record { name = "have-dip" ; args = [] } ∷ []
+      ; posPost = record { name = "have-dip" ; terms = [] } ∷ []
       ; negPost = []
       }
     ∷ record
       { label = "get-chips"
       ; posPre =
-          record { name = "chips" ; args = term "c1" ∷ [] } ∷ []
+          record { name = "chips" ; terms = const "c1" ∷ [] } ∷ []
       ; negPre = []
-      ; posPost = record { name = "have-chips" ; args = [] } ∷ []
+      ; posPost = record { name = "have-chips" ; terms = [] } ∷ []
       ; negPost = []
       }
     ∷ record
       { label = "rewind-movie"
       ; posPre =
-          record { name = "counter-at-other-than-two-hours" ; args = [] } ∷
+          record { name = "counter-at-other-than-two-hours" ; terms = [] } ∷
           []
       ; negPre = []
-      ; posPost = record { name = "movie-rewound" ; args = [] } ∷ []
-      ; negPost = record { name = "counter-at-zero" ; args = [] } ∷ []
+      ; posPost = record { name = "movie-rewound" ; terms = [] } ∷ []
+      ; negPost = record { name = "counter-at-zero" ; terms = [] } ∷ []
       }
-    ∷ (record { label = "reset-counter"; posPre = [] ; negPre = [] ; posPost = record { name = "counter-at-zero" ; args = [] } ∷ [] ; negPost = [] } ∷ [])
+    ∷ (record { label = "reset-counter"; posPre = [] ; negPre = [] ; posPost = record { name = "counter-at-zero" ; terms = [] } ∷ [] ; negPost = [] } ∷ [])
   
   goals : Goal
   goals = record 
         { 
-          pos = record { name = "movie-rewound" ; args = [] } ∷ 
-                record { name = "counter-at-zero" ; args = [] } ∷ 
-                record { name = "have-chips" ; args = [] } ∷ 
-                (record { name = "have-dip" ; args = [] }) ∷ 
-                (record { name = "have-pop" ; args = [] }) ∷ 
-                (record { name = "have-cheese" ; args = [] }) ∷ 
-                (record { name = "have-crackers" ; args = [] }) ∷ [] 
+          pos = record { name = "movie-rewound" ; terms = [] } ∷ 
+                record { name = "counter-at-zero" ; terms = [] } ∷ 
+                record { name = "have-chips" ; terms = [] } ∷ 
+                (record { name = "have-dip" ; terms = [] }) ∷ 
+                (record { name = "have-pop" ; terms = [] }) ∷ 
+                (record { name = "have-cheese" ; terms = [] }) ∷ 
+                (record { name = "have-crackers" ; terms = [] }) ∷ [] 
         ; neg = [] 
         }
 
   planProblem : PlanProblem
   planProblem = record
-    { terms = term "c1" ∷ term "d1" ∷ term "p1" ∷ term "z1" ∷ term "k1" ∷ []
+    { terms = const "c1" ∷ const "d1" ∷ const "p1" ∷ const "z1" ∷ const "k1" ∷ []
     ; conditions = conditions
     ; initialState = initialState
     ; operators = operators
     ; goals = goals
     }
-
-  plan-is-valid : Solves initialState plan goals
-  plan-is-valid = from-just (solver initialState plan goals)
 
   {-
     TRANSLATIONS 
@@ -132,11 +149,5 @@ module MovieExample where
   open import ADJ.Core
   open import PrettyPrinter.PrettyPrinter 3000
   
-  stateTrans : Vec (Prop × Mode) (Data.List.length conditions)
-  stateTrans = translS initialState conditions
-
-  operatorTrans : String
-  operatorTrans = render (prettyProp (proj₁ (translO (Data.List.lookup operators (suc zero)))))
-
-  goalTrans : String
-  goalTrans = render (prettyProp (proj₁ (translG goals)))
+  pProblem : String
+  pProblem = render (prettyProblem (translProb planProblem))

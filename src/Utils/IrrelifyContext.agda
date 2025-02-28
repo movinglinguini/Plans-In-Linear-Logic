@@ -7,7 +7,6 @@ open import Data.Vec.Relation.Unary.Any
 module Utils.IrrelifyContext where
   open import Translations.Core.State
   open import ADJ.Core renaming (Term to AdjointTerm)
-  open import Utils.BigTensor Proposition
   open import Utils.AllOfMode
 
   {- Helper functions -}
