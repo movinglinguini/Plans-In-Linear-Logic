@@ -18,19 +18,47 @@ module Translations.Translations where
   open import ADJ.Core
 
   open import Utils.AllOfMode
+  open import Utils.BigTensor Proposition
 
-  -- The problem translation function
+  {-
+    Here, we define the problem translation function in pieces.
+  -}
+
+  {- 
+    Translation of operators into an unrestricted context.
+    We prove that this part of the context is indeed unrestricted below.
+  -}
   contextify-operators : (P : PlanProblem) → Context (length (PlanProblem.terms P)) (length (PlanProblem.operators P))
   contextify-operators P = ⟨ translTs (PlanProblem.terms P) , translOs (PlanProblem.operators P) ⟩
 
+  {-
+    Translation of state into a linear context.
+    We prove that this part of the context is indeed linear below.
+  -}
   contextify-state : (P : PlanProblem) → Context 0 (length (PlanProblem.conditions P)) 
   contextify-state P = ⟨ [] , translS (PlanProblem.initialState P) (PlanProblem.conditions P) ⟩
 
-  contextOfProblem : (P : PlanProblem) → Context (length (PlanProblem.terms P) + 0) ((length (PlanProblem.operators P)) + (length (PlanProblem.conditions P)))
+  {-
+    Concatenates the operator and state contexts.
+  -}
+  contextOfProblem : (P : PlanProblem) 
+                    → Context 
+                        (length (PlanProblem.terms P) + 0) 
+                        ((length (PlanProblem.operators P)) + (length (PlanProblem.conditions P)))
   contextOfProblem P = contextify-operators P ++ᶜ contextify-state P
 
-  translProb : ∀ (P : PlanProblem) → Set 
-  translProb P = (contextOfProblem P) ⊢ⁱ translG (PlanProblem.goals P)
+  {-
+    The main translation function. Given a PlanProblem, output the translated context
+    and translated goal as a proposition. We omit the mode of the goal context here. We
+    will assume that it's linear in our proofs.
+  -}
+  translProb : ∀ (P : PlanProblem) 
+              → (Context 
+                    (length (PlanProblem.terms P) + 0) 
+                    ((length (PlanProblem.operators P)) + (length (PlanProblem.conditions P)))
+                ) 
+                  × Prop 
+  translProb P = ⟨ (contextOfProblem P) , ⨂ (translG (PlanProblem.goals P)) ⟩
 
   {------
   - Properties of translations

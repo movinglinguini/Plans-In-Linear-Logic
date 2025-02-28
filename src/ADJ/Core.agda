@@ -24,17 +24,17 @@ module ADJ.Core where
     -}
     subst-TCondition-Terms : ∀ { n } → Vec Term n → Term → Vec Term n
     subst-TCondition-Terms [] t = []
-    subst-TCondition-Terms (term x ∷ T) t = term x ∷ (subst-TCondition-Terms T t)
+    subst-TCondition-Terms (const x ∷ T) t = const x ∷ (subst-TCondition-Terms T t)
     subst-TCondition-Terms (var x ∷ T) t with x
     ... | zero = t ∷ subst-TCondition-Terms T t
     ... | suc x = var x ∷ subst-TCondition-Terms T t
 
     subst-TCondition : TCondition → Term → TCondition
-    subst-TCondition record { name = name ; args = args } t = record { name = name ; args = (subst-TCondition-Terms args t) }
+    subst-TCondition record { name = name ; terms = args } t = record { name = name ; terms = (subst-TCondition-Terms args t) }
 
     subst : Prop → Term → Prop
     subst (` v[ p , b ]) t with b
-    ... | term x = ` v[ (subst-TCondition p t) , (term x) ]
+    ... | const x = ` v[ (subst-TCondition p t) , (const x) ]
     ... | var x with x
     ...   | zero = ` v[ (subst-TCondition p t), t ]
     ...   | suc x = ` v[ (subst-TCondition p t) , var x ]
@@ -51,21 +51,21 @@ module ADJ.Core where
 
     -- Test out substitution
     cond1 : TCondition
-    cond1 = record { name = "cond-1" ; args = var 0 ∷ term "t1" ∷ [] }
+    cond1 = record { name = "cond-1" ; terms = var 0 ∷ const "t1" ∷ [] }
 
     cond2 : TCondition
-    cond2 = record { name = "cond-2" ; args = var 1 ∷ term "t2" ∷ [] }
+    cond2 = record { name = "cond-2" ; terms = var 1 ∷ const "t2" ∷ [] }
 
     cond1trans : TCondition
-    cond1trans = record { name = "cond-1" ; args = term "s1" ∷ term "t1" ∷ [] }
+    cond1trans = record { name = "cond-1" ; terms = const "s1" ∷ const "t1" ∷ [] }
 
     cond2trans1 : TCondition
-    cond2trans1 = record { name = "cond-2" ; args = var 0 ∷ term "t2" ∷ [] }
+    cond2trans1 = record { name = "cond-2" ; terms = var 0 ∷ const "t2" ∷ [] }
 
     prop1 : Prop
-    prop1 = ∀[ ∀[ (` v[ cond1 , term "b1" ]) ⊸ (` v[ cond2 , var 0 ])  ]  ]
+    prop1 = ∀[ ∀[ (` v[ cond1 , const "b1" ]) ⊸ (` v[ cond2 , var 0 ])  ]  ]
 
-    _ : subst prop1 (term "s1") ≡ ∀[ (` v[ cond1trans , term "b1" ]) ⊸ (` v[ cond2trans1 , term "s1" ] ) ]
+    _ : subst prop1 (const "s1") ≡ ∀[ (` v[ cond1trans , const "b1" ]) ⊸ (` v[ cond2trans1 , const "s1" ] ) ]
     _ = refl 
 
   open import Logic.Adjoint Proposition TermAtom subst public

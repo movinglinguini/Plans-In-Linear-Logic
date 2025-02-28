@@ -7,18 +7,19 @@ open import Data.Product renaming (_,_ to ⟨_,_⟩)
 module PrettyPrinter.PrettyPrinter (width : ℕ) where
   open import Text.Pretty width public
 
-  open import Translations.Translations
+  open import Translations.Core.Condition
+  open import Translations.Core.State
   open import ADJ.Core
   
   {-
     Pretty print props
   -}
   prettyTerm : Term → Doc
-  prettyTerm (term x) = text x
+  prettyTerm (const x) = text x
   prettyTerm (var x) = char '#' <> (text (show x))
   
   prettyTCondition : TCondition → Doc
-  prettyTCondition record { name = name ; args = args } 
+  prettyTCondition record { name = name ; terms = args } 
     = text name <> parens (termDocs)
     where
       termDocs : Doc
@@ -49,6 +50,3 @@ module PrettyPrinter.PrettyPrinter (width : ℕ) where
       prettyContext-helper : ∀ { A n } → Vec A n → (A → Doc) → Doc 
       prettyContext-helper Vec.[] f = empty
       prettyContext-helper (x Vec.∷ V) f = f x <> char ',' <+> prettyContext-helper V f
-
-  prettySeq : Δ ⊢ⁱ ⟨ A , m ⟩ → Doc  
-  prettySeq {Δ = Δ} {A} {m} seq = prettyContext Δ <+> char '⊢' <+> prettyProp A  
