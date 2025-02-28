@@ -2,6 +2,7 @@ open import Data.Product
 open import Data.List
 open import Data.List.Membership.Propositional
 open import Data.Nat
+open import Data.Bool
 
 module STRIPS.Core.Goals where
   open import STRIPS.Core.Conditions

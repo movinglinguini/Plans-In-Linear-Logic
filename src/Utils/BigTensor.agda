@@ -1,8 +1,8 @@
-open import Data.List
+open import Data.Vec
 
 module Utils.BigTensor (Atom : Set) where
   open import Logic.Core.Props Atom
 
-  ⨂_ : List Prop → Prop
+  ⨂_ : ∀ { n } → Vec Prop n → Prop
   ⨂ [] = 𝟙
   ⨂ (x ∷ xs) = x ⊗ (⨂ xs)

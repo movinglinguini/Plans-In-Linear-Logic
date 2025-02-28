@@ -7,11 +7,11 @@ module Translations.Core.Condition where
   open import Translations.Core.Term
   open import Logic.Core.Terms TermAtom
 
-  record TCondition : Set where
+  record TCondition  : Set where
     field
-      { argLength } : ℕ
+      { arity } : ℕ
       name : String
-      args : Vec Term argLength
+      terms : Vec Term arity
 
-  translC : Condition → TCondition
-  translC record { name = name ; args = args } = record { name = name ; args = map (λ t → translT t) args } 
+  translC : ∀ { s } → Condition s → TCondition
+  translC record { name = name ; terms = terms } = record { name = name ; terms = translTs terms } 

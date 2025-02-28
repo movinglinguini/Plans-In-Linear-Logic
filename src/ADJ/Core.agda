@@ -19,6 +19,9 @@ module ADJ.Core where
   open import Logic.Utils.ModeOf Proposition public
 
   private
+    {-
+      Here, we define the substitution function.
+    -}
     subst-TCondition-Terms : ∀ { n } → Vec Term n → Term → Vec Term n
     subst-TCondition-Terms [] t = []
     subst-TCondition-Terms (term x ∷ T) t = term x ∷ (subst-TCondition-Terms T t)

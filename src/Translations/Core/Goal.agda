@@ -1,4 +1,7 @@
-open import Data.List
+open import Data.List hiding (_++_)
+open import Data.Nat using (_+_)
+open import Data.Vec hiding (length)
+open import Data.Bool
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality
 
@@ -8,23 +11,14 @@ module Translations.Core.Goal where
   open import Translations.Core.State
   open import Logic.Core.Props Proposition
   open import Logic.Core.Terms TermAtom
-  open import Logic.Core.Modes
-  open import Logic.Utils.ModeOf Proposition
-  open import Utils.BigTensor Proposition
 
   private     
-    translatePos : Goal → List Prop
-    translatePos g = Data.List.map (λ p → ` v[ (translC p) , (term "true") ]) (Goal.pos g) 
+    -- Some helper functions for goal translation
+    translhalf : (C : List (Condition 0)) → Bool → Vec Prop (length C)
+    translhalf [] b = []
+    translhalf (x ∷ C) false = ` v[ translC x , const "false" ] ∷ translhalf C false
+    translhalf (x ∷ C) true = ` v[ translC x , const "true" ] ∷ translhalf C true 
 
-    translateNeg : Goal → List Prop
-    translateNeg g = Data.List.map (λ p → ` v[ (translC p) , (term "false") ]) (Goal.neg g) 
-
-    translg : Goal → List Prop
-    translg G = (translatePos G) ++ (translateNeg G) 
-
-  translG : Goal → Prop × Mode
-  translG G = ⟨  (⨂ translg G) ⊗ ⊤ , Linear ⟩ 
-
-  {- Properties of the translation -}
-  translG-linear : ∀ { 𝔾 𝔾ᵗ } → 𝔾ᵗ ≡ translG 𝔾 → modeOf 𝔾ᵗ ≡ Linear
-  translG-linear refl = refl
+  translG : (G : Goal) → Vec Prop (length (Goal.pos G) + length (Goal.neg G))
+  translG G = (translhalf (Goal.pos G) true) ++ (translhalf (Goal.neg G) false)
+  

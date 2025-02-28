@@ -14,6 +14,8 @@ module Translations.Core.State where
   open import STRIPS.Problem hiding (Term)
   open import Logic.Core.Terms TermAtom
   
+  -- We are ultimately translating Conditions into Propositions,
+  -- which contain translated conditions (TCondition) + a truth value term.
   infix 10 v[_,_]
   data Proposition : Set where
     v[_,_] : TCondition → Term → Proposition
@@ -24,27 +26,23 @@ module Translations.Core.State where
 
   private
     variable
-      𝕊 ℙ : List Condition
+      s : ℕ
+      𝕊 ℙ : List (Condition s)
 
-    translS-helper : Condition → Bool → Prop
-    translS-helper c false = ` v[ (translC c) , term "false" ]
-    translS-helper c true = ` v[ (translC c) , term "true" ]
+    -- Helper function for translS
+    -- Bool is supposed to represent whether or not the condition c was in the state we
+    -- are translating over. If it is, then the proposition we translate to gets a truth
+    -- value of "true". Otherwise, it gets "false".
+    translS-helper : ∀ { s } → Condition s → Bool → Prop
+    translS-helper c false = ` v[ (translC c) , const "false" ]
+    translS-helper c true = ` v[ (translC c) , const "true" ]
 
-  translS : (𝕊 ℙ : List Condition) → Vec (Prop × Mode) (length ℙ) -- Vec Proposition (length ℙ)
+  {- State Translation -}
+  -- Given a state 𝕊 and a list of conditions ℙ, map each condition in ℙ
+  -- to a proposition where the truth value reflects whether the condition is in
+  -- the state.
+  translS : ∀ { s } (𝕊 ℙ : List (Condition s)) → Vec (Prop × Mode) (length ℙ)
   translS 𝕊 [] = []
   translS 𝕊 (x ∷ ℙ) = ⟨ translS-helper x (x ∈ᶜᵇ 𝕊) , Linear ⟩ ∷ translS 𝕊 ℙ
 
-  -- private
-  --   translS-pos : ∀ { P s } → WfProblem P → s ∈ (fromList (PlanProblem.initialState P)) → ⟨ ` v[ translC s , term "true" ] , Linear ⟩ ∈ (translS (PlanProblem.initialState P) (PlanProblem.conditions P)) 
-  --   translS-pos {P} WfP mem with PlanProblem.initialState P | PlanProblem.conditions P | translS (PlanProblem.initialState P) (PlanProblem.conditions P)
-  --   ... | x ∷ a | [] | c = {!   !}
-  --   ... | x ∷ a | x₁ ∷ b | c = {!   !}
-
-  -- translS-sat-pos : ∀ { 𝕘 } { P : PlanProblem } 
-  --   → WfProblem P
-  --   → sat (PlanProblem.initialState P) ⟨ Goal.pos (PlanProblem.goals P) , Goal.neg (PlanProblem.goals P) ⟩
-  --   → 𝕘 ∈ (fromList (Goal.pos (PlanProblem.goals P)))
-  --   → ⟨ ` v[ translC 𝕘 , term "true" ] , Linear ⟩ ∈ (translS (PlanProblem.initialState P) (PlanProblem.conditions P))
-  -- translS-sat-pos {𝕊} {P = P} ⟨ fst₁ , ⟨ fst₂ , ⟨ fst , snd ⟩ ⟩ ⟩ sat mem with (PlanProblem.goals P) | (PlanProblem.conditions P)
-  -- ... | a | b = {!   !}
 
