@@ -1,6 +1,6 @@
 open import Data.Vec hiding (length)
 open import Data.List hiding (merge)
-open import Data.Nat using (_+_)
+open import Data.Nat using (_+_; z≤n)
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality
 
@@ -12,7 +12,6 @@ module Translations.Translations where
   open import Translations.Core.State public
   open import Translations.Core.Goal public
   open import Translations.Core.Operator public
-  open import Translations.Core.Contextify public
   
   open import STRIPS.Problem
   open import ADJ.Core
@@ -29,7 +28,7 @@ module Translations.Translations where
     We prove that this part of the context is indeed unrestricted below.
   -}
   contextify-operators : (P : PlanProblem) → Context (2 + length (PlanProblem.terms P)) (length (PlanProblem.operators P))
-  contextify-operators P = ⟨ (const "true") ∷ (const "false") ∷ translTs (PlanProblem.terms P) , translOs (PlanProblem.operators P) ⟩
+  contextify-operators P = ⟨ (const "true") ∷ (const "false") ∷ translTs 0 z≤n (PlanProblem.terms P) , translOs (PlanProblem.operators P) ⟩
 
   {-
     Translation of state into a linear context.
