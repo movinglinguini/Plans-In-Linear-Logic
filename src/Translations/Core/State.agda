@@ -14,15 +14,15 @@ module Translations.Core.State where
   open import STRIPS.Problem hiding (Term)
   open import Logic.Core.Terms TermAtom
   
-  -- We are ultimately translating Conditions into Propositions,
+  -- We are ultimately translating Conditions into PropAtoms,
   -- which contain translated conditions (TCondition) + a truth value term.
   infix 10 v[_,_]
-  data Proposition : Set where
-    v[_,_] : TCondition → Term → Proposition
+  data PropAtom : Set where
+    v[_,_] : ∀ { s } → TCondition s → Term s → PropAtom
 
-  open import Logic.Core.Props Proposition
+  open import Logic.Core.Props PropAtom
   open import Logic.Core.Modes
-  open import Logic.Utils.ModeOf Proposition
+  open import Logic.Utils.ModeOf PropAtom
 
   private
     variable
@@ -31,7 +31,7 @@ module Translations.Core.State where
 
     -- Helper function for translS
     -- Bool is supposed to represent whether or not the condition c was in the state we
-    -- are translating over. If it is, then the proposition we translate to gets a truth
+    -- are translating over. If it is, then the PropAtom we translate to gets a truth
     -- value of "true". Otherwise, it gets "false".
     translS-helper : ∀ { s } → Condition s → Bool → Prop
     translS-helper c false = ` v[ (translC c) , const "false" ]
@@ -39,7 +39,7 @@ module Translations.Core.State where
 
   {- State Translation -}
   -- Given a state 𝕊 and a list of conditions ℙ, map each condition in ℙ
-  -- to a proposition where the truth value reflects whether the condition is in
+  -- to a PropAtom where the truth value reflects whether the condition is in
   -- the state.
   translS : ∀ { s } (𝕊 ℙ : List (Condition s)) → Vec (Prop × Mode) (length ℙ)
   translS 𝕊 [] = []

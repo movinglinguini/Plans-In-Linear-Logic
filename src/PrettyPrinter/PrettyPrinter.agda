@@ -1,5 +1,6 @@
 open import Data.Nat
-open import Data.Nat.Show
+open import Data.Fin.Show renaming (show to showF)
+open import Data.Nat.Show renaming (show to showN)
 open import Data.Vec using (toList; Vec)
 open import Data.List
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
@@ -14,11 +15,11 @@ module PrettyPrinter.PrettyPrinter (width : ℕ) where
   {-
     Pretty print props
   -}
-  prettyTerm : Term → Doc
+  prettyTerm : ∀ { s } → Term s → Doc
   prettyTerm (const x) = text x
-  prettyTerm (var x) = char '#' <> (text (show x))
+  prettyTerm (var x) = char '#' <> (text (showF x))
   
-  prettyTCondition : TCondition → Doc
+  prettyTCondition : ∀ { s } → TCondition s → Doc
   prettyTCondition record { name = name ; terms = args } 
     = text name <> parens (termDocs)
     where
@@ -26,20 +27,16 @@ module PrettyPrinter.PrettyPrinter (width : ℕ) where
       termDocs = foldr (λ t acc → (prettyTerm t) <> char ',' <+> acc) empty (toList args)
 
 
-  prettyProposition : Proposition → Doc
-  prettyProposition v[ x , x₁ ] = char 'v' <> parens (prettyTCondition x <> char ',' <+> prettyTerm x₁)
+  prettyPropAtom : PropAtom → Doc
+  prettyPropAtom v[ x , x₁ ] = char 'v' <> parens (prettyTCondition x <> char ',' <+> prettyTerm x₁)
 
   prettyProp : Prop → Doc
-  prettyProp (` A) = prettyProposition A
+  prettyProp (` A) = prettyPropAtom A
   prettyProp (A ⊸ B) = prettyProp A <+> char '⊸' <+> prettyProp B
   prettyProp (A ⊗ B) = prettyProp A <+> char '⊗' <+> prettyProp B
   prettyProp 𝟙 = char '𝟙'
   prettyProp ⊤ = char '⊤'
-  prettyProp (A ⊕ B) = prettyProp A <+> char '⊕' <+> prettyProp B
-  prettyProp (A & B) = prettyProp A <+> char '&' <+> prettyProp B
-  prettyProp (↑[ x ][ x₁ ] A) = char '↑' <> (prettyProp A)
-  prettyProp (↓[ x ][ x₁ ] A) = char '↓' <> (prettyProp A)
-  prettyProp ∀[ A ] = char '∀' <> parens (prettyProp A)
+  prettyProp ∀[ n ][ A ] = char '∀' <> char '{' <> (text (showN n)) <> char '}' <> parens (prettyProp A)
 
   prettyPropxMode : (Prop × Mode) → Doc
   prettyPropxMode ⟨ A , m ⟩ = prettyProp A

@@ -5,6 +5,7 @@
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality hiding (subst)
 open import Data.Nat
+open import Data.Fin
 open import Data.Vec
 open import Data.Bool hiding (_≟_)
 
@@ -12,60 +13,54 @@ module ADJ.Core where
   open import STRIPS.Problem hiding (Term)
   open import Translations.Core.Condition
   open import Translations.Core.State
-  open import Logic.Core.Props Proposition public
+  open import Logic.Core.Props PropAtom public
   open import Logic.Core.Terms TermAtom public
   open import Logic.Core.Modes public
-  open import Logic.Core.Contexts Proposition TermAtom public
-  open import Logic.Utils.ModeOf Proposition public
+  open import Logic.Core.Contexts PropAtom TermAtom public
+  open import Logic.Utils.ModeOf PropAtom public
 
   private
-    {-
-      Here, we define the substitution function.
-    -}
-    subst-TCondition-Terms : ∀ { n } → Vec Term n → Term → Vec Term n
-    subst-TCondition-Terms [] t = []
-    subst-TCondition-Terms (const x ∷ T) t = const x ∷ (subst-TCondition-Terms T t)
-    subst-TCondition-Terms (var x ∷ T) t with x
-    ... | zero = t ∷ subst-TCondition-Terms T t
-    ... | suc x = var x ∷ subst-TCondition-Terms T t
+    subst-Term : ∀ { s } → Term s → Term 0 → Term s
+    subst-Term (const x) _ = const x
+    subst-Term (var zero) (const x) = const x
+    subst-Term (var (suc m)) _ = var (inject₁ m)
 
-    subst-TCondition : TCondition → Term → TCondition
-    subst-TCondition record { name = name ; terms = args } t = record { name = name ; terms = (subst-TCondition-Terms args t) }
+    subst-Terms : ∀ { s n } → Vec (Term s) n → Term 0 → Vec (Term s) n 
+    subst-Terms [] t = []
+    subst-Terms (x ∷ ts) t = (subst-Term x t) ∷ (subst-Terms ts t)
 
-    subst : Prop → Term → Prop
-    subst (` v[ p , b ]) t with b
-    ... | const x = ` v[ (subst-TCondition p t) , (const x) ]
-    ... | var x with x
-    ...   | zero = ` v[ (subst-TCondition p t), t ]
-    ...   | suc x = ` v[ (subst-TCondition p t) , var x ]
-    subst (p₁ ⊸ p₂) t = (subst p₁ t) ⊸ (subst p₂ t)
-    subst (p₁ ⊗ p₂) t = ((subst p₁ t)) ⊗ subst p₂ t
-    subst 𝟙 t = 𝟙
-    subst ⊤ t = ⊤
-    subst (p₁ ⊕ p₂) t = subst p₁ t ⊕ subst p₂ t
-    subst (p₁ & p₂) t = (subst p₁ t) & subst p₂ t
-    subst (↑[ x ][ x₁ ] p) t = ↑[ x ][ x₁ ] (subst p t)
-    subst (↓[ x ][ x₁ ] p) t = ↓[ x ][ x₁ ] (subst p t)
-    subst ∀[ ∀[ p ] ] t = ∀[ subst ∀[ p ] t ]
-    subst ∀[ p ] t = subst p t
+    subst-TCondition : ∀ { s } → TCondition s → Term 0 → TCondition s
+    subst-TCondition TC t = record { name = (TCondition.name TC) ; terms = subst-Terms (TCondition.terms TC) t }
 
-    -- Test out substitution
-    cond1 : TCondition
-    cond1 = record { name = "cond-1" ; terms = var 0 ∷ const "t1" ∷ [] }
+    -- Helper function for substitution that's needed by the Adjoint Logic module.
+    -- Scans over the PropAtom, and replaces all var 0's with t. As it scans,
+    -- all non-var 0's are decremented.
+    subst-PropAtom : PropAtom → Term 0 → PropAtom
+    subst-PropAtom v[ TC , tv ] t = v[ subst-TCondition TC t , subst-Term tv t ]
 
-    cond2 : TCondition
-    cond2 = record { name = "cond-2" ; terms = var 1 ∷ const "t2" ∷ [] }
+  -- Instantiate the Adjoint Logic with atoms for Props and Terms, and a
+  -- function for substitution in PropAtoms.
+  open import Logic.Adjoint PropAtom TermAtom subst-PropAtom public
+   
+  -- Let's test out substitution 
+  -- Setting up the conditions to be used as atoms for our props
+  -- Left side of the source Prop
+  sTCondL : TCondition 2
+  sTCondL = record { name = "p1" 
+              ; terms = var zero ∷ var (suc zero) ∷ [] }
+  -- Right side of the target Prop
+  sTCondR : TCondition 2
+  sTCondR = record { name = "p2" 
+              ; terms = var (suc zero) ∷ const "t" ∷ var zero ∷ [] }
 
-    cond1trans : TCondition
-    cond1trans = record { name = "cond-1" ; terms = const "s1" ∷ const "t1" ∷ [] }
+  sProp : Prop
+  sProp = ∀[ 1 ][ ` v[ sTCondL , var zero ] ⊸ ` v[ sTCondR , const "false" ] ]
 
-    cond2trans1 : TCondition
-    cond2trans1 = record { name = "cond-2" ; terms = var 0 ∷ const "t2" ∷ [] }
+  ts : Vec (Term 0) 2
+  ts = const "t0" ∷ const "t1" ∷ []
 
-    prop1 : Prop
-    prop1 = ∀[ ∀[ (` v[ cond1 , const "b1" ]) ⊸ (` v[ cond2 , var 0 ])  ]  ]
-
-    _ : subst prop1 (const "s1") ≡ ∀[ (` v[ cond1trans , const "b1" ]) ⊸ (` v[ cond2trans1 , const "s1" ] ) ]
-    _ = refl 
-
-  open import Logic.Adjoint Proposition TermAtom subst public
+  tProp = subst sProp ts
+  {-
+    Expecting tProp to look like
+    v[ p1( t0, t1 ) , t0 ] ⊸ v[ p2(t1, t, t0), false ]
+  -}

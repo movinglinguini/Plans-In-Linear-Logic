@@ -12,7 +12,7 @@ module STRIPS.Core.Terms where
   TermAtom = String
 
   -- A Term n is a term that's well-formed in a scope with n variables
-  data Term : ℕ → Set where 
+  data Term : (Scope : ℕ) → Set where 
     const : ∀ { n } → TermAtom → Term n
     var : ∀ { n } ( m : Fin n ) → Term n
 

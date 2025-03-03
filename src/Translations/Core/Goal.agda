@@ -9,7 +9,7 @@ module Translations.Core.Goal where
   open import STRIPS.Problem hiding (Term)
   open import Translations.Core.Condition
   open import Translations.Core.State
-  open import Logic.Core.Props Proposition
+  open import Logic.Core.Props PropAtom
   open import Logic.Core.Terms TermAtom
 
   private     
