@@ -2,12 +2,14 @@ open import Data.List
 open import Data.Bool
 open import Data.Unit
 open import Data.Nat
+open import Data.Vec hiding (remove)
 open import Data.String
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Relation.Nullary.Decidable
 
 module STRIPS.Core.Operators where
   open import STRIPS.Core.Conditions
+  open import STRIPS.Core.Terms
   
   -- An operator comes with its own scope and arity
   record Operator : Set where
@@ -59,13 +61,13 @@ module STRIPS.Core.Operators where
       negPost : List (Condition 0)
 
   {- The Update Function -}
-  update : ∀ ( τ : GroundOperator ) ( S : List (Condition 0) ) → List (Condition 0)
+  update : GroundOperator → State → State
   update τ S = add (remove S (GroundOperator.negPost τ)) (GroundOperator.posPost τ)
     where
-      add : ∀ { s } → List (Condition s) → List (Condition s) → List (Condition s)
+      add : State → List (Condition 0) → State
       add 𝕊 A = A ∪ᶜ 𝕊
 
-      remove : ∀ { s } → List (Condition s) → List (Condition s) → List (Condition s)
+      remove : State → List (Condition 0) → State
       remove [] R = [] 
       remove 𝕊 [] = 𝕊
       remove (s ∷ 𝕊) R with s ∈ᶜᵇ R

@@ -57,7 +57,7 @@ module Translations.Translations where
                     ((length (PlanProblem.operators P)) + (length (PlanProblem.conditions P)))
                 ) 
                   × Prop 
-  translProb P = ⟨ (contextOfProblem P) , ⨂ (translG (PlanProblem.goals P)) ⟩
+  translProb P = ⟨ (contextOfProblem P) , (⨂ (translG (PlanProblem.goals P))) ⊗ ⊤ ⟩
 
   {------
   - Properties of translations

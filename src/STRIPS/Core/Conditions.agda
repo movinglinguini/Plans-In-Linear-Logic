@@ -24,6 +24,9 @@ module STRIPS.Core.Conditions where
       name : String
       terms : List (Term Scope)
 
+  -- State is just a list of Conditions with 0 scope
+  State = List (Condition 0)
+
   {- Properties of sets of conditions -}
 
   -- Boolean equality over conditions. This is basically syntactic equality squashed to the
@@ -71,4 +74,3 @@ module STRIPS.Core.Conditions where
   (x ∷ C₁) ∩ᶜ C₂ with x ∈ᶜᵇ C₂
   ... | false = C₁ ∩ᶜ C₂
   ... | true = x ∷ C₁ ∩ᶜ C₂
-  

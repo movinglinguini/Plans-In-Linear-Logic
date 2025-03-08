@@ -24,7 +24,7 @@ module STRIPS.Problem where
     field
       terms : List (Term 0)
       conditions : List (Condition 0)
-      initialState : List (Condition 0)
+      initialState : State
       operators : List Operator
       goals : Goal
 
