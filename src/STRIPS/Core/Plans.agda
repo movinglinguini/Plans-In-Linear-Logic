@@ -31,6 +31,6 @@ module STRIPS.Core.Plans where
     -- 2. the state given by updating 𝕀 with the postconditions of τ gets us closer
     --    to solving the problem.
     solves/s : Solves (update τ 𝕀) Τ 𝔾
-      → sat 𝕀 ⟨ Operator.posPre τ , Operator.negPre τ ⟩
+      → sat 𝕀 ⟨ GroundOperator.posPre τ , GroundOperator.negPre τ ⟩
       → Solves 𝕀 (τ ∷ Τ) 𝔾 
 
