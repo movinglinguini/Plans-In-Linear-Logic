@@ -30,6 +30,7 @@ module STRIPS.Core.Common where
   sat : State → (List (Condition 0)) × (List (Condition 0)) → Set
   sat 𝕊 𝔾 = (∀ p → p ∈ proj₁ 𝔾 → p ∈ 𝕊) × (∀ p → p ∈ proj₂ 𝔾 → p ∉ 𝕊)
 
+  -- Testing out satisfaction
   private
     state : State
     state = (record { name = "cond-1" ; terms = [] }) ∷ (record { name = "cond-2" ; terms = [] }) ∷ []
@@ -45,4 +46,5 @@ module STRIPS.Core.Common where
 
     _ : (satᵇ state goal2) ≡ false
     _ = refl
+
 

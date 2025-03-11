@@ -16,6 +16,9 @@ module STRIPS.Core.Terms where
     const : ∀ { n } → TermAtom → Term n
     var : ∀ { n } ( m : Fin n ) → Term n
 
+  -- A constant term is just a term at 0 scope
+  TermConstant = Term 0
+
   {- Operations on terms -}
 
   -- Identifying terms as variables or constants
@@ -25,6 +28,14 @@ module STRIPS.Core.Terms where
 
   isConstᵇ : ∀ { s } → Term s → Bool
   isConstᵇ t = not (isVarᵇ t)
+
+  isConst : ∀ { s } → Term s → Set
+  isConst t = T (isConstᵇ t)
+
+  isConst? : ∀ { s } ( t : Term s ) → Dec (isConst t)
+  isConst? t with isConstᵇ t
+  ... | false = no λ x → x
+  ... | true = yes tt
 
   -- Boolean equality over terms
   _≟ᵗᵇ_ : ∀ { s } → Term s → Term s → Bool
@@ -41,3 +52,10 @@ module STRIPS.Core.Terms where
   [] ≗ᵗ (x ∷ C₂) = false
   (x ∷ T₁) ≗ᵗ [] = false
   (x ∷ T₁) ≗ᵗ (x₁ ∷ T₂) = (x ≟ᵗᵇ x₁) ∧ (T₁ ≗ᵗ T₂)
+
+  -- Extracting only constants from a list of terms
+  filterTerms : ∀ { s } → List (Term s) → List TermConstant
+  filterTerms [] = []
+  filterTerms (const x ∷ ts) = (const x) ∷ (filterTerms ts)
+  filterTerms (var m ∷ ts) = filterTerms ts
+ 

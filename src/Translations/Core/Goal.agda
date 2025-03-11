@@ -1,5 +1,6 @@
 open import Data.List hiding (_++_)
-open import Data.Nat using (_+_)
+open import Data.Nat using (_+_; ℕ; _∸_)
+open import Data.Fin using (toℕ)
 open import Data.Vec hiding (length)
 open import Data.Bool
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
@@ -12,13 +13,12 @@ module Translations.Core.Goal where
   open import Logic.Core.Props PropAtom
   open import Logic.Core.Terms TermAtom
 
-  private     
-    -- Some helper functions for goal translation
-    translhalf : (C : List (Condition 0)) → Bool → Vec Prop (length C)
-    translhalf [] b = []
-    translhalf (x ∷ C) false = ` v[ translC x , const "false" ] ∷ translhalf C false
-    translhalf (x ∷ C) true = ` v[ translC x , const "true" ] ∷ translhalf C true 
+  -- Translate the positives and then the negatives, and then combine.
+  translG-Goals : ∀ (G : Goal) → Vec Prop (length G)
+  translG-Goals [] = []
+  translG-Goals (⟨ fst , false ⟩ ∷ G) = ` v[ translC fst , const "false" ] ∷ translG-Goals G
+  translG-Goals (⟨ fst , true ⟩ ∷ G) = ` v[ translC fst , const "true" ] ∷ translG-Goals G
 
-  translG : (G : Goal) → Vec Prop (length (Goal.pos G) + length (Goal.neg G))
-  translG G = (translhalf (Goal.pos G) true) ++ (translhalf (Goal.neg G) false)
-  
+  translG : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → Vec Prop (length 𝔾)
+  translG (wf/prob _ _ _ _ 𝔾 _ _ _ _) = translG-Goals 𝔾
+   

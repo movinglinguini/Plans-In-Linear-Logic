@@ -1,8 +1,9 @@
 open import Data.List
+open import Data.Vec
 open import Data.Maybe
+open import Data.Nat
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Nullary.Decidable
-
 
 module STRIPS.Core.Plans where
   open import STRIPS.Core.Operators
@@ -15,15 +16,16 @@ module STRIPS.Core.Plans where
 
   private 
     variable
+      goalSize : ℕ
       Τ : Plan
       𝕀 : State
-      𝔾 : Goal
+      𝔾 : Goal goalSize
       τ : GroundOperator
   
   {- Well-typed plan -}
-  data Solves : State → Plan → Goal → Set where
+  data Solves : ∀ { n } → State → Plan → Goal n → Set where
     -- If the given state already satisfies the plan, then the plan is empty.
-    solves/z : sat 𝕀 ⟨ Goal.pos 𝔾 , Goal.neg 𝔾 ⟩
+    solves/z : sat 𝕀 ⟨ (toList (Goal.pos 𝔾)) , (toList (Goal.neg 𝔾)) ⟩
       → Solves 𝕀 [] 𝔾
 
     -- Given a state 𝕀 and a goal 𝔾, a plan solves the problem if 

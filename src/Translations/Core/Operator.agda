@@ -13,7 +13,7 @@ open import Data.String hiding (_++_; length) renaming (_≟_ to _≟ₛ_)
 open import Data.Nat using (ℕ; suc; zero; _+_) renaming (_≟_ to _≟ₙ_)
 open import Data.Nat.Properties
 open import Data.Fin hiding (_+_)
-open import Data.Vec
+open import Data.Vec hiding (length)
 
 module Translations.Core.Operator where
   open import STRIPS.Problem hiding (Term)
@@ -61,16 +61,19 @@ module Translations.Core.Operator where
       let o≤svc = ≤-trans o≤vc (n≤1+n vc)
        in translPs o (suc vc) o≤svc Ps (translPs-lift (suc vc) o≤svc p (fromℕ vc) ⊗ PL) (` v[ translC p , const "false" ] ⊗ PR)
   
-  {- 
+    {- 
     Given an operator, translates into a universally quantified unrestricted implication. 
     See the pretty-printed translation example below for what this is supposed to look like.
-  -}
-  translO : Operator → Prop × Mode
-  translO o = ⟨ translPs o (Operator.arity o) ≤-refl ((o ⁺ ∪ᶜ o ⁻) ∪ᶜ (o ₊ ∪ᶜ o ₋)) 𝟙 𝟙 , Unrestricted ⟩ -- ⟨ (translPs o zero ((o ⁺ ∪ᶜ o ⁻) ∪ᶜ (o ₊ ∪ᶜ o ₋)) 𝟙 𝟙) , Unrestricted ⟩
+    -}
+    translO-Operator : Operator → Prop × Mode
+    translO-Operator o = ⟨ translPs o (Operator.arity o) ≤-refl ((o ⁺ ∪ᶜ o ⁻) ∪ᶜ (o ₊ ∪ᶜ o ₋)) 𝟙 𝟙 , Unrestricted ⟩
 
-  translOs : (O : List Operator) → Vec (Prop × Mode) (Data.List.length O)
-  translOs [] = []
-  translOs (x ∷ O) = translO x ∷ translOs O 
+    translO-Operators : ( os : List Operator ) → Vec (Prop × Mode) (length os)
+    translO-Operators [] = []
+    translO-Operators (o ∷ os) = translO-Operator o ∷ translO-Operators os
+
+  translO : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Vec (Prop × Mode) (length 𝕆)
+  translO (wf/prob _ _ _ 𝕆 _ _ _ _ _) = translO-Operators 𝕆
 
   -- Let's test translO
   private
@@ -98,7 +101,7 @@ module Translations.Core.Operator where
       }
 
   o-trans : Prop × Mode
-  o-trans = translO o
+  o-trans = translO-Operator o
   
   open import PrettyPrinter.PrettyPrinter 3000
 

@@ -18,106 +18,104 @@ module Translations.Translations where
 
   open import Utils.AllOfMode
   open import Utils.BigTensor
-
+  
   {-
     Here, we define the problem translation function in pieces.
   -}
-
-  -- Some helper functions/syntactic sugar
+  -- Some helper functions
 
   -- Expected length of the term context, which will consist of
   -- all translated terms of P plus "true" and "false"
-  lenTermCtxt : PlanProblem → ℕ
-  lenTermCtxt P = 2 + length (PlanProblem.terms P)
+  lenTermCtxt : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 → ℕ
+  lenTermCtxt (wf/prob 𝕋 _ _ _ _ _ _ _ _) = length 𝕋
 
   -- Expected length of the unrestricted context, which will
   -- consist of all translated operators of P
-  lenUnrCtxt : PlanProblem → ℕ
-  lenUnrCtxt P = length (PlanProblem.operators P)
+  lenUnrCtxt : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → ℕ
+  lenUnrCtxt (wf/prob _ _ _ 𝕆 _ _ _ _ _) = length 𝕆
 
-  -- Expected length of the linear context, which will
-  -- consist of all translated conditions of P
-  lenLinCtxt : PlanProblem → ℕ
-  lenLinCtxt P = length (PlanProblem.conditions P)
+  -- -- Expected length of the linear context, which will
+  -- -- consist of all translated conditions of P
+  lenLinCtxt : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → ℕ
+  lenLinCtxt (wf/prob _ ℂ _ _ _ _ _ _ _) = length ℂ
 
-  -- The expected size of the context of the sequent
-  -- obtained from translating a problem is the size of
-  -- the term context (plus 0) and the combined length of
-  -- the unrestricted and linear contexts. We need the plus 0
-  -- because we are going to get the translated context through
-  -- concatenation.
-  CtxtP : PlanProblem → Set
-  CtxtP P = Context ((lenTermCtxt P) + 0) ((lenUnrCtxt P) + (lenLinCtxt P))
+  -- -- The expected size of the context of the sequent
+  -- -- obtained from translating a problem is the size of
+  -- -- the term context (plus 0) and the combined length of
+  -- -- the unrestricted and linear contexts. We need the plus 0
+  -- -- because we are going to get the translated context through
+  -- -- concatenation.
+  CtxtP : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Set
+  CtxtP (wf/prob 𝕋 ℂ _ 𝕆 _ x x₁ x₂ x₃) = Context ((2 + length 𝕋) + 0) ((length 𝕆) + (length ℂ))
 
-  {- 
-    Translation of operators into an unrestricted context.
-    We prove that this part of the context is indeed unrestricted below.
-  -}
-  contextify-operators : (P : PlanProblem) → Context (lenTermCtxt P) (lenUnrCtxt P)
-  contextify-operators P 
-    = ⟨ (const "true") ∷ (const "false") ∷ translTs 0 z≤n (PlanProblem.terms P) , translOs (PlanProblem.operators P) ⟩
+  -- {- 
+  --   Translation of operators into an unrestricted context.
+  --   We prove that this part of the context is indeed unrestricted below.
+  -- -}
+  contextify-operators : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Context (2 + length 𝕋) (length 𝕆)
+  contextify-operators P = ⟨ const "true" ∷ const "false" ∷ translTsOfP P , translO P ⟩
+  -- {-
+  --   Translation of state into a linear context.
+  --   We prove that this part of the context is indeed linear below.
+  -- -}
+  contextify-state : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Context 0 (length ℂ) 
+  contextify-state P = ⟨ [] , translS P ⟩
 
-  {-
-    Translation of state into a linear context.
-    We prove that this part of the context is indeed linear below.
-  -}
-  contextify-state : (P : PlanProblem) → Context 0 (lenLinCtxt P) 
-  contextify-state P = ⟨ [] , translS (PlanProblem.initialState P) (PlanProblem.conditions P) ⟩
-
-  {-
-    Concatenates the operator and state contexts.
-  -}
-  contextOfProblem : (P : PlanProblem) → CtxtP P
+  -- {-
+  --   Concatenates the operator and state contexts.
+  -- -}
+  contextOfProblem : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Context ((2 + length 𝕋) + 0) ((length 𝕆) + (length ℂ))
   contextOfProblem P = contextify-operators P ++ᶜ contextify-state P
 
-  {-
-    The main translation function. Given a PlanProblem, output the translated context
-    and translated goal as a proposition. We omit the mode of the goal context here. We
-    will assume that it's linear in our proofs.
-  -}
-  translProb : ∀ (P : PlanProblem) → (CtxtP P) × Prop 
-  translProb P = ⟨ (contextOfProblem P) , (⨂ (translG (PlanProblem.goals P))) ⊗ ⊤ ⟩
+  -- {-
+  --   The main translation function. Given a PlanProblem, output the translated context
+  --   and translated goal as a proposition. We omit the mode of the goal context here. We
+  --   will assume that it's linear in our proofs.
+  -- -}
+  translProb : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } ( P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 ) 
+    → (Context ((2 + length 𝕋) + 0) ((length 𝕆) + (length ℂ))) × Prop 
+  translProb P = ⟨ (contextOfProblem P) , (⨂ (translG P)) ⊗ ⊤ ⟩
 
-  {------
-  - Properties of translations
-  ------}
+  -- {------
+  -- - Properties of translations
+  -- ------}
 
-  {- Properties of problem translation -}
+  -- {- Properties of problem translation -}
 
-  -- The state translation is fully linear
-  context-state-all-lin : ∀ { P } → AllOfMode Linear (contextify-state P)
-  context-state-all-lin {record { terms = terms ; conditions = [] ; initialState = initialState ; operators = operators ; goals = goals }} = all-mode/z
-  context-state-all-lin {record { terms = terms ; conditions = x ∷ conditions ; initialState = initialState ; operators = operators ; goals = goals }} 
-    = all-mode/s (context-state-all-lin { P = record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals } }) refl
+  -- -- The state translation is fully linear
+  -- context-state-all-lin : ∀ { P } → AllOfMode Linear (contextify-state P)
+  -- context-state-all-lin {record { terms = terms ; conditions = [] ; initialState = initialState ; operators = operators ; goals = goals }} = all-mode/z
+  -- context-state-all-lin {record { terms = terms ; conditions = x ∷ conditions ; initialState = initialState ; operators = operators ; goals = goals }} 
+  --   = all-mode/s (context-state-all-lin { P = record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals } }) refl
 
-  -- The operator translation is fully unrestricted
-  context-operator-all-unr : ∀ { P } → AllOfMode Unrestricted (contextify-operators P)
-  context-operator-all-unr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} = all-mode/z
-  context-operator-all-unr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} 
-    = all-mode/s (context-operator-all-unr { record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals } }) refl
+  -- -- The operator translation is fully unrestricted
+  -- context-operator-all-unr : ∀ { P } → AllOfMode Unrestricted (contextify-operators P)
+  -- context-operator-all-unr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} = all-mode/z
+  -- context-operator-all-unr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} 
+  --   = all-mode/s (context-operator-all-unr { record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals } }) refl
 
-  -- The operator context is weakenable
-  context-operator-cWeak : ∀ { P } → cWeakenable (contextify-operators P)
-  context-operator-cWeak {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} = weak/n
-  context-operator-cWeak {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} 
-    = weak/c (context-operator-cWeak {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals }}) mweak/u
+  -- -- The operator context is weakenable
+  -- context-operator-cWeak : ∀ { P } → cWeakenable (contextify-operators P)
+  -- context-operator-cWeak {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} = weak/n
+  -- context-operator-cWeak {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} 
+  --   = weak/c (context-operator-cWeak {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals }}) mweak/u
   
-  -- The operator context is contractable
-  context-operator-cContr : ∀ { P } → cContractable (contextify-operators P)
-  context-operator-cContr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} = cont/n
-  context-operator-cContr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} 
-    = cont/c (context-operator-cContr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals }}) mcontract/u
+  -- -- The operator context is contractable
+  -- context-operator-cContr : ∀ { P } → cContractable (contextify-operators P)
+  -- context-operator-cContr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} = cont/n
+  -- context-operator-cContr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} 
+  --   = cont/c (context-operator-cContr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals }}) mcontract/u
 
-  -- The operator context can merge with itself
-  context-operator-merge : ∀ { P Γ } → Γ ≡ (contextify-operators P) → merge Γ Γ Γ
-  context-operator-merge {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} {Γ = .(contextify-operators (record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }))} refl = mg/n
-  context-operator-merge {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} {Γ = .(contextify-operators (record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }))} refl 
-    = mg/c (context-operator-merge
-       {record
-        { terms = terms
-        ; conditions = conditions
-        ; initialState = initialState
-        ; operators = operators
-        ; goals = goals
-        }}
-       refl) u∙u
+  -- -- The operator context can merge with itself
+  -- context-operator-merge : ∀ { P Γ } → Γ ≡ (contextify-operators P) → merge Γ Γ Γ
+  -- context-operator-merge {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} {Γ = .(contextify-operators (record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }))} refl = mg/n
+  -- context-operator-merge {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} {Γ = .(contextify-operators (record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }))} refl 
+  --   = mg/c (context-operator-merge
+  --      {record
+  --       { terms = terms
+  --       ; conditions = conditions
+  --       ; initialState = initialState
+  --       ; operators = operators
+  --       ; goals = goals
+  --       }}
+  --      refl) u∙u 

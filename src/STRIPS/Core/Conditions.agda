@@ -19,13 +19,15 @@ open import Utils.Variables
 module STRIPS.Core.Conditions where
   open import STRIPS.Core.Terms
 
-  record Condition ( Scope : ℕ ) : Set where 
+  record Condition ( Scope : ℕ ): Set where 
     field
       name : String
       terms : List (Term Scope)
 
+  -- Ground conditions are just conditions at 0 scope
+  GroundCondition = Condition 0
   -- State is just a list of Conditions with 0 scope
-  State = List (Condition 0)
+  State = List GroundCondition
 
   {- Properties of sets of conditions -}
 
@@ -38,7 +40,7 @@ module STRIPS.Core.Conditions where
   -- Let's test this equality
   private
     c₁ : Condition 2
-    c₁ = record { name = "test-condition" ; terms = var zero ∷ var (suc (zero)) ∷ const "const" ∷ [] } 
+    c₁ = record { name = "test-condition" ; terms = var zero ∷ var (suc (zero)) ∷  const "const" ∷ [] } 
     c₂ : Condition 2
     c₂ = record { name = "test-condition" ; terms = var zero ∷ var (suc (zero)) ∷ const "const" ∷ [] } 
 
@@ -74,3 +76,9 @@ module STRIPS.Core.Conditions where
   (x ∷ C₁) ∩ᶜ C₂ with x ∈ᶜᵇ C₂
   ... | false = C₁ ∩ᶜ C₂
   ... | true = x ∷ C₁ ∩ᶜ C₂
+
+  {-
+    Terms of a condition
+  -}
+  constantsOf : ∀ { s } → Condition s → List TermConstant
+  constantsOf c = filterTerms (Condition.terms c)
