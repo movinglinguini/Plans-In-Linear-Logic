@@ -20,5 +20,5 @@ module Translations.Core.Goal where
   translG-Goals (⟨ fst , true ⟩ ∷ G) = ` v[ translC fst , const "true" ] ∷ translG-Goals G
 
   translG : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → Vec Prop (length 𝔾)
-  translG (wf/prob _ _ _ _ 𝔾 _ _ _ _) = translG-Goals 𝔾
+  translG (wf/prob _ _ _ _ 𝔾) = translG-Goals 𝔾
    

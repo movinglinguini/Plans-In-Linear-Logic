@@ -73,7 +73,7 @@ module Translations.Core.Operator where
     translO-Operators (o ∷ os) = translO-Operator o ∷ translO-Operators os
 
   translO : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Vec (Prop × Mode) (length 𝕆)
-  translO (wf/prob _ _ _ 𝕆 _ _ _ _ _) = translO-Operators 𝕆
+  translO (wf/prob _ _ _ 𝕆 _) = translO-Operators 𝕆
 
   -- Let's test translO
   private

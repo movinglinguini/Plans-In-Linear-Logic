@@ -49,6 +49,6 @@ module Translations.Core.State where
     translS-Conditions S (c ∷ cs) = ⟨ ` translS-Condition c (c ∈ᶜᵇ S) , Linear ⟩ ∷ (translS-Conditions S cs)
 
   translS : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } ( P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 ) → Vec (Prop × Mode) (length ℂ)
-  translS (wf/prob _ ℂ 𝕀 _ _ _ _ _ _) = translS-Conditions 𝕀 ℂ
+  translS (wf/prob _ ℂ 𝕀 _ _) = translS-Conditions 𝕀 ℂ
 
 

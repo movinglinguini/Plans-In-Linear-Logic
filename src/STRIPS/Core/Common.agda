@@ -28,7 +28,12 @@ module STRIPS.Core.Common where
 
   -- Propositional satisfaction: Similar to above, but we use propositional list membership.
   sat : State → (List (Condition 0)) × (List (Condition 0)) → Set
-  sat 𝕊 𝔾 = (∀ p → p ∈ proj₁ 𝔾 → p ∈ 𝕊) × (∀ p → p ∈ proj₂ 𝔾 → p ∉ 𝕊)
+  sat 𝕊 𝔾 = T (satᵇ 𝕊 𝔾)
+
+  sat? : ( S : State) → ( G : (List (Condition 0)) × (List (Condition 0)) ) → Dec (sat S G)
+  sat? S G with satᵇ S G
+  ... | false = no (λ ())
+  ... | true = yes tt
 
   -- Testing out satisfaction
   private

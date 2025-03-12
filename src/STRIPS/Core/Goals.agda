@@ -30,8 +30,8 @@ module STRIPS.Core.Goals where
 
   getNegatives-Goal : Goal → List GroundCondition
   getNegatives-Goal [] = []
-  getNegatives-Goal ((fst , false) ∷ 𝔾) = fst ∷ getPositives-Goal 𝔾
-  getNegatives-Goal ((fst , true) ∷ 𝔾) = getPositives-Goal 𝔾
+  getNegatives-Goal ((fst , false) ∷ 𝔾) = fst ∷ getNegatives-Goal 𝔾
+  getNegatives-Goal ((fst , true) ∷ 𝔾) = getNegatives-Goal 𝔾
 
   sizeOf-Goal : Goal → ℕ
   sizeOf-Goal 𝔾 = Data.List.length (getPositives-Goal 𝔾) + Data.List.length (getNegatives-Goal 𝔾)

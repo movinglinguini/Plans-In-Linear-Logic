@@ -3,12 +3,16 @@ open import Data.Vec
 open import Data.Irrelevant
 open import Data.Maybe
 open import Data.Fin
-open import Data.Product
+open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Data.String
+open import Data.Bool
 
 open import STRIPS.Problem
 
 module MovieExample where
+  terms : List TermConstant
+  terms = const "c1" ∷ const "d1" ∷ const "p1" ∷ const "z1" ∷ const "k1" ∷ []
+
   conditions : List (Condition 0)
   conditions = (record { name = "movie-rewound" ; terms = [] }) ∷
       (record { name = "counter-at-two-hours" ; terms = [] }) ∷ 
@@ -60,13 +64,22 @@ module MovieExample where
                         posPost = record { name = "have-crackers" ; terms = [] } ∷ [] ;
                         negPost = [] }) ∷ []
 
-  initialState : List (Condition 0)
+  initialState : State
   initialState = record { name = "chips" ; terms = const "c1" ∷ [] } ∷ 
                   record { name = "dip" ; terms = (const "d1") ∷ [] } ∷ 
                   record { name = "pop" ; terms = const "p1" ∷ [] } ∷ 
                   record { name = "cheese" ; terms = const "z1" ∷ [] } ∷ 
                   record { name = "crackers" ; terms = const "k1" ∷ [] } ∷ 
                   record { name = "counter-at-other-than-two-hours" ; terms = [] } ∷ []
+
+  goals : Goal
+  goals = ⟨ record { name = "movie-rewound" ; terms = [] } , true ⟩ ∷ 
+          ⟨ record { name = "counter-at-zero" ; terms = [] } , true ⟩ ∷
+          ⟨ record { name = "have-chips" ; terms = [] } , true ⟩ ∷
+          ⟨ record { name = "have-dip" ; terms = [] } , true ⟩ ∷
+          ⟨ record { name = "have-pop" ; terms = [] } , true ⟩ ∷
+          ⟨ record { name = "have-cheese" ; terms = [] } , true ⟩ ∷
+          ⟨ record { name = "have-crackers" ; terms = [] } , true ⟩ ∷ []
 
   plan : Plan
   plan = record
@@ -120,34 +133,19 @@ module MovieExample where
       }
     ∷ (record { label = "reset-counter"; posPre = [] ; negPre = [] ; posPost = record { name = "counter-at-zero" ; terms = [] } ∷ [] ; negPost = [] } ∷ [])
   
-  goals : Goal
-  goals = record 
-        { 
-          pos = record { name = "movie-rewound" ; terms = [] } ∷ 
-                record { name = "counter-at-zero" ; terms = [] } ∷ 
-                record { name = "have-chips" ; terms = [] } ∷ 
-                (record { name = "have-dip" ; terms = [] }) ∷ 
-                (record { name = "have-pop" ; terms = [] }) ∷ 
-                (record { name = "have-cheese" ; terms = [] }) ∷ 
-                (record { name = "have-crackers" ; terms = [] }) ∷ [] 
-        ; neg = [] 
-        }
+  
+  problem : PlanProblem terms conditions initialState operators goals
+  problem = wf/prob terms conditions initialState operators goals
 
-  planProblem : PlanProblem
-  planProblem = record
-    { terms = const "c1" ∷ const "d1" ∷ const "p1" ∷ const "z1" ∷ const "k1" ∷ []
-    ; conditions = conditions
-    ; initialState = initialState
-    ; operators = operators
-    ; goals = goals
-    }
+  wf-plan : Maybe (WfPlan problem plan)
+  wf-plan = solver problem plan -- Expecting this to be "just <plan>"
 
-  {-
-    TRANSLATIONS 
-  -}
+  -- {-
+  --   TRANSLATIONS 
+  -- -}
   open import Translations.Translations
   open import ADJ.Core
   open import PrettyPrinter.PrettyPrinter 3000
   
   pProblem : String
-  pProblem = render (prettyProblem (translProb planProblem))
+  pProblem = render (prettyProblem (translProb problem))

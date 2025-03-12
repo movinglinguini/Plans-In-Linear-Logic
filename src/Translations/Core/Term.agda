@@ -22,6 +22,7 @@ module Translations.Core.Term where
   translTs _ _ [] = []
   translTs n o≤n (t ∷ ts) = (translT n o≤n t) ∷ (translTs n o≤n ts)
 
+  -- Translates the terms of a problem
   translTsOfP : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → Vec (ADJTerm 0) (Data.List.length 𝕋)
-  translTsOfP (wf/prob 𝕋 _ _ _ _ x x₁ x₂ x₃) = translTs 0 z≤n 𝕋
+  translTsOfP (wf/prob 𝕋 _ _ _ _) = translTs 0 z≤n 𝕋
  
