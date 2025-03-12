@@ -29,7 +29,21 @@ module Proofs.Correctness where
     → proj₁ (translProb ℙ) ⊢ⁱ ⟨ (⨂ gs) ⊗ ⊤ , Linear ⟩
   sat𝕀⟨𝔾⟩⇒proof-lemma {𝔾 = []} P gs refl satgoal = {!   !}
   sat𝕀⟨𝔾⟩⇒proof-lemma {𝔾 = x ∷ 𝔾} (wf/prob 𝕋 ℂ 𝕀 𝕆 (x ∷ 𝔾)) gs refl satgoal with translG-Goals (x ∷ 𝔾)
-  ... | g ∷ gs = ⊗-assoc (⊗R {!   !} {!   !} {!   !} {!   !} {!   !} {!   !})
+  ... | g ∷ gs = ⊗-assoc (⊗R {!   !} {!   !} {!   !} {!   !} {!   !} IH)
+    where
+      -- Here, we have a few things we need to set up.
+
+      -- First, let's establish a smaller version of the problem, ℙ', where we
+      -- have one less goal condition to worry about
+      ℙ' = wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾
+
+      -- Now, we establish our IH, which is that we can prove the translation of
+      -- the goal with one less proposition at the head of the conjunction.
+      IH : proj₁ (translProb ℙ') ⊢ⁱ ⟨ (⨂ gs) ⊗ ⊤ , Linear ⟩
+      IH = sat𝕀⟨𝔾⟩⇒proof-lemma ℙ' 
+              {! translG-Goals 𝔾  !} -- Why can't I refine??? 
+              {!   !} -- It seems obvious to me that gs ≡ translG-Goals 𝔾...
+              {!   !} -- Not sure how to convince Agda that 𝕀 still satisfies a smaller version of the goal...
 
   {-
     Lemma: If we have goal satisfaction, then we can prove the translation of the goal. We use the lemma
@@ -45,7 +59,7 @@ module Proofs.Correctness where
     Lemma: If we're taking a step in the plan, then we have a step in our proof. We use the notion of the
     logical preorder to get us there.
   -}
-  plan-step⇒proof-step : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 𝕀' } { P : Plan } ( ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 ) (τ : GroundOperator) { ℙ' : PlanProblem 𝕋 ℂ 𝕀' 𝕆 𝔾}
+  plan-step⇒proof-step : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 𝕀' } ( ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 ) (τ : GroundOperator) { ℙ' : PlanProblem 𝕋 ℂ 𝕀' 𝕆 𝔾}
     → 𝕀 ⟶[ τ ] 𝕀'
     → (proj₁ (translProb ℙ)) ≼ (proj₁ (translProb ℙ'))
   plan-step⇒proof-step ℙ τ (transition x x₁) = preceq (λ x₂ → ∀L {!   !} {!   !} {!   !} {!   !})
@@ -60,4 +74,4 @@ module Proofs.Correctness where
     → Σ (Context ((2 + length 𝕋) + 0) ((length 𝕆) + (length ℂ)) × Prop)
         (λ tP → (proj₁ tP) ⊢ⁱ ⟨ (proj₂ tP) , Linear ⟩)
   correctness P (wf/plan/z satgoal) = ⟨ translProb P , sat𝕀⟨𝔾⟩⇒proof P satgoal ⟩
-  correctness P (wf/plan/s plan x) = ⟨ (translProb P) , {!   !} ⟩
+  correctness P (wf/plan/s {τ = τ} plan x) = {! P  !}
