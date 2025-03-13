@@ -29,13 +29,13 @@ module Translations.Core.State where
       s : ℕ
       𝕊 ℙ : List (Condition s)
 
-    -- Helper function for translS
-    -- Bool is supposed to represent whether or not the condition c was in the state we
-    -- are translating over. If it is, then the PropAtom we translate to gets a truth
-    -- value of "true". Otherwise, it gets "false".
-    translS-Condition : ∀ { s } → Condition s → Bool → PropAtom
-    translS-Condition c false = v[ (translC c) , const "false" ]
-    translS-Condition c true = v[ (translC c) , const "true" ]
+  -- Helper function for translS
+  -- Bool is supposed to represent whether or not the condition c was in the state we
+  -- are translating over. If it is, then the PropAtom we translate to gets a truth
+  -- value of "true". Otherwise, it gets "false".
+  translS-Condition : ∀ { s } → Condition s → Bool → PropAtom
+  translS-Condition c false = v[ (translC c) , const "false" ]
+  translS-Condition c true = v[ (translC c) , const "true" ]
 
   {- State Translation -}
   -- Given a state 𝕊 and a list of conditions ℙ, map each condition in ℙ
@@ -44,9 +44,9 @@ module Translations.Core.State where
   -- translS : ∀ (S : State) (P : List (Condition 0)) → Vec (Prop × Mode) (length P)
   -- translS S [] = []
   -- translS S (x ∷ P) = ⟨ ` translS-helper x (x ∈ᶜᵇ S) , Linear ⟩ ∷ translS S P
-    translS-Conditions : State → ( cs : List (Condition 0) ) → Vec (Prop × Mode) (length cs)
-    translS-Conditions S [] = []
-    translS-Conditions S (c ∷ cs) = ⟨ ` translS-Condition c (c ∈ᶜᵇ S) , Linear ⟩ ∷ (translS-Conditions S cs)
+  translS-Conditions : State → ( cs : List (Condition 0) ) → Vec (Prop × Mode) (length cs)
+  translS-Conditions S [] = []
+  translS-Conditions S (c ∷ cs) = ⟨ ` translS-Condition c (c ∈ᶜᵇ S) , Linear ⟩ ∷ (translS-Conditions S cs)
 
   translS : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } ( P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 ) → Vec (Prop × Mode) (length ℂ)
   translS (wf/prob _ ℂ 𝕀 _ _) = translS-Conditions 𝕀 ℂ

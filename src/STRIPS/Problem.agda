@@ -154,17 +154,6 @@ module STRIPS.Problem where
   satGoal? : (S : State) → (G : Goal) → Dec (satGoal S G)
   satGoal? S G = sat? S ⟨ getPositives-Goal G , getNegatives-Goal G ⟩
 
-  {- Properties of satGoal -}
-  ∈-xs⇒∈-x∷xs : ∀ { v x xs } → v ∈ˡ xs → v ∈ˡ (x ∷ xs)
-  ∈-xs⇒∈-x∷xs mem = there mem
-
-  satGoal⇒smaller-satGoal : ∀ { g G S } → satGoal′ S (g ∷ G) → satGoal′ S G
-  satGoal⇒smaller-satGoal {G = G} ⟨ fst , snd ⟩ with getPositives-Goal G | getNegatives-Goal G
-  ... | [] | [] = ⟨ (λ g x → fst g {! x  !}) , {!   !} ⟩
-  ... | [] | x ∷ b = {!   !}
-  ... | x ∷ a | [] = {!   !}
-  ... | x ∷ a | x₁ ∷ b = {!   !}  -- ⟨ (λ g₁ x → fst g₁ {! ∈-xs⇒∈-x∷xs  !}) , {!   !} ⟩
-  
   satOp : State → GroundOperator → Set
   satOp S τ = sat S ⟨ GroundOperator.posPre τ , GroundOperator.negPre τ ⟩
 
@@ -189,7 +178,7 @@ module STRIPS.Problem where
   data WfPlan : (PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → Plan → Set where
     -- If we're here, then we just need to show that the plan state 𝕀 satisfies the goal 𝔾
     wf/plan/z : 
-      satGoal 𝕀 𝔾
+      sat-Conditions 𝕀 𝔾
       → WfPlan (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾) []
 
     -- If we're here, we need to show that our transition τ is well-formed (a.k.a., can be constructed
@@ -201,12 +190,12 @@ module STRIPS.Problem where
       → WfPlan (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾) (τ ∷ P)
   
   -- Writing a simple solver
-  solver : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → ( ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 ) → ( P : Plan ) → Maybe (WfPlan ℙ P)
-  solver (wf/prob _ _ 𝕀 _ 𝔾) [] with satGoal? 𝕀 𝔾
-  ... | no ¬p = nothing
-  ... | yes p = just (wf/plan/z p) 
-  solver (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾) (τ ∷ P) with satOp? 𝕀 τ
-  ... | no ¬p = nothing
-  ... | yes p with solver (wf/prob 𝕋 ℂ (update τ 𝕀) 𝕆 𝔾) P
-  ... | nothing = nothing
-  ... | just x = just (wf/plan/s x (transition p refl))
+  -- solver : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → ( ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 ) → ( P : Plan ) → Maybe (WfPlan ℙ )
+  -- solver (wf/prob _ _ 𝕀 _ 𝔾) [] with satGoal? 𝕀 𝔾
+  -- ... | no ¬p = nothing
+  -- ... | yes p = just (wf/plan/z p) 
+  -- solver (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾) (τ ∷ P) with satOp? 𝕀 τ
+  -- ... | no ¬p = nothing
+  -- ... | yes p with solver (wf/prob 𝕋 ℂ (update τ 𝕀) 𝕆 𝔾) P
+  -- ... | nothing = nothing
+  -- ... | just x = just (wf/plan/s x (transition p refl))

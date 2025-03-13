@@ -5,11 +5,12 @@ open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Nullary.Decidable
 open import Relation.Binary.PropositionalEquality
 open import Data.Unit
--- open import Data.List.Membership.DecPropositional
+open import Data.List.Relation.Unary.Any
 open import Data.List.Membership.Propositional
 
 module STRIPS.Core.Common where
   open import STRIPS.Core.Conditions
+  open import STRIPS.Core.Goals
 
   {- Satisfaction of conditions -}
 
@@ -32,6 +33,19 @@ module STRIPS.Core.Common where
 
   sat′ : State → (List (Condition 0)) × (List (Condition 0)) → Set
   sat′ S G = (∀ g → g ∈ (proj₁ G) → g ∈ S) × (∀ g → g ∈ (proj₂ G) → g ∉ S)
+
+  sat-Condition : State → (GroundCondition × Bool) → Set
+  sat-Condition S ⟨ c , false ⟩ = c ∉ S
+  sat-Condition S ⟨ c , true ⟩ = c ∈ S 
+
+  sat-Conditions : State → List (GroundCondition × Bool) → Set
+  sat-Conditions S cs = ∀ c → c ∈ cs → sat-Condition S c
+
+  {-
+    Properties of sat-Conditions
+  -}
+  satg∷G⇒satG : ∀ { g G S } → sat-Conditions S (g ∷ G) → sat-Conditions S G
+  satg∷G⇒satG sat = λ c z → sat c (there z)
 
   sat? : ( S : State) → ( G : (List (Condition 0)) × (List (Condition 0)) ) → Dec (sat S G)
   sat? S G with satᵇ S G
