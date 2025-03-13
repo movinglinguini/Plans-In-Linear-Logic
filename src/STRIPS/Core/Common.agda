@@ -30,6 +30,9 @@ module STRIPS.Core.Common where
   sat : State → (List (Condition 0)) × (List (Condition 0)) → Set
   sat 𝕊 𝔾 = T (satᵇ 𝕊 𝔾)
 
+  sat′ : State → (List (Condition 0)) × (List (Condition 0)) → Set
+  sat′ S G = (∀ g → g ∈ (proj₁ G) → g ∈ S) × (∀ g → g ∈ (proj₂ G) → g ∉ S)
+
   sat? : ( S : State) → ( G : (List (Condition 0)) × (List (Condition 0)) ) → Dec (sat S G)
   sat? S G with satᵇ S G
   ... | false = no (λ ())

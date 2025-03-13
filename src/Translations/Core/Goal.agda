@@ -13,11 +13,19 @@ module Translations.Core.Goal where
   open import Logic.Core.Props PropAtom
   open import Logic.Core.Terms TermAtom
 
-  -- Translate the positives and then the negatives, and then combine.
+  {- 
+    Goal translation. We turn each ground condition in the goal to an atomic
+    proposition with true or false as its truth value depending on the boolean
+    the condition was paired with.
+  -}
+
+  translG-Goal : GroundCondition → Bool → Prop
+  translG-Goal c false = ` v[ translC c , const "false" ]
+  translG-Goal c true = ` v[ translC c , const "true" ]
+  
   translG-Goals : ∀ (G : Goal) → Vec Prop (length G)
   translG-Goals [] = []
-  translG-Goals (⟨ fst , false ⟩ ∷ G) = ` v[ translC fst , const "false" ] ∷ translG-Goals G
-  translG-Goals (⟨ fst , true ⟩ ∷ G) = ` v[ translC fst , const "true" ] ∷ translG-Goals G
+  translG-Goals (⟨ fst , snd ⟩ ∷ G) = (translG-Goal fst snd) ∷ translG-Goals G
 
   translG : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → Vec Prop (length 𝔾)
   translG (wf/prob _ _ _ _ 𝔾) = translG-Goals 𝔾

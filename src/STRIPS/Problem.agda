@@ -1,11 +1,12 @@
-open import Data.List
-open import Data.Vec
+open import Data.List hiding (head)
+open import Data.Vec hiding (head)
 open import Data.Nat
 open import Data.Bool
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Data.Vec.Membership.Propositional renaming (_∈_ to _∈ᵛ_; _∉_ to _∉ᵛ_)
 open import Data.List.Membership.Propositional renaming (_∈_ to _∈ˡ_; _∉_ to _∉ˡ_)
+open import Data.List.Membership.Propositional.Properties
 open import Relation.Binary.PropositionalEquality
 open import Data.List.Relation.Unary.Any
 open import Relation.Nullary.Negation using (contradiction)
@@ -147,8 +148,22 @@ module STRIPS.Problem where
   satGoal : State → Goal → Set
   satGoal S G = sat S ⟨ getPositives-Goal G , getNegatives-Goal G ⟩
 
+  satGoal′ : State → Goal → Set
+  satGoal′ S G = sat′ S ⟨ getPositives-Goal G , getNegatives-Goal G ⟩
+
   satGoal? : (S : State) → (G : Goal) → Dec (satGoal S G)
   satGoal? S G = sat? S ⟨ getPositives-Goal G , getNegatives-Goal G ⟩
+
+  {- Properties of satGoal -}
+  ∈-xs⇒∈-x∷xs : ∀ { v x xs } → v ∈ˡ xs → v ∈ˡ (x ∷ xs)
+  ∈-xs⇒∈-x∷xs mem = there mem
+
+  satGoal⇒smaller-satGoal : ∀ { g G S } → satGoal′ S (g ∷ G) → satGoal′ S G
+  satGoal⇒smaller-satGoal {G = G} ⟨ fst , snd ⟩ with getPositives-Goal G | getNegatives-Goal G
+  ... | [] | [] = ⟨ (λ g x → fst g {! x  !}) , {!   !} ⟩
+  ... | [] | x ∷ b = {!   !}
+  ... | x ∷ a | [] = {!   !}
+  ... | x ∷ a | x₁ ∷ b = {!   !}  -- ⟨ (λ g₁ x → fst g₁ {! ∈-xs⇒∈-x∷xs  !}) , {!   !} ⟩
   
   satOp : State → GroundOperator → Set
   satOp S τ = sat S ⟨ GroundOperator.posPre τ , GroundOperator.negPre τ ⟩
