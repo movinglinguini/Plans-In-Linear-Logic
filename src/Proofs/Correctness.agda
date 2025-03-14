@@ -22,7 +22,8 @@ module Proofs.Correctness where
   sat𝕀⟨𝕘∷𝔾⟩⇒g∈I : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 𝕘 } → ( ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 )
     → sat-Conditions 𝕀 (𝕘 ∷ 𝔾)
     → ⟨ translG-Goal 𝕘 , Linear ⟩ ∈ translS-Conditions 𝕀 ℂ
-  sat𝕀⟨𝕘∷𝔾⟩⇒g∈I ℙ sat = {!   !}
+  sat𝕀⟨𝕘∷𝔾⟩⇒g∈I {𝕘 = ⟨ c , false ⟩} (wf/prob _ _ _ _ _ (wf/goal x)) sat = {!   !}
+  sat𝕀⟨𝕘∷𝔾⟩⇒g∈I {𝕘 = ⟨ c , true ⟩} (wf/prob _ _ _ _ _ (wf/goal x)) sat = {!   !}
 
   {-
     Helper function for one of our main lemmas.

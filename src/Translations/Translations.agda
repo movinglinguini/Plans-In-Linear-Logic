@@ -27,17 +27,17 @@ module Translations.Translations where
   -- Expected length of the term context, which will consist of
   -- all translated terms of P plus "true" and "false"
   lenTermCtxt : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 → ℕ
-  lenTermCtxt (wf/prob 𝕋 _ _ _ _) = length 𝕋
+  lenTermCtxt (wf/prob 𝕋 _ _ _ _ _) = length 𝕋
 
   -- Expected length of the unrestricted context, which will
   -- consist of all translated operators of P
   lenUnrCtxt : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → ℕ
-  lenUnrCtxt (wf/prob _ _ _ 𝕆 _) = length 𝕆
+  lenUnrCtxt (wf/prob _ _ _ 𝕆 _ _) = length 𝕆
 
   -- -- Expected length of the linear context, which will
   -- -- consist of all translated conditions of P
   lenLinCtxt : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → ℕ
-  lenLinCtxt (wf/prob _ ℂ _ _ _) = length ℂ
+  lenLinCtxt (wf/prob _ ℂ _ _ _ _) = length ℂ
 
   -- -- The expected size of the context of the sequent
   -- -- obtained from translating a problem is the size of
@@ -46,7 +46,7 @@ module Translations.Translations where
   -- -- because we are going to get the translated context through
   -- -- concatenation.
   CtxtP : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Set
-  CtxtP (wf/prob 𝕋 ℂ _ 𝕆 _) = Context ((2 + length 𝕋) + 0) ((length 𝕆) + (length ℂ))
+  CtxtP (wf/prob 𝕋 ℂ _ 𝕆 _ _) = Context ((2 + length 𝕋) + 0) ((length 𝕆) + (length ℂ))
 
   -- {- 
   --   Translation of operators into an unrestricted context.

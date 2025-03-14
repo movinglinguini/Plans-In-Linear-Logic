@@ -89,8 +89,7 @@ module STRIPS.Problem where
   -}
   data WfGoal : Goal → List GroundCondition → Set where
     wf/goal : 
-      WfGroundConditions (getConditions-Goal 𝔾) ℂ
-      -- → (∀ { g } → g ∈ˡ (getPositives-Goal 𝔾) → g ∉ˡ (getNegatives-Goal 𝔾))
+      (∀ 𝕘 { b } → ⟨ 𝕘 , b ⟩ ∈ˡ 𝔾 → 𝕘 ∈ˡ ℂ)
       → WfGoal 𝔾 ℂ
 
   {-
@@ -106,6 +105,7 @@ module STRIPS.Problem where
     → Set where
     wf/prob : ∀ (𝕋 : List TermConstant) (ℂ : List GroundCondition) (𝕀 : State) 
       (𝕆 : List Operator) (𝔾 : Goal)
+      → ( wfgoal : WfGoal 𝔾 ℂ )
       → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾
 
   private
@@ -116,18 +116,6 @@ module STRIPS.Problem where
       wfops : WfOperators 𝕆 𝕋
       wfgoal : WfGoal 𝔾 ℂ
 
-  {--------------
-    Properties of Well-formed Problems
-  ---------------}
-
-  {- If you have a well-formed goal, shortening the goal is still well-formed. -}
-  -- wfProb-smaller-goal-lemma : ∀ { ℂ 𝔾 𝕘 } → WfGoal (𝕘 ∷ 𝔾) ℂ → WfGoal 𝔾 ℂ
-  -- wfProb-smaller-goal-lemma (wf/goal (wf/gconds wf-goal-conds)) 
-  --   = wf/goal (wf/gconds (λ x → wf-goal-conds (there x))) 
-
-  -- wfProb-smaller-goal : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 𝕘 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 (𝕘 ∷ 𝔾) → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾
-  -- wfProb-smaller-goal (wf/prob 𝕋 ℂ 𝕀 𝕆 (_ ∷ 𝔾) x x₁ x₂ (wf/goal (wf/gconds wf-goal-conds))) 
-  --   = wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾 x x₁ x₂ (wf/goal (wf/gconds (λ x₃ → wf-goal-conds (there x₃))))
 
   {-
     Now, we talk about well-formed plans, or solutions to plan-problems.
@@ -179,15 +167,15 @@ module STRIPS.Problem where
     -- If we're here, then we just need to show that the plan state 𝕀 satisfies the goal 𝔾
     wf/plan/z : 
       sat-Conditions 𝕀 𝔾
-      → WfPlan (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾) []
+      → WfPlan (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾 wfgoal) []
 
     -- If we're here, we need to show that our transition τ is well-formed (a.k.a., can be constructed
     -- by grounding a problem operator. We then recurse on the updated state.
     wf/plan/s : ∀ { P 𝕀' }
-      → WfPlan (wf/prob 𝕋 ℂ 𝕀' 𝕆 𝔾) P
+      → WfPlan (wf/prob 𝕋 ℂ 𝕀' 𝕆 𝔾 wfgoal) P
       → 𝕀 ⟶[ τ ] 𝕀'
       -- → Σ Operator (λ  → o ∈ˡ 𝕆 → Σ (Vec TermConstant (Operator.arity o)) λ ts → τ ≡ ground o ts)
-      → WfPlan (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾) (τ ∷ P)
+      → WfPlan (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾 wfgoal) (τ ∷ P)
   
   -- Writing a simple solver
   -- solver : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → ( ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 ) → ( P : Plan ) → Maybe (WfPlan ℙ )
@@ -199,3 +187,4 @@ module STRIPS.Problem where
   -- ... | yes p with solver (wf/prob 𝕋 ℂ (update τ 𝕀) 𝕆 𝔾) P
   -- ... | nothing = nothing
   -- ... | just x = just (wf/plan/s x (transition p refl))
+ 

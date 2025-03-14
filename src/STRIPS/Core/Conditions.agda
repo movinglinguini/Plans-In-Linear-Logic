@@ -13,6 +13,7 @@ open import Data.Vec.Membership.Propositional hiding (_∉_)
 open import Data.Vec.Relation.Unary.All
 open import Data.Vec.Bounded.Base using (Vec≤)
 open import Relation.Nullary.Negation
+open import Relation.Nullary.Reflects
 
 open import Utils.Variables
 
@@ -36,6 +37,13 @@ module STRIPS.Core.Conditions where
   _≟ᶜᵇ_ : ∀ { s } ( c₁ c₂ : Condition s ) → Bool
   c₁ ≟ᶜᵇ c₂ = (does ((Condition.name c₁) ≟ˢ (Condition.name c₂))) 
               ∧ ((Condition.terms c₁) ≗ᵗ (Condition.terms c₂))
+
+  _≟ᶜ_ : ∀ { s } ( c₁ c₂ : Condition s ) → Dec (c₁ ≡ c₂)
+  c₁ ≟ᶜ c₂ with (Condition.name c₁) ≟ˢ (Condition.name c₂)
+  ... | no ¬a = no {!   !}
+  ... | true because proof₁ = {!   !}
+
+  _≟ᶜ?_ : ∀ { s } ( c₁ c₂ : Condition s ) → Dec (c₁ ≡ c₂)
 
   -- Let's test this equality
   private

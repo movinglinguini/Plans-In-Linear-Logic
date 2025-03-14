@@ -6,8 +6,10 @@ open import Relation.Binary.PropositionalEquality
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Nullary.Decidable
 open import Relation.Nullary.Negation
-open import Data.Vec.Membership.Propositional 
+open import Data.Vec.Membership.Propositional renaming (_∈_ to _∈ᵛ_) 
 open import Data.Vec.Relation.Unary.Any
+open import Data.List.Membership.Propositional renaming (_∈_ to _∈ˡ_; _∉_ to _∉ˡ_)
+open import Data.List.Relation.Unary.Any
 
 module Translations.Core.State where
   open import Translations.Core.Condition
@@ -49,6 +51,17 @@ module Translations.Core.State where
   translS-Conditions S (c ∷ cs) = ⟨ ` translS-Condition c (c ∈ᶜᵇ S) , Linear ⟩ ∷ (translS-Conditions S cs)
 
   translS : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } ( P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 ) → Vec (Prop × Mode) (length ℂ)
-  translS (wf/prob _ ℂ 𝕀 _ _) = translS-Conditions 𝕀 ℂ
+  translS (wf/prob _ ℂ 𝕀 _ _ _) = translS-Conditions 𝕀 ℂ
+
+  {- Properties of the translation -}
+
+  -- If 
+  translS-∉⇒false : ∀ { c S cs } 
+    → c ∈ˡ cs 
+    → c ∉ˡ S 
+    → ⟨ ` (translS-Condition c false) , Linear ⟩ ∈ᵛ translS-Conditions S cs
+  translS-∉⇒false (Data.List.Relation.Unary.Any.Any.here px) notmem = here {!   !}
+  translS-∉⇒false (Data.List.Relation.Unary.Any.Any.there mem) notmem = {!   !}
+  
 
 
