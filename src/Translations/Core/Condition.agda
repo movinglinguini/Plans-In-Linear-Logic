@@ -3,7 +3,7 @@ open import Data.List
 open import Data.Nat
 open import Data.Nat.Properties
 open import Data.Fin
-open import Data.String hiding (map ; length)
+open import Data.String hiding (map ; length ; fromList)
 
 module Translations.Core.Condition where
   open import STRIPS.Problem renaming (Term to STRIPSTerm)
@@ -11,8 +11,6 @@ module Translations.Core.Condition where
   open import Logic.Core.Terms TermAtom renaming (Term to AdjointTerm)
 
   record TCondition (Scope : ℕ) : Set where
-    no-eta-equality
-    pattern
     field
       { arity } : ℕ
       name : String
@@ -21,7 +19,7 @@ module Translations.Core.Condition where
   -- This form of translC lifts the given condition to a higher scope.
   -- Most cases will just need regular old translC.
   translC′ : ∀ { o } (n : ℕ) → o Data.Nat.≤ n → Condition o → TCondition n   
-  translC′ s o≤n record { name = name ; terms = terms } = record { name = name ; terms = translTs s o≤n terms } 
+  translC′ s o≤n record { name = name ; terms = terms } = record { name = name ; terms = translTs s o≤n (fromList terms) } 
   
   -- Trivial form of translC that translates a condition and retains the same scope.
   -- This will be very useful for translating most things.

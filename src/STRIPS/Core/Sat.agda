@@ -8,7 +8,7 @@ open import Data.Unit
 open import Data.List.Relation.Unary.Any
 open import Data.List.Membership.Propositional
 
-module STRIPS.Core.Common where
+module STRIPS.Core.Sat where
   open import STRIPS.Core.Conditions
   open import STRIPS.Core.Goals
 

@@ -1,6 +1,6 @@
 -- Translation of action descriptions from Actions You Can Handle into open 
 -- lolli propositions in Adjoint Logic
-open import Data.List
+open import Data.List hiding (length)
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Data.Bool hiding (_≟_)
@@ -13,7 +13,7 @@ open import Data.String hiding (_++_; length) renaming (_≟_ to _≟ₛ_)
 open import Data.Nat using (ℕ; suc; zero; _+_) renaming (_≟_ to _≟ₙ_)
 open import Data.Nat.Properties
 open import Data.Fin hiding (_+_)
-open import Data.Vec hiding (length)
+open import Data.Vec
 
 module Translations.Core.Operator where
   open import STRIPS.Problem hiding (Term)
@@ -68,12 +68,12 @@ module Translations.Core.Operator where
     translO-Operator : Operator → Prop × Mode
     translO-Operator o = ⟨ translPs o (Operator.arity o) ≤-refl ((o ⁺ ∪ᶜ o ⁻) ∪ᶜ (o ₊ ∪ᶜ o ₋)) 𝟙 𝟙 , Unrestricted ⟩
 
-    translO-Operators : ( os : List Operator ) → Vec (Prop × Mode) (length os)
+    translO-Operators : ∀ { n } ( os : Vec Operator n ) → Vec (Prop × Mode) n
     translO-Operators [] = []
     translO-Operators (o ∷ os) = translO-Operator o ∷ translO-Operators os
 
-  translO : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Vec (Prop × Mode) (length 𝕆)
-  translO (wf/prob _ _ _ 𝕆 _ _) = translO-Operators 𝕆
+  translO : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Vec (Prop × Mode) (length 𝕆)
+  translO (wf/prob _ _ _ 𝕆 _) = translO-Operators 𝕆
 
   -- Let's test translO
   private

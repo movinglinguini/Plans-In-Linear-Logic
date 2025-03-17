@@ -15,7 +15,7 @@ open import Data.Maybe
 
 module STRIPS.Problem where
   {- Repackaging the other parts of the STRIPS encoding -}
-  open import STRIPS.Core.Common public
+  open import STRIPS.Core.Sat public
   open import STRIPS.Core.Terms public
   open import STRIPS.Core.Conditions public
   open import STRIPS.Core.Operators public
@@ -33,114 +33,45 @@ module STRIPS.Problem where
     This module defines a well-formed problem, which takes quite a bit of
     setup to formulate.
   -}
-  private
-    variable
-      𝕋 : List TermConstant
-      ℂ ℂ₁ ℂ₂ : List GroundCondition
-      𝕔 : GroundCondition
-      𝕀 : State
-      𝕆 : List Operator
-      𝕠 : Operator
-      τ : GroundOperator
-      𝔾 : Goal
-
-  {-
-    A list of ground conditions is well-formed if:
-    1. each element can be found in the problem condition list (ℂ)
-  -}
-  data WfGroundConditions : List GroundCondition → List GroundCondition → Set where
-    wf/gconds : 
-      (∀ c → c ∈ˡ ℂ₁ → c ∈ˡ ℂ₂)
-      →  WfGroundConditions ℂ₁ ℂ₂
-
-  {-
-    A list of conditions is well-formed if all conditions are well-formed. A condition
-    is well-formed if all its constant terms can be found in the problem term list (𝕋).
-  -}
-  data WfConditions : ∀ { s } → List (Condition s) → List TermConstant → Set where
-    wf/conds : ∀ { s } { C : List (Condition s) }
-      → (∀ c t  → c ∈ˡ C → t ∈ˡ (constantsOf c) → t ∈ˡ 𝕋)
-      → WfConditions C 𝕋
-
-  {-
-    An operator is well-formed if all of its conditions are well-formed.
-  -}
-  data WfOperator : Operator → List TermConstant → Set where 
-    wf/op : ∀ { o } 
-      → WfConditions (o ⁺) 𝕋
-      → WfConditions (o ⁻) 𝕋
-      → WfConditions (o ₊) 𝕋
-      → WfConditions (o ₋) 𝕋
-      → WfOperator o 𝕋
-
-  {-
-    A list of operators is well-formed if all its elements are well-formed.
-  -}
-  data WfOperators : List Operator → List TermConstant → Set where
-    wf/ops : 
-      (∀ { o } → o ∈ˡ 𝕆 → WfOperator o 𝕋)
-      → WfOperators 𝕆 𝕋
-
-  {-
-    A well-formed goal is one where:
-    1. all positive and negative conditions are well-formed with respect to the
-      plan problem's condition and term lists
-    2. the positive and negative term lists are disjoint.
-  -}
-  data WfGoal : Goal → List GroundCondition → Set where
-    wf/goal : 
-      (∀ 𝕘 { b } → ⟨ 𝕘 , b ⟩ ∈ˡ 𝔾 → 𝕘 ∈ˡ ℂ)
-      → WfGoal 𝔾 ℂ
+  variable
+    n m x : ℕ
+    𝕋 : Vec TermConstant x
+    ℂ ℂ₁ ℂ₂ cs : Vec GroundCondition n
+    gs : List (GroundCondition × Bool)
+    𝕔 : GroundCondition
+    𝕀 : State
+    𝕆 : Vec Operator m
+    𝕠 : Operator
+    τ : GroundOperator
+    𝔾 : Goals ℂ gs
 
   {-
    A well-formed plan problem is one where:
    1. 
   -}
-  data PlanProblem :
-    List TermConstant 
-    → List GroundCondition 
+  data PlanProblem : ∀ { gs n m x }
+    → Vec TermConstant x 
+    → ( ℂ : Vec GroundCondition n )
     → State 
-    → List Operator
-    → Goal
+    → Vec Operator m
+    → Goals ℂ gs
     → Set where
-    wf/prob : ∀ (𝕋 : List TermConstant) (ℂ : List GroundCondition) (𝕀 : State) 
-      (𝕆 : List Operator) (𝔾 : Goal)
-      → ( wfgoal : WfGoal 𝔾 ℂ )
+    wf/prob : ∀ { n m x gs } 
+      (𝕋 : Vec TermConstant x) (ℂ : Vec GroundCondition n) (𝕀 : State) 
+      (𝕆 : Vec Operator m) (𝔾 : Goals ℂ gs)
       → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾
 
   private
     variable
       ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾
-      wfconds : WfConditions ℂ 𝕋
-      wfstate : WfGroundConditions 𝕀 ℂ
-      wfops : WfOperators 𝕆 𝕋
-      wfgoal : WfGoal 𝔾 ℂ
-
-
-  {-
-    Now, we talk about well-formed plans, or solutions to plan-problems.
-    First of all, a plan is just a list of ground conditions, but with a caveat.
-    Each ground condition needs to be a grounding of an operator from the original
-    problem, using terms from the plan problem.
-  -}
-  data WfGroundOperator : GroundOperator → (o : Operator) → Vec TermConstant (Operator.arity o) → List TermConstant → Set where
-    wf/groundop : ∀ { o } { ts : Vec TermConstant (Operator.arity o) }
-      → (∀ { t } → t ∈ᵛ ts → t ∈ˡ 𝕋)
-      → τ ≡ ground o ts
-      → WfGroundOperator τ o ts 𝕋
 
   -- A plan is a list of ground operators
   Plan = List GroundOperator
 
   -- Some syntactic sugar for satisfaction that we're going to use
-  satGoal : State → Goal → Set
-  satGoal S G = sat S ⟨ getPositives-Goal G , getNegatives-Goal G ⟩
-
-  satGoal′ : State → Goal → Set
-  satGoal′ S G = sat′ S ⟨ getPositives-Goal G , getNegatives-Goal G ⟩
-
-  satGoal? : (S : State) → (G : Goal) → Dec (satGoal S G)
-  satGoal? S G = sat? S ⟨ getPositives-Goal G , getNegatives-Goal G ⟩
+  satGoals : State → Goals ℂ gs → Set
+  satGoals S wf/goal/z = sat-Conditions S []
+  satGoals S (wf/goal/s {gs = gs} 𝔾 wfcond) = sat-Conditions S gs
 
   satOp : State → GroundOperator → Set
   satOp S τ = sat S ⟨ GroundOperator.posPre τ , GroundOperator.negPre τ ⟩
@@ -165,17 +96,18 @@ module STRIPS.Problem where
   -}
   data WfPlan : (PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → Plan → Set where
     -- If we're here, then we just need to show that the plan state 𝕀 satisfies the goal 𝔾
-    wf/plan/z : 
-      sat-Conditions 𝕀 𝔾
-      → WfPlan (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾 wfgoal) []
+    wf/plan/z :
+      satGoals 𝕀 𝔾
+      -----------------------
+      → WfPlan (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾) []
 
     -- If we're here, we need to show that our transition τ is well-formed (a.k.a., can be constructed
     -- by grounding a problem operator. We then recurse on the updated state.
     wf/plan/s : ∀ { P 𝕀' }
-      → WfPlan (wf/prob 𝕋 ℂ 𝕀' 𝕆 𝔾 wfgoal) P
+      → WfPlan (wf/prob 𝕋 ℂ 𝕀' 𝕆 𝔾) P
       → 𝕀 ⟶[ τ ] 𝕀'
       -- → Σ Operator (λ  → o ∈ˡ 𝕆 → Σ (Vec TermConstant (Operator.arity o)) λ ts → τ ≡ ground o ts)
-      → WfPlan (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾 wfgoal) (τ ∷ P)
+      → WfPlan (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾) (τ ∷ P)
   
   -- Writing a simple solver
   -- solver : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } → ( ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 ) → ( P : Plan ) → Maybe (WfPlan ℙ )

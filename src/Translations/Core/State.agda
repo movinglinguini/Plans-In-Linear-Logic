@@ -1,7 +1,7 @@
 open import Data.Nat
-open import Data.List
+open import Data.List hiding (length)
 open import Data.Bool
-open import Data.Vec hiding (length)
+open import Data.Vec 
 open import Relation.Binary.PropositionalEquality
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Nullary.Decidable
@@ -51,29 +51,10 @@ module Translations.Core.State where
   -- translS : ∀ (S : State) (P : List (Condition 0)) → Vec (Prop × Mode) (length P)
   -- translS S [] = []
   -- translS S (x ∷ P) = ⟨ ` translS-helper x (x ∈ᶜᵇ S) , Linear ⟩ ∷ translS S P
-  translS-Conditions : State → ( cs : List GroundCondition ) → Vec (Prop × Mode) (length cs)
+  translS-Conditions : ∀ { n } → State → ( cs : Vec GroundCondition n) → Vec (Prop × Mode) n
   translS-Conditions S [] = []
   translS-Conditions S (c ∷ cs) = ⟨ ` translS-Condition c (c ∈? S) , Linear ⟩ ∷ (translS-Conditions S cs)
 
-  translS : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } ( P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 ) → Vec (Prop × Mode) (length ℂ)
-  translS (wf/prob _ ℂ 𝕀 _ _ _) = translS-Conditions 𝕀 ℂ
-
-  {- Properties of the translation -}
-
-  translS-∉⇒false-lemma : ∀ { c S }
-    → c ∉ˡ S
-    → translS-Condition c (c ∈? S) ≡ v[ translC c , const "false" ]
-  translS-∉⇒false-lemma {c} {[]} notmem = refl
-  translS-∉⇒false-lemma {c} {x ∷ S} notmem = {! refl  !}
-
-  -- If 
-  translS-∉⇒false : ∀ { c S cs } 
-    → c ∈ˡ cs 
-    → c ∉ˡ S 
-    → ⟨ ` v[ translC c , const "false" ] , Linear ⟩ ∈ᵛ translS-Conditions S cs
-  translS-∉⇒false {c} {S} (here refl) memS = here {!   !}
-  translS-∉⇒false (there memcs) memS = there (translS-∉⇒false memcs memS)
-  
-
- 
+  translS : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 → Vec (Prop × Mode) (length ℂ)
+  translS (wf/prob _ ℂ 𝕀 _ _) = translS-Conditions 𝕀 ℂ
  

@@ -1,5 +1,5 @@
-open import Data.String
-open import Data.List 
+open import Data.String hiding (length)
+open import Data.List hiding (length)
 open import Data.Vec
 open import Data.Fin
 open import Data.Nat
@@ -18,11 +18,11 @@ module Translations.Core.Term where
 
   -- STRIPS Terms are generally held in lists in the STRIPS side, so we translate over
   -- lists
-  translTs : ∀ { o } (n : ℕ) → o Data.Nat.≤ n → (ts : List (STRIPSTerm o)) → Vec (ADJTerm n) (Data.List.length ts)
+  translTs : ∀ { o m } (n : ℕ) → o Data.Nat.≤ n → (ts : Vec (STRIPSTerm o) m) → Vec (ADJTerm n) (m)
   translTs _ _ [] = []
   translTs n o≤n (t ∷ ts) = (translT n o≤n t) ∷ (translTs n o≤n ts)
 
   -- Translates the terms of a problem
-  translTsOfP : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → Vec (ADJTerm 0) (Data.List.length 𝕋)
-  translTsOfP (wf/prob 𝕋 _ _ _ _ _) = translTs 0 z≤n 𝕋
+  translTsOfP : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 → Vec (ADJTerm 0) (length 𝕋)
+  translTsOfP (wf/prob 𝕋 _ _ _ _) = translTs 0 z≤n 𝕋
  

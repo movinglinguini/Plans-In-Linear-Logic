@@ -23,10 +23,11 @@ module Translations.Core.Goal where
   translG-Goal ⟨ c , false ⟩ = ` v[ translC c , const "false" ]
   translG-Goal ⟨ c , true ⟩ = ` v[ translC c , const "true" ]
   
-  translG-Goals : ∀ (G : Goal) → Vec Prop (length G)
-  translG-Goals [] = []
-  translG-Goals (g ∷ G) = (translG-Goal g) ∷ translG-Goals G
+  translG-Goals : ∀ { gs } (G : Goals ℂ gs) → Vec Prop (length gs)
+  translG-Goals wf/goal/z = []
+  translG-Goals (wf/goal/s {g = g} 𝔾 wfcond) = translG-Goal g ∷ translG-Goals 𝔾
 
-  translG : ∀ { 𝕋 ℂ 𝕀 𝕆 𝔾 } (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → Vec Prop (length 𝔾)
-  translG (wf/prob _ _ _ _ 𝔾 _) = translG-Goals 𝔾
+  translG : ∀ { gs } { 𝔾 : Goals ℂ gs } 
+    (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → Vec Prop (length gs)
+  translG (wf/prob _ _ _ _ 𝔾) = translG-Goals 𝔾
    
