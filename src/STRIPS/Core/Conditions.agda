@@ -36,14 +36,21 @@ module STRIPS.Core.Conditions where
   -- level of booleans
   _≟ᶜᵇ_ : ∀ { s } ( c₁ c₂ : Condition s ) → Bool
   c₁ ≟ᶜᵇ c₂ = (does ((Condition.name c₁) ≟ˢ (Condition.name c₂))) 
-              ∧ ((Condition.terms c₁) ≗ᵗ (Condition.terms c₂))
+              ∧ ((Condition.terms c₁) ≗ᵗᵇ (Condition.terms c₂))
 
-  _≟ᶜ_ : ∀ { s } ( c₁ c₂ : Condition s ) → Dec (c₁ ≡ c₂)
-  c₁ ≟ᶜ c₂ with (Condition.name c₁) ≟ˢ (Condition.name c₂)
-  ... | no ¬a = no {!   !}
-  ... | true because proof₁ = {!   !}
+  -- Helper function for proving decidable equality over conditions.
+  ≟ᶜ-lemma : ∀ { s } { c₁ c₂ : Condition s }
+    → (Condition.name c₁) ≡ (Condition.name c₂)
+    → (Condition.terms c₁) ≡ (Condition.terms c₂)
+    → c₁ ≡ c₂
+  ≟ᶜ-lemma refl refl = refl
 
-  _≟ᶜ?_ : ∀ { s } ( c₁ c₂ : Condition s ) → Dec (c₁ ≡ c₂)
+  -- Decidable equality over conditions. 
+  _≟ᶜ_ : ∀ { s } → DecidableEquality (Condition s)
+  c₁ ≟ᶜ c₂ with (Condition.name c₁) ≟ˢ (Condition.name c₂) | (Condition.terms c₁) ≗ᵗ (Condition.terms c₂)
+  ... | no ¬a | _ = no λ x → ¬a (cong Condition.name x) 
+  ... | _ | no ¬a = no (λ x → ¬a (cong Condition.terms x))
+  ... | yes a₁ | yes a₂ = yes (≟ᶜ-lemma a₁ a₂)
 
   -- Let's test this equality
   private

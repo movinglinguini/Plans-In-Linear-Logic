@@ -64,13 +64,31 @@ module STRIPS.Core.Terms where
   ... | no ¬a = no (λ x → ¬a (var≡var⇒i≡i x))
   ... | yes a = yes (cong var a)
 
+  ≗ᵗ-lemma-1 : ∀ { s } { ts₁ ts₂ } { t₁ t₂ : Term s }
+    → (t₁ ∷ ts₁) ≡ (t₂ ∷ ts₂)
+    → t₁ ≡ t₂
+  ≗ᵗ-lemma-1 refl = refl
+
+  ≗ᵗ-lemma-2 : ∀ { s } { ts₁ ts₂ } { t₁ t₂ : Term s }
+    → (t₁ ∷ ts₁) ≡ (t₂ ∷ ts₂)
+    → ts₁ ≡ ts₂
+  ≗ᵗ-lemma-2 refl = refl
+
+  ≗ᵗ-lemma-3 : ∀ { s } { ts₁ ts₂ } { t₁ t₂ : Term s }
+    → t₁ ≡ t₂
+    → ts₁ ≡ ts₂
+    → (t₁ ∷ ts₁) ≡ (t₂ ∷ ts₂)
+  ≗ᵗ-lemma-3 refl refl = refl
+
   _≗ᵗ_ : ∀ { s } → DecidableEquality (List (Term s))
   [] ≗ᵗ [] = yes refl
   [] ≗ᵗ (t ∷ ts₂) = no (λ ())
   (t ∷ ts₁) ≗ᵗ [] = no (λ ())
   (t₁ ∷ ts₁) ≗ᵗ (t₂ ∷ ts₂) with t₁ ≟ᵗ t₂
-  ... | no ¬a = no (λ x → ¬a {!   !})
-  ... | true because proof₁ = {!   !}
+  ... | no ¬a = no (λ x → ¬a (≗ᵗ-lemma-1 x))
+  ... | yes a with ts₁ ≗ᵗ ts₂
+  ...   | no ¬p = no (λ x → ¬p (≗ᵗ-lemma-2 x))
+  ...   | yes p = yes (≗ᵗ-lemma-3 a p)
   
   -- Point-wise boolean equality over vectors of terms
   -- Note to self: it really sucks that we can't compare vectors of
