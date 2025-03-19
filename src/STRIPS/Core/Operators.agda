@@ -84,24 +84,24 @@ module STRIPS.Core.Operators where
     ground-Conditions [] ts = []
     ground-Conditions (c ∷ cs) ts = ground-Condition c ts ∷ ground-Conditions cs ts
 
-  ground : (o : Operator) → Vec TermConstant (Operator.arity o) → GroundOperator
-  ground o ts = 
-    let posPres = ground-Conditions (Operator.posPre o) ts
-      in let negPres = ground-Conditions (Operator.negPre o) ts
-        in let posPost = ground-Conditions (Operator.posPost o) ts
-          in let negPosts = ground-Conditions (Operator.negPost o) ts
-            in record { label = (Operator.label o) ; posPre = posPres ; negPre = negPres ; posPost = posPost ; negPost = negPosts }
+  -- ground : (o : Operator) → Vec TermConstant (Operator.arity o) → GroundOperator
+  -- ground o ts = 
+  --   let posPres = ground-Conditions (Operator.posPre o) ts
+  --     in let negPres = ground-Conditions (Operator.negPre o) ts
+  --       in let posPost = ground-Conditions (Operator.posPost o) ts
+  --         in let negPosts = ground-Conditions (Operator.negPost o) ts
+  --           in record { label = (Operator.label o) ; posPre = posPres ; negPre = negPres ; posPost = posPost ; negPost = negPosts }
 
   {- The Update Function -}
-  update : GroundOperator → State → State
-  update τ S = add (remove S (GroundOperator.negPost τ)) (GroundOperator.posPost τ)
-    where
-      add : State → List (Condition 0) → State
-      add 𝕊 A = A ∪ᶜ 𝕊
+  -- update : GroundOperator → State → State
+  -- update τ S = add (remove S (GroundOperator.negPost τ)) (GroundOperator.posPost τ)
+  --   where
+  --     add : State → List (Condition 0) → State
+  --     add 𝕊 A = A ∪ᶜ 𝕊
 
-      remove : State → List (Condition 0) → State
-      remove [] R = [] 
-      remove 𝕊 [] = 𝕊
-      remove (s ∷ 𝕊) R with s ∈ᶜᵇ R
-      ... | false = s ∷ remove 𝕊  R 
-      ... | true = remove 𝕊 R  
+  --     remove : State → List (Condition 0) → State
+  --     remove [] R = [] 
+  --     remove 𝕊 [] = 𝕊
+  --     remove (s ∷ 𝕊) R with s ∈ᶜᵇ R
+  --     ... | false = s ∷ remove 𝕊  R 
+  --     ... | true = remove 𝕊 R  
