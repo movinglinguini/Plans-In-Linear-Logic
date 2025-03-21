@@ -23,11 +23,18 @@ module STRIPS.Core.Operators where
       postconditions : List ((Condition arity) × Bool)
 
   -- WIP : Better definitions for operators and ground operators
+  -- First we define operator condition positions
+  data OperatorConditionPosition : Set where
+    precond : OperatorConditionPosition
+    postcond : OperatorConditionPosition
+
+  -- An operator condition is a condition paired with a bool, paired with a position
+  data OperatorCondition : ℕ → Set where
+    wf/operator-condition : ∀ arity → ((Condition arity) × Bool) → OperatorConditionPosition → (OperatorCondition arity)
+
+  -- Operators are lists of operator conditions with arbitrary arity.
   data Operators : Set where
-    wf/operator : ∀ ( arity : ℕ ) 
-      → (preconds : List ((Condition arity) × Bool))
-      → (postconds : List ((Condition arity) × Bool)) 
-      → Operators
+    wf/operator : ∀ arity → List (OperatorCondition arity) → Operators
 
   -- A ground operator is well-formed if all of its conditions can be found in the problem conditions
   data GroundOperators : ∀ { n } → List (GroundCondition × Bool) → List (GroundCondition × Bool) → Vec GroundCondition n → Set where
