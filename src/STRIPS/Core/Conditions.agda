@@ -17,47 +17,49 @@ open import Relation.Nullary.Reflects
 
 open import Utils.Variables
 
-module STRIPS.Core.Conditions where
-  open import STRIPS.Core.Terms
+open import STRIPS.Core.Terms
 
-  record Condition ( Scope : ℕ ): Set where 
+module STRIPS.Core.Conditions where
+
+  record Condition ( Scope : ℕ ) : Set where 
     field
-      name : String
+      label : String
       terms : List (Term Scope)
 
-  -- Ground conditions are just conditions at 0 scope
+  private
+    variable
+      𝕃 : Vec String n
+
   GroundCondition = Condition 0
-  -- State is just a list of Conditions with 0 scope
-  State = List GroundCondition
 
   {- Properties of sets of conditions -}
 
   -- Boolean equality over conditions. This is basically syntactic equality squashed to the
   -- level of booleans
-  _≟ᶜᵇ_ : ∀ { s } ( c₁ c₂ : Condition s ) → Bool
-  c₁ ≟ᶜᵇ c₂ = (does ((Condition.name c₁) ≟ˢ (Condition.name c₂))) 
+  _≟ᶜᵇ_ : ∀ { s } ( c₁ c₂ : Condition s) → Bool
+  c₁ ≟ᶜᵇ c₂ = (does ((Condition.label c₁) ≟ˢ (Condition.label c₂))) 
               ∧ ((Condition.terms c₁) ≗ᵗᵇ (Condition.terms c₂))
 
   -- Helper function for proving decidable equality over conditions.
   ≟ᶜ-lemma : ∀ { s } { c₁ c₂ : Condition s }
-    → (Condition.name c₁) ≡ (Condition.name c₂)
+    → (Condition.label c₁) ≡ (Condition.label c₂)
     → (Condition.terms c₁) ≡ (Condition.terms c₂)
     → c₁ ≡ c₂
   ≟ᶜ-lemma refl refl = refl
 
   -- Decidable equality over conditions. 
   _≟ᶜ_ : ∀ { s } → DecidableEquality (Condition s)
-  c₁ ≟ᶜ c₂ with (Condition.name c₁) ≟ˢ (Condition.name c₂) | (Condition.terms c₁) ≗ᵗ (Condition.terms c₂)
-  ... | no ¬a | _ = no λ x → ¬a (cong Condition.name x) 
+  c₁ ≟ᶜ c₂ with (Condition.label c₁) ≟ˢ (Condition.label c₂) | (Condition.terms c₁) ≗ᵗ (Condition.terms c₂)
+  ... | no ¬a | _ = no λ x → ¬a (cong Condition.label x) 
   ... | _ | no ¬a = no (λ x → ¬a (cong Condition.terms x))
   ... | yes a₁ | yes a₂ = yes (≟ᶜ-lemma a₁ a₂)
 
   -- Let's test this equality
   private
     c₁ : Condition 2
-    c₁ = record { name = "test-condition" ; terms = var zero ∷ var (suc (zero)) ∷  const "const" ∷ [] } 
+    c₁ = record { label = "test-condition" ; terms = var zero ∷ var (suc (zero)) ∷  const "const" ∷ [] } 
     c₂ : Condition 2
-    c₂ = record { name = "test-condition" ; terms = var zero ∷ var (suc (zero)) ∷ const "const" ∷ [] } 
+    c₂ = record { label = "test-condition" ; terms = var zero ∷ var (suc (zero)) ∷ const "const" ∷ [] } 
 
     -- c₁ and c₂ are syntactically equivalent, so we expect them to be boolean equivalent
     _ : c₁ ≟ᶜᵇ c₂ ≡ true
@@ -65,7 +67,7 @@ module STRIPS.Core.Conditions where
 
     -- c₃ is different from the other two syntactically, so we expect the comparison to return false
     c₃ : Condition 2
-    c₃ = record { name = "test-condition" ; terms = var zero ∷ const "const" ∷ const "const" ∷ [] } 
+    c₃ = record { label = "test-condition" ; terms = var zero ∷ const "const" ∷ const "const" ∷ [] } 
     _ : c₃ ≟ᶜᵇ c₂ ≡ false
     _ = refl
 

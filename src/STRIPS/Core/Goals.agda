@@ -25,10 +25,10 @@ module STRIPS.Core.Goals where
   -- Example
   private
     ℂ : Vec GroundCondition 2
-    ℂ = (record { name = "cond-1" ; terms = [] }) ∷ ((record { name = "cond-2" ; terms = [] }) ∷ [])
+    ℂ = (record { label = "cond-1" ; terms = [] }) ∷ ((record { label = "cond-2" ; terms = [] }) ∷ [])
 
     gs : List (GroundCondition × Bool)
-    gs = ((record { name = "cond-2" ; terms = [] }) , false) ∷ (((record { name = "cond-1" ; terms = [] }) , true) ∷ [])
+    gs = ((record { label = "cond-2" ; terms = [] }) , false) ∷ (((record { label = "cond-1" ; terms = [] }) , true) ∷ [])
 
     goals : Goals ℂ gs
     goals = wf/goal/s (wf/goal/s wf/goal/z (here refl)) (there (here refl))

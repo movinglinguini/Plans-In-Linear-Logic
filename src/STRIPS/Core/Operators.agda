@@ -10,81 +10,82 @@ open import Data.String
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Relation.Nullary.Decidable
 
+open import STRIPS.Core.Common
+open import STRIPS.Core.Conditions
+open import STRIPS.Core.Terms
+
 module STRIPS.Core.Operators where
-  open import STRIPS.Core.Conditions
-  open import STRIPS.Core.Terms
+
+  {- 
+    Definition of operators
+
+    We see operators as lists of tuples ⟨ c , b , p ⟩, where c is a condition, b
+    is the condition's boolean value, and p is the condition's position. The boolean
+    value determines the condition's "polarity" (not in the type theoretic sense). The position
+    denotes whether the condition is a precondition or a postcondition. For example,
+    ⟨ c , true , precond ⟩ denotes a positive precondition, while ⟨ c , false, postcond ⟩ denotes
+    a negative postcondition. 
+  -}
+
+  -- The condition position denotes whether the condition is a precondition or a postcondition
+  data OperatorConditionPosition : Set where
+    precond : OperatorConditionPosition
+    postcond : OperatorConditionPosition
   
-  -- An operator comes with its own scope and arity
+  {- Operators on condition positions -}
+  _≟cp_ : OperatorConditionPosition → OperatorConditionPosition → Bool
+  precond ≟cp precond = true
+  precond ≟cp postcond = false
+  postcond ≟cp precond = false
+  postcond ≟cp postcond = true
+
+  -- An operator condition is a tuple that contains a condition of arbitrary arity, a boolean
+  -- and a position.
+  data OperatorCondition : ℕ → Set where
+    opcond : ∀ { arity } → ((Condition arity) × Bool) → OperatorConditionPosition → OperatorCondition arity
+  
+  -- An operator packages up a list of OperatorConditions of arbitrary arity with a label
+  -- data Operator : ∀ { n } → Vec String n → Set where
+  --   op : ∀ { n } { legalNames : Vec String n } arity 
+  --     → (label : String) → label ∈ legalNames
+  --     → (List (OperatorCondition arity)) 
+  --     → Operator
   record Operator : Set where
     field
       label : String
       arity : ℕ
-      preconditions : List ((Condition arity) × Bool)
-      postconditions : List ((Condition arity) × Bool)
+      conds : List (OperatorCondition arity)
 
-  -- WIP : Better definitions for operators and ground operators
-  -- First we define operator condition positions
-  data OperatorConditionPosition : Set where
-    precond : OperatorConditionPosition
-    postcond : OperatorConditionPosition
+  {-
+   Extracting data from operators
+  -}
 
-  -- An operator condition is a condition paired with a bool, paired with a position
-  data OperatorCondition : ℕ → Set where
-    wf/operator-condition : ∀ arity → ((Condition arity) × Bool) → OperatorConditionPosition → (OperatorCondition arity)
-
-  -- Operators are lists of operator conditions with arbitrary arity.
-  data Operators : Set where
-    wf/operator : ∀ arity → List (OperatorCondition arity) → Operators
-
-  -- A ground operator is well-formed if all of its conditions can be found in the problem conditions
-  data GroundOperators : ∀ { n } → List (GroundCondition × Bool) → List (GroundCondition × Bool) → Vec GroundCondition n → Set where
-    wf/groundoperator/z : ∀ { n } → { ℂ : Vec GroundCondition n } → GroundOperators [] [] ℂ
-    wf/groundoperator/pres/s : ∀ { n } { p pres posts } { ℂ : Vec GroundCondition n }
-      → GroundOperators pres posts ℂ → (proj₁ p ∈ ℂ)
-      ---------------------------------------------
-      → GroundOperators (p ∷ pres) posts ℂ
-    wf/groundoperator/posts/s : ∀ { n } { p pres posts } { ℂ : Vec GroundCondition n }
-      → GroundOperators pres posts ℂ → (proj₁ p) ∈ ℂ
-      ----------------------------
-      → GroundOperators pres (p ∷ posts) ℂ
-
-  {- Some syntactic sugar for extracting parts of operators -}
-  infix 50 _⁺ _⁻ _₊ _₋
-
+  -- Getting preconditions of o
   private
-    get-Positives : ∀ { s } → List ((Condition s) × Bool) → List (Condition s)
-    get-Positives [] = []
-    get-Positives ((fst , false) ∷ xs) = get-Positives xs
-    get-Positives ((fst , true) ∷ xs) = fst ∷ get-Positives xs
+    extract-CondPairs : ∀ { a } → List (OperatorCondition a) → OperatorConditionPosition → List ((Condition a) × Bool)
+    extract-CondPairs [] _ = []
+    extract-CondPairs (opcond cp pos₁ ∷ ocs) pos₂ with pos₁ ≟cp pos₂
+    ... | false = extract-CondPairs ocs pos₂
+    ... | true = cp ∷ extract-CondPairs ocs pos₂
+  
+  pres : (o : Operator) → List ((Condition (Operator.arity o)) × Bool)
+  pres o = extract-CondPairs (Operator.conds o) precond
 
-    get-Negatives : ∀ { s } → List ((Condition s) × Bool) → List (Condition s)
-    get-Negatives [] = []
-    get-Negatives ((fst , false) ∷ xs) = fst ∷ get-Negatives xs
-    get-Negatives ((fst , true) ∷ xs) = get-Negatives xs
+  posts : (o : Operator) → List ((Condition (Operator.arity o)) × Bool)
+  posts o = extract-CondPairs (Operator.conds o) postcond
 
-  -- Positive preconditions
+  -- Getting just conditions from preconditions of o
   _⁺ : (o : Operator) → List (Condition (Operator.arity o))
-  o ⁺ = get-Positives (Operator.preconditions o)
+  o ⁺ = getPositives (pres o)
 
-  -- Negative preconditions
   _⁻ : (o : Operator) → List (Condition (Operator.arity o))
-  o ⁻ = get-Negatives (Operator.preconditions o)
+  o ⁻ = getNegatives (pres o)
 
-  -- Positive postconditions
-  _₊ : (o : Operator) → List (Condition (Operator.arity o))
-  o ₊ = get-Positives (Operator.postconditions o)
-
-  -- Negative postconditions
   _₋ : (o : Operator) → List (Condition (Operator.arity o))
-  o ₋ = get-Negatives (Operator.postconditions o)
+  o ₋ = getNegatives (posts o)
 
-  -- All preconditions
-  pres : (o : Operator) → List (Condition (Operator.arity o))
-  pres o = o ⁺ ∪ᶜ o ⁻ -- (Operator.posPre o) ∪ᶜ (Operator.negPre o)
-
-  -- All postconditions
-  posts : (o : Operator) → List (Condition (Operator.arity o))
-  posts o = o ₊ ∪ᶜ o ₋ -- (Operator.posPost o) ∪ᶜ (Operator.negPost o)
+  _₊ : (o : Operator) → List (Condition (Operator.arity o))
+  o ₊ = getPositives (posts o)
 
   {--
     Ground Operators are operators with all ground conditions.
@@ -92,12 +93,16 @@ module STRIPS.Core.Operators where
   record GroundOperator : Set where
     field
       label : String
-      posPre : List GroundCondition
-      negPre : List GroundCondition
-      posPost : List GroundCondition
-      negPost : List GroundCondition
+      conds : List (OperatorCondition 0)
 
-  {- Grounding an operator -}
+  {- Operations on ground operators -}
+  toOperator : GroundOperator → Operator
+  toOperator g = record { label = GroundOperator.label g ; arity = 0 ; conds = GroundOperator.conds g }
+
+  {- 
+    The grounding function. This transforms an operator into a ground operator
+    by substituting variable terms.
+  -}
   private
     subst-Term : ∀ { s } → Term (suc s) → TermConstant → Term s
     subst-Term (const x) _ = const x
@@ -117,28 +122,30 @@ module STRIPS.Core.Operators where
       let c' = subst-Condition c t
         in ground-Condition c' ts
 
-    ground-Conditions : ∀ { s } → List (Condition s) → Vec TermConstant s → List GroundCondition
-    ground-Conditions [] ts = []
-    ground-Conditions (c ∷ cs) ts = ground-Condition c ts ∷ ground-Conditions cs ts
+    ground-ConditionPair : ∀ { s } → ((Condition s) × Bool) → Vec TermConstant s → GroundCondition × Bool
+    ground-ConditionPair (fst , snd) ts = (ground-Condition fst ts) , snd
+    
+    ground-OperatorCondition : ∀ { s } → OperatorCondition s → Vec TermConstant s → OperatorCondition 0
+    ground-OperatorCondition (opcond x x₁) ts = opcond (ground-ConditionPair x ts) x₁
+
+    ground-OperatorConditions : ∀ { s } → List (OperatorCondition s) → Vec TermConstant s → List (OperatorCondition 0)
+    ground-OperatorConditions [] ts = []
+    ground-OperatorConditions (oc ∷ ocs) ts = (ground-OperatorCondition oc ts) ∷ (ground-OperatorConditions ocs ts)
 
   ground : (o : Operator) → Vec TermConstant (Operator.arity o) → GroundOperator
-  ground o ts = 
-    let posPres = ground-Conditions (o ⁺) ts
-      in let negPres = ground-Conditions (o ⁻) ts
-        in let posPost = ground-Conditions (o ₊) ts
-          in let negPosts = ground-Conditions (o ₋) ts
-            in record { label = (Operator.label o) ; posPre = posPres ; negPre = negPres ; posPost = posPost ; negPost = negPosts }
+  ground o ts = record { label = (Operator.label o) ; conds = ground-OperatorConditions (Operator.conds o) ts }
 
-  {- The Update Function -}
-  update : GroundOperator → State → State
-  update τ S = add (remove S (GroundOperator.negPost τ)) (GroundOperator.posPost τ)
-    where
-      add : State → List (Condition 0) → State
-      add 𝕊 A = A ∪ᶜ 𝕊
+  private
+    variable
+      n : ℕ
+      ℂ : Vec GroundCondition n
 
-      remove : State → List (Condition 0) → State
-      remove [] R = [] 
-      remove 𝕊 [] = 𝕊
-      remove (s ∷ 𝕊) R with s ∈ᶜᵇ R
-      ... | false = s ∷ remove 𝕊  R 
-      ... | true = remove 𝕊 R    
+  -- A ground operator is well-formed if all of its underlying conditions can be
+  -- found in the list of problem conditions.
+  data WfGroundOperator : ∀ { n } → GroundOperator → Vec GroundCondition n → Set where
+    wf/groundop/z : ∀ { ℓ } → WfGroundOperator (record { label = ℓ ; conds = [] }) ℂ
+
+    wf/groundop/s : ∀ { ℓ c ocs p b } 
+      → WfGroundOperator (record { label = ℓ ; conds = ocs }) ℂ
+      → c ∈ ℂ
+      → WfGroundOperator (record { label = ℓ ; conds = (opcond (c , b) p) ∷ ocs }) ℂ
