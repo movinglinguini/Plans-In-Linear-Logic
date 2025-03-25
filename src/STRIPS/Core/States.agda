@@ -1,14 +1,17 @@
 open import Data.List
-open import Data.Vec
+open import Data.Vec hiding ([]; _∷_; fromList)
+open import Data.Nat
+open import Data.Nat.Properties
 open import Data.Vec.Membership.Propositional
 
 module STRIPS.Core.States where
   open import STRIPS.Core.Conditions
 
-  data States : ∀ { n } → List GroundCondition → Vec GroundCondition n → Set where
+  data State : ∀ { n } → List GroundCondition → Vec GroundCondition n → Set where
     wf/state/z : ∀ { n } { ℂ : Vec GroundCondition n }
-      → States [] ℂ
+      → State [] ℂ
     
-    wf/state/s : ∀ { n c cs } { ℂ : Vec GroundCondition n }
-      → States cs ℂ   →   c ∈ ℂ
-      → States (c ∷ cs) ℂ
+    wf/state/s : ∀ { n c cs }  { ℂ : Vec GroundCondition (suc n) }
+      → State cs ℂ   →   c ∈ ℂ
+      → State (c ∷ cs) ℂ 
+      

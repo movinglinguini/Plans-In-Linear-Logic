@@ -13,13 +13,13 @@ module STRIPS.Core.Goals where
 
   -- A well-formed goal is one where all its conditions are in the problem condition vector.
   
-  data Goals : ∀ { n } ( ℂ : Vec GroundCondition n ) → ( gs : List (GroundCondition × Bool) ) → Set where
-    wf/goal/z : ∀ { n } { ℂ : Vec GroundCondition n } → Goals ℂ []
+  data Goals : ∀ { n } ( gs : List (GroundCondition × Bool) ) → ( ℂ : Vec GroundCondition n ) → Set where
+    wf/goal/z : ∀ { n } { ℂ : Vec GroundCondition n } → Goals [] ℂ
 
     wf/goal/s : ∀ { n g gs } { ℂ : Vec GroundCondition n } 
-      → Goals ℂ gs → (wfcond : (proj₁ g) ∈ ℂ)
+      → Goals gs ℂ → (wfcond : (proj₁ g) ∈ ℂ)
         ------------------------------------
-      → Goals ℂ (g ∷ gs)  
+      → Goals (g ∷ gs) ℂ
  
 
   -- Example
@@ -30,5 +30,5 @@ module STRIPS.Core.Goals where
     gs : List (GroundCondition × Bool)
     gs = ((record { label = "cond-2" ; terms = [] }) , false) ∷ (((record { label = "cond-1" ; terms = [] }) , true) ∷ [])
 
-    goals : Goals ℂ gs
+    goals : Goals gs ℂ
     goals = wf/goal/s (wf/goal/s wf/goal/z (here refl)) (there (here refl))

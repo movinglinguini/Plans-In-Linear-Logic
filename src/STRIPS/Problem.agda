@@ -1,5 +1,6 @@
 open import Data.List hiding (head)
 open import Data.Vec hiding (head)
+open import Data.Vec.Bounded 
 open import Data.Nat
 open import Data.Bool
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
@@ -20,40 +21,110 @@ module STRIPS.Problem where
   open import STRIPS.Core.Conditions public
   open import STRIPS.Core.Operators public
   open import STRIPS.Core.Goals public
+  open import STRIPS.Core.States public
   open import STRIPS.Core.Transitions public
 
   {- Definition of a planning problem -}
   variable
-    n m x : ℕ
-    𝕋 : Vec TermConstant x
-    ℂ ℂ₁ ℂ₂ cs : Vec GroundCondition n
+    n m q r : ℕ
+    𝕋 : Vec TermConstant n
+    ℂ ℂ₁ ℂ₂ cs : Vec GroundCondition m
     gs : List (GroundCondition × Bool)
     𝕔 : GroundCondition
-    𝕀 : Vec GroundCondition n
-    𝕆 : Vec Operator m
-    𝕠 : Operator
-    τ : GroundOperator
-    𝔾 : Goals ℂ gs
+    𝕀 S S' : List GroundCondition
+    𝕆 : Vec Operator r
+    o : Operator
+    𝔾 : Goals gs ℂ
+    ts : Vec TermConstant (Operator.arity o)
+    τ : Transition o ts ℂ 𝕆
 
-  -- {-
-  --  A well-formed plan problem is one where:
-  --  1. 
-  -- -}
-  -- data PlanProblem : ∀ { gs n m x }
-  --   → Vec TermConstant x 
-  --   → ( ℂ : Vec GroundCondition n )
-  --   → State 
-  --   → Vec Operator m
-  --   → Goals ℂ gs
-  --   → Set where
-  --   wf/prob : ∀ { n m x gs } 
-  --     (𝕋 : Vec TermConstant x) (ℂ : Vec GroundCondition n) (𝕀 : State) 
-  --     (𝕆 : Vec Operator m) (𝔾 : Goals ℂ gs)
-  --     → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾
+  {-
+    Definition of a planning problem. A planning problem is a tuple
+    〈 ℂ, 𝕀, 𝕆, 𝔾 ⟩ where
 
-  -- private
-  --   variable
-  --     ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾
+    1. ℂ is a vector of ground conditions
+    2. 𝕀 is a list subset of ℂ
+    3. 𝕆 is a vector of operators
+    4. 𝔾 is a goal definition
+  -}
+  data PlanProblem : ∀ { gs }
+    → (ℂ : Vec GroundCondition n) -- The list of legal ground conditions that can be used.
+    → List GroundCondition  -- The initial state
+    → Vec Operator m  -- The list of legal operators.
+    → Goals gs ℂ  -- The goal definition
+    → Set
+    where
+    -- A well-formed planning problem is constituted of well-formed parts.
+    -- We wrote the definition of 𝔾 to be well-formed.
+    -- We add an argument for the well-formedness of the state 𝕀 as an argument.
+    wf/prob : 
+      (ℂ : Vec GroundCondition n) (𝕀 : List GroundCondition)
+      (𝕆 : Vec Operator m) (𝔾 : Goals gs ℂ)
+      (wf/state : State 𝕀 ℂ)
+      → PlanProblem ℂ 𝕀 𝕆 𝔾
+
+  private
+    variable
+      ℙ : PlanProblem ℂ 𝕀 𝕆 𝔾
+
+  initialState : PlanProblem ℂ 𝕀 𝕆 𝔾 → State 𝕀 ℂ
+  initialState (wf/prob _ _ _ _ wf/state) = wf/state
+
+  {-
+    Plan definitions
+
+    From here, we define valid plans for planning problems. Plans are effectively
+    lists of transitions that iteratively transform an initial state into one that
+    satisfies the goal state.
+  -}
+
+  -- Alias for satisfying a transition's ground operator since we have to go through 
+  -- a few definitions to do it.
+  private
+    sat-τ-helper : ∀ { o ts } →  List GroundCondition → Transition o ts ℂ 𝕆 → Set
+    sat-τ-helper S (wf/transition o ts _ _) = sat S (pres gτ)
+      where
+        ground[τ] : GroundOperator
+        ground[τ] = ground o ts
+
+        gτ : Operator
+        gτ = toOperator ground[τ]
+
+  -- We say a state S satisfies a transition τ if
+  -- the conditions of S satisfy the preconditions of ground(τ).
+  sat-τ : ∀ { o ts } → State S ℂ → Transition o ts ℂ 𝕆 → Set
+  sat-τ wf/state/z τ = sat-τ-helper List.[] τ
+  sat-τ (wf/state/s {c = c} {cs} inp x) τ = sat-τ-helper (c List.∷ cs) τ
+
+  -- We write inp ⟶[ τ ] out to mean that a transition τ can transform state inp into
+  -- state out if inp satisfies the preconditions of ground(τ) and the conditions of
+  -- inp are transformed into the conditions of out.
+  data _⟶[_]_ : ∀ { o ts } → State S ℂ → Transition o ts ℂ 𝕆 → State S' ℂ → Set where
+    wf/trans : ( inp : State S ℂ) ( out : State S' ℂ )
+      → sat-τ inp τ   →  (update S τ) ≡ S'
+      ------------------------------------
+      → inp ⟶[ τ ] out
+
+
+  -- Given an initial state and a goal, a well-formed plan is one that iteratively
+  -- transforms the initial state into one that satisfies the goal.
+  data Plan : State S ℂ → Goals gs ℂ → Set where
+    wf/plan/z : (state : State S ℂ) (goal : Goals gs ℂ)
+      → sat S gs
+      → Plan state goal
+
+    wf/plan/s : (inp : State S ℂ) (out : State S' ℂ) (τ : Transition o ts ℂ 𝕆)
+      (goal : Goals gs ℂ)
+      → Plan out goal   →   inp ⟶[ τ ] out
+      -------------------------------------
+      → Plan inp goal
+
+
+  -- Relation between plan problems and valid plans.
+  data Solves : (ℙ : PlanProblem ℂ 𝕀 𝕆 𝔾) → Plan (initialState ℙ) 𝔾 → Set where
+    solves : (ℙ : PlanProblem ℂ 𝕀 𝕆 𝔾) (plan : Plan (initialState ℙ) 𝔾)
+      → Solves ℙ plan
+    
 
   -- -- A plan is a list of ground operators
   -- Plan = List GroundOperator
@@ -109,4 +180,4 @@ module STRIPS.Problem where
   -- -- ... | yes p with solver (wf/prob 𝕋 ℂ (update τ 𝕀) 𝕆 𝔾) P
   -- -- ... | nothing = nothing
   -- -- ... | just x = just (wf/plan/s x (transition p refl))
- 
+  

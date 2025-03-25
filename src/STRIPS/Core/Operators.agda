@@ -96,6 +96,8 @@ module STRIPS.Core.Operators where
       conds : List (OperatorCondition 0)
 
   {- Operations on ground operators -}
+
+  -- Casting a GroundOperator to an Operator
   toOperator : GroundOperator → Operator
   toOperator g = record { label = GroundOperator.label g ; arity = 0 ; conds = GroundOperator.conds g }
 

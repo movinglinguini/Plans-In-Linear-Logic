@@ -38,13 +38,16 @@ module STRIPS.Core.Transitions where
       → WfGroundOperator (ground o ts) ℂ
       → Transition o ts ℂ 𝕆
 
+  ground[_] : Transition o ts ℂ 𝕆 → Operator
+  ground[ wf/transition o ts _ _ ] = toOperator (ground o ts)
+
   {- Updating state -}
   -- Given a state S and transition τ, we define an update on S as follows:
   -- 1. let ground(τ) be the ground operator yielded by grounding the underlying operator
   --    of τ with the underlying terms of τ.
   -- 2. remove negative postconditions of ground(τ) from S
   -- 3. add positive postconditions of ground(τ) to S
-  update : List GroundCondition → Transition o ts ℂ 𝕆 → List GroundCondition
+  update : ∀ { o ts } → List GroundCondition → Transition o ts ℂ 𝕆 → List GroundCondition
   update S (wf/transition o ts _ _) = add (remove S gτ-) gτ+
     where
       gτ : GroundOperator
