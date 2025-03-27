@@ -9,6 +9,7 @@ open import Data.Vec.Membership.Propositional
 open import Data.String
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Relation.Nullary.Decidable
+open import Data.Maybe
 
 open import STRIPS.Core.Common
 open import STRIPS.Core.Conditions
@@ -55,6 +56,13 @@ module STRIPS.Core.Operators where
       label : String
       arity : ℕ
       conds : List (OperatorCondition arity)
+
+  {- Operations on operators -}
+  findByLabel : String → List Operator → Maybe Operator
+  findByLabel l [] = nothing
+  findByLabel l (o ∷ os) with l Data.String.≟ (Operator.label o)
+  ... | no _ = findByLabel l os
+  ... | yes _ = just o
 
   {-
    Extracting data from operators
@@ -149,5 +157,5 @@ module STRIPS.Core.Operators where
 
     wf/groundop/s : ∀ { ℓ c ocs p b } 
       → WfGroundOperator (record { label = ℓ ; conds = ocs }) ℂ
-      → c ∈ ℂ
+      → c ∈ ℂ 
       → WfGroundOperator (record { label = ℓ ; conds = (opcond (c , b) p) ∷ ocs }) ℂ

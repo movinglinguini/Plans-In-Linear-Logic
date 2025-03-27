@@ -11,7 +11,7 @@ module STRIPS.Core.States where
     wf/state/z : ∀ { n } { ℂ : Vec GroundCondition n }
       → State [] ℂ
     
-    wf/state/s : ∀ { n c cs }  { ℂ : Vec GroundCondition (suc n) }
+    wf/state/s : ∀ { n c cs }  { ℂ : Vec GroundCondition n }
       → State cs ℂ   →   c ∈ ℂ
       → State (c ∷ cs) ℂ 
       

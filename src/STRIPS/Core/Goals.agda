@@ -7,6 +7,8 @@ open import Data.Vec.Relation.Unary.Any
 open import Data.List
 open import Data.Fin hiding (_+_)
 open import Data.Bool
+open import Data.Maybe
+open import Relation.Nullary.Decidable
 
 module STRIPS.Core.Goals where
   open import STRIPS.Core.Conditions
@@ -32,3 +34,13 @@ module STRIPS.Core.Goals where
 
     goals : Goals gs ℂ
     goals = wf/goal/s (wf/goal/s wf/goal/z (here refl)) (there (here refl))
+  
+  open import Data.Vec.Membership.DecPropositional { A = GroundCondition } (_≟ᶜ_)
+  -- Build goals
+  maybeGoal : ∀ { n } → (gs : List (GroundCondition × Bool)) → (ℂ : Vec GroundCondition n) → Maybe (Goals gs ℂ)
+  maybeGoal [] ℂ = just wf/goal/z 
+  maybeGoal (g ∷ gs) ℂ with (proj₁ g) ∈? ℂ
+  ... | no ¬p = nothing
+  ... | yes p₁ with maybeGoal gs ℂ
+  ...   | nothing = nothing
+  ...   | just p₂ = just (wf/goal/s p₂ p₁) 

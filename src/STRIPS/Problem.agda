@@ -70,6 +70,14 @@ module STRIPS.Problem where
   initialState : PlanProblem ℂ 𝕀 𝕆 𝔾 → State 𝕀 ℂ
   initialState (wf/prob _ _ _ _ wf/state) = wf/state
 
+  open import Data.Vec.Membership.DecPropositional { A = GroundCondition } (_≟ᶜ_)
+  maybeWfState : ∀ { n } → (S : List GroundCondition) → (ℂ : Vec GroundCondition n) → Maybe (State S ℂ)
+  maybeWfState List.[] ℂ = just wf/state/z
+  maybeWfState (c List.∷ S) ℂ with c ∈? ℂ
+  ... | no ¬p = nothing
+  ... | yes p₁ with maybeWfState S ℂ
+  ...   | nothing = nothing
+  ...   | just p₂ = just (wf/state/s p₂ p₁)
   {-
     Plan definitions
 
