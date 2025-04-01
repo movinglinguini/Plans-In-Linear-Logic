@@ -35,6 +35,8 @@ module BlocksWorld where
     ∷ (record { label = "holding" ; terms = const "C" ∷ [] })
     ∷ []
 
+  conds-vec = Data.Vec.fromList conditions
+
   -- Problem operators
   operators : List Operator
   operators = 
@@ -47,7 +49,8 @@ module BlocksWorld where
               -- Postconditions 
               ∷ opcond ⟨ (record { label = "on-table" ; terms = (var zero) ∷ [] }) , false ⟩ postcond 
               ∷ opcond ⟨ (record { label = "clear" ; terms = (var zero) ∷ [] }) , false ⟩ postcond 
-              ∷ opcond ⟨ (record { label = "handempty" ; terms = [] }) , true ⟩ postcond
+              ∷ opcond ⟨ (record { label = "handempty" ; terms = [] }) , false ⟩ postcond
+              ∷ opcond ⟨ (record { label = "holding" ; terms = var zero ∷ [] }) , true ⟩ postcond
               ∷ [] 
             }
     ∷ record { label = "put-down" ; arity = 1 
@@ -89,6 +92,8 @@ module BlocksWorld where
                 ∷ []
               }
     ∷ []  
+  
+  op-vec = Data.Vec.fromList operators
 
   -- Initial state
   initState : List GroundCondition
@@ -101,8 +106,8 @@ module BlocksWorld where
     ∷ []
 
   -- Proof that the initial state is well-formed
-  initState-wf : State initState (Data.Vec.fromList conditions)
-  initState-wf = from-just (maybeWfState initState ((Data.Vec.fromList conditions)))
+  initState-wf : State initState (conds-vec)
+  initState-wf = from-just (maybeWfState initState (conds-vec))
 
   -- Goals
   goalConds : List (GroundCondition × Bool)
@@ -110,11 +115,163 @@ module BlocksWorld where
     ∷ ⟨ (record { label = "on-table" ; terms = const "A" ∷ [] }) , true ⟩
     ∷ []
   
-  goal : Goals goalConds (Data.Vec.fromList conditions)
+  goal : Goals goalConds (conds-vec)
   goal = from-just (maybeGoal goalConds (Data.Vec.fromList conditions))
 
   -- The problem statement
-  problem : PlanProblem (Data.Vec.fromList conditions) initState (Data.Vec.fromList operators) goal
+  problem : PlanProblem conds-vec initState op-vec goal
   problem = wf/prob (Data.Vec.fromList conditions) initState (Data.Vec.fromList operators) goal initState-wf
 
-  -- Transitions for a plan
+  {- 
+    Transitions for a plan. The transitions are
+
+    - unstack A B
+    - put-down A
+    - pick-up C
+    - stack C B
+  -}
+  transitions : List (Transition conds-vec op-vec)
+  transitions =
+    wf/transition (from-just (findByLabel "unstack" operators)) (const "A" ∷ const "B" ∷ []) (there (there (there (here refl)))) (wf/groundop/s
+       (wf/groundop/s
+        (wf/groundop/s
+         (wf/groundop/s
+          (wf/groundop/s
+           (wf/groundop/s
+            (wf/groundop/s
+             (wf/groundop/s wf/groundop/z (there (there (there (here refl)))))
+             (there
+              (there
+               (there
+                (there (there (there (there (there (there (here refl)))))))))))
+            (here refl))
+           (there (here refl)))
+          (there
+           (there
+            (there
+             (there
+              (there
+               (there
+                (there
+                 (there (there (there (there (there (there (here refl)))))))))))))))
+         (there
+          (there
+           (there
+            (there (there (there (there (there (there (here refl)))))))))))
+        (here refl))
+       (there (there (there (here refl)))))
+    ∷ wf/transition (from-just (findByLabel "put-down" operators)) (const "A" ∷ []) (there (here refl)) (wf/groundop/s
+       (wf/groundop/s
+        (wf/groundop/s
+         (wf/groundop/s
+          (wf/groundop/s wf/groundop/z
+           (there
+            (there
+             (there
+              (there
+               (there (there (there (there (there (there (here refl))))))))))))
+          (there
+           (there
+            (there
+             (there (there (there (there (there (there (here refl)))))))))))
+         (here refl))
+        (there
+         (there
+          (there
+           (there
+            (there
+             (there
+              (there
+               (there (there (there (there (there (there (here refl)))))))))))))))
+       (there
+        (there
+         (there
+          (there
+           (there
+            (there
+             (there
+              (there (there (there (there (there (there (here refl)))))))))))))))
+    ∷ wf/transition (from-just (findByLabel "pick-up" operators)) (const "C" ∷ []) (here refl) (wf/groundop/s (wf/groundop/s
+       (wf/groundop/s
+        (wf/groundop/s
+         (wf/groundop/s
+          (wf/groundop/s
+           (wf/groundop/s wf/groundop/z
+            (there
+             (there
+              (there
+               (there
+                (there
+                 (there
+                  (there
+                   (there
+                    (there
+                     (there
+                      (there (there (there (there (there (here refl)))))))))))))))))
+           (there
+            (there
+             (there
+              (there (there (there (there (there (there (here refl)))))))))))
+          (there (there (here refl))))
+         (there
+          (there
+           (there
+            (there
+             (there
+              (there
+               (there (there (there (there (there (there (here refl))))))))))))))
+        (there
+         (there
+          (there
+           (there (there (there (there (there (there (here refl)))))))))))
+       (there
+        (there
+         (there
+          (there
+           (there
+            (there
+             (there (there (there (there (there (there (here refl)))))))))))))) (there (there (here refl))))
+    ∷ wf/transition (from-just (findByLabel "stack" operators)) (const "C" ∷ const "B" ∷ []) (there (there (here refl))) (wf/groundop/s
+       (wf/groundop/s
+        (wf/groundop/s
+         (wf/groundop/s
+          (wf/groundop/s
+           (wf/groundop/s
+            (wf/groundop/s wf/groundop/z
+             (there
+              (there
+               (there (there (there (there (there (there (here refl))))))))))
+            (there
+             (there
+              (there
+               (there (there (there (there (there (there (here refl)))))))))))
+           (there (there (here refl))))
+          (there (here refl)))
+         (there
+          (there
+           (there
+            (there
+             (there
+              (there
+               (there
+                (there
+                 (there
+                  (there
+                   (there (there (there (there (there (here refl)))))))))))))))))
+        (there (here refl)))
+       (there
+        (there
+         (there
+          (there
+           (there
+            (there
+             (there
+              (there
+               (there
+                (there
+                 (there (there (there (there (there (here refl)))))))))))))))))
+    ∷ []
+
+  -- Should normalize to just a large data structure
+  plan : Maybe (Plan initState-wf goal)
+  plan = solver-plan initState-wf goal transitions

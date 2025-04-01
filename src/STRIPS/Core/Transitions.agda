@@ -16,6 +16,7 @@ module STRIPS.Core.Transitions where
     variable
       n m q : ℕ
       o : Operator
+      S : List GroundCondition
       𝕋 : Vec TermConstant n
       𝕆 : Vec Operator m
       ℂ : Vec GroundCondition q
@@ -28,17 +29,15 @@ module STRIPS.Core.Transitions where
     and grounding o with ts forms a well-formed ground operator.
   -}
   data Transition : ∀ { m q } 
-      → ( o : Operator ) 
-      → Vec TermConstant (Operator.arity o) 
       → Vec GroundCondition q
       → Vec Operator m
       → Set where
     wf/transition : ( o : Operator ) → (ts : Vec TermConstant (Operator.arity o))
       → o ∈ 𝕆 
       → WfGroundOperator (ground o ts) ℂ
-      → Transition o ts ℂ 𝕆
+      → Transition ℂ 𝕆
 
-  ground[_] : Transition o ts ℂ 𝕆 → Operator
+  ground[_] : Transition ℂ 𝕆 → Operator
   ground[ wf/transition o ts _ _ ] = toOperator (ground o ts)
 
   {- Updating state -}
@@ -47,7 +46,7 @@ module STRIPS.Core.Transitions where
   --    of τ with the underlying terms of τ.
   -- 2. remove negative postconditions of ground(τ) from S
   -- 3. add positive postconditions of ground(τ) to S
-  update : ∀ { o ts } → List GroundCondition → Transition o ts ℂ 𝕆 → List GroundCondition
+  update : List GroundCondition → Transition ℂ 𝕆 → List GroundCondition
   update S (wf/transition o ts _ _) = add (remove S gτ-) gτ+
     where
       gτ : GroundOperator
@@ -68,4 +67,3 @@ module STRIPS.Core.Transitions where
       remove (s ∷ S) (r ∷ R) with s ∈ᶜᵇ (r ∷ R)
       ... | false = s ∷ remove S R
       ... | true = remove S R 
- 

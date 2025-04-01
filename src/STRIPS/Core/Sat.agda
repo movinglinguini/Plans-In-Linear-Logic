@@ -7,6 +7,7 @@ open import Relation.Binary.PropositionalEquality
 open import Data.Unit
 open import Data.List.Relation.Unary.Any
 open import Data.List.Membership.Propositional
+open import Relation.Nullary.Negation
 
 module STRIPS.Core.Sat where
   open import STRIPS.Core.Conditions
@@ -38,30 +39,67 @@ module STRIPS.Core.Sat where
   sat-Condition S ⟨ c , false ⟩ = c ∉ S
   sat-Condition S ⟨ c , true ⟩ = c ∈ S 
 
-  sat : List GroundCondition → List (GroundCondition × Bool) → Set
-  sat S cs = ∀ c → c ∈ cs → sat-Condition S c
+  data sat : List GroundCondition → List (GroundCondition × Bool) → Set where
+    sat/z : ∀ { S } → sat S []
+
+    sat/s/neg : ∀ { S gs c } 
+      → sat S gs    →   c ∉ S
+      → sat S (⟨ c , false ⟩ ∷ gs) 
+
+    sat/s/pos : ∀ { S gs c }
+      → sat S gs    →   c ∈ S
+      → sat S (⟨ c , true ⟩ ∷ gs)
 
   {-
     Properties of sat
   -}
   satg∷G⇒satG : ∀ { g G S } → sat S (g ∷ G) → sat S G
-  satg∷G⇒satG sat = λ c z → sat c (there z)
+  satg∷G⇒satG (sat/s/neg sat₁ x) = sat₁
+  satg∷G⇒satG (sat/s/pos sat₁ x) = sat₁
+
+  sat⇒∉ : ∀ { c gs S } → sat S (⟨ c , false ⟩ ∷ gs) → c ∉ S
+  sat⇒∉ (sat/s/neg s x) = x
+
+  sat⇒∈ : ∀ { c gs S } → sat S (⟨ c , true ⟩ ∷ gs) → c ∈ S
+  sat⇒∈ (sat/s/pos s x) = x
+
+  ∈⇒not-sat : ∀ { c gs S } → c ∈ S → ¬ (sat S (⟨ c , false ⟩ ∷ gs))
+  ∈⇒not-sat mem = λ x → contraposition sat⇒∉ (λ z → z mem) x
+
+  ∉⇒not-sat : ∀ { c gs S } → c ∉ S → ¬ (sat S (⟨ c , true ⟩ ∷ gs))
+  ∉⇒not-sat notmem = λ x → contraposition sat⇒∈ notmem x
+  
+  -- Decidable satisfaction
+  open import Data.List.Membership.DecPropositional { A = GroundCondition } (_≟ᶜ_)
+  sat? : (S : List GroundCondition) → (gs : List (GroundCondition × Bool)) → Dec(sat S gs)
+  sat? S [] = yes sat/z
+  sat? S (⟨ c , false ⟩ ∷ gs) with c ∈? S
+  ... | no ¬a with sat? S gs
+  ...   |   no ¬b = no (λ x → ¬b (satg∷G⇒satG x))
+  ...   |   yes b = yes (sat/s/neg b ¬a)
+  sat? S (⟨ c , false ⟩ ∷ gs) | yes a = no (∈⇒not-sat a)
+  sat? S (⟨ c , true ⟩ ∷ gs) with c ∈? S
+  ... | no ¬a = no (∉⇒not-sat ¬a)
+  ... | yes a with sat? S gs
+  ...   | no ¬b = no λ x → ¬b (satg∷G⇒satG x)
+  ...   | yes b = yes (sat/s/pos b a) 
 
   -- Testing out satisfaction
   private
     state : List GroundCondition
-    state = (record { label = "cond-1" ; terms = [] }) ∷ (record { label = "cond-2" ; terms = [] }) ∷ []
+    state = (record { label = "cond-1" ; terms = [] }) ∷ []
 
-    goal1 : (List (Condition 0)) × (List (Condition 0))
-    goal1 = ⟨ record { label = "cond-1" ; terms = [] } ∷ [] , [] ⟩
+    goal1 : GroundCondition × Bool
+    goal1 = ⟨ record { label = "cond-1" ; terms = [] } , true ⟩
 
-    goal2 : (List (Condition 0)) × (List (Condition 0))
-    goal2 = ⟨ record { label = "cond-1" ; terms = [] } ∷ [] , record { label = "cond-2" ; terms = [] } ∷ [] ⟩
+    goal2 : GroundCondition × Bool
+    goal2 = ⟨ record { label = "cond-2" ; terms = [] } , false ⟩
 
-    _ : (satᵇ state goal1) ≡ true
-    _ = refl
+    goal2-neg : (proj₁ goal2) Data.List.Membership.Propositional.∉ state
+    goal2-neg with (proj₁ goal2) ∈? state
+    ... | no ¬a = ¬a
+    ... | yes (here ())
+    ... | yes (there ()) 
 
-    _ : (satᵇ state goal2) ≡ false
-    _ = refl
-
-
+    _ : sat state (goal1 ∷ goal2 ∷ [])
+    _ = sat/s/pos (sat/s/neg sat/z goal2-neg) (here refl)
