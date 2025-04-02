@@ -83,15 +83,19 @@ module STRIPS.Core.Operators where
   posts o = extract-CondPairs (Operator.conds o) postcond
 
   -- Getting just conditions from preconditions of o
+  infixr 50 _⁺
   _⁺ : (o : Operator) → List (Condition (Operator.arity o))
   o ⁺ = getPositives (pres o)
 
+  infixr 50 _⁻
   _⁻ : (o : Operator) → List (Condition (Operator.arity o))
   o ⁻ = getNegatives (pres o)
 
+  infixr 50 _₋
   _₋ : (o : Operator) → List (Condition (Operator.arity o))
   o ₋ = getNegatives (posts o)
 
+  infixr 50 _₊
   _₊ : (o : Operator) → List (Condition (Operator.arity o))
   o ₊ = getPositives (posts o)
 

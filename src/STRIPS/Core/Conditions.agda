@@ -14,6 +14,7 @@ open import Data.Vec.Relation.Unary.All
 open import Data.Vec.Bounded.Base using (Vec≤)
 open import Relation.Nullary.Negation
 open import Relation.Nullary.Reflects
+open import Data.Maybe
 
 open import Utils.Variables
 
@@ -21,19 +22,73 @@ open import STRIPS.Core.Terms
 
 module STRIPS.Core.Conditions where
 
+  private
+    variable
+      𝕋 : Vec TermConstant m
+      ℓ : String
+
   record Condition ( Scope : ℕ ) : Set where 
     field
       label : String
       terms : List (Term Scope)
 
-  private
-    variable
-      𝕃 : Vec String n
-
   GroundCondition = Condition 0
 
-  {- Properties of sets of conditions -}
+  private
+    variable
+      ℂ : Vec GroundCondition n
 
+  {-
+    Well-formedness arguments for ground conditions of planning problems.
+    A ground condition in a planning problem is well-formed if all of its
+    terms are in the list of problem term constants.
+  -}
+  data WfGroundCondition : GroundCondition → Vec TermConstant m → Set where
+    wf/groundcond/z : ∀ { l }
+      → WfGroundCondition (record { label = l ; terms = [] }) 𝕋
+
+    wf/groundcond/s : ∀ { l t ts }
+      → WfGroundCondition (record { label = l ; terms = ts }) 𝕋
+      → t ∈ 𝕋
+      → WfGroundCondition (record { label = l ; terms = (t ∷ ts) }) 𝕋
+
+  data WfGroundConditions : Vec GroundCondition n → Vec TermConstant m → Set where
+    wf/groundconds/z : WfGroundConditions [] 𝕋
+    wf/groundconds/s : ∀ { c }
+      → WfGroundConditions ℂ 𝕋    →    WfGroundCondition c 𝕋
+      -------------------------------------------------------
+      → WfGroundConditions (c ∷ ℂ) 𝕋
+
+  {- Constructing a well-formedness argument -}
+  open import Data.Vec.Membership.DecPropositional { A = TermConstant } (_≟ᵗ_)
+  
+  {-# TERMINATING #-} 
+  -- Using the terminating pragma here to nudge Agda along.
+  -- We are recursing on the list of terms inside of the ground condition.
+  -- Maybe builds a proof that the ground condition is well-formed with
+  -- respect to a list of terms.
+  maybeWfCondition : (c : GroundCondition) → (𝕋 : Vec TermConstant m)
+    → Maybe (WfGroundCondition c 𝕋)
+  maybeWfCondition record { label = label ; terms = [] } 𝕋 = just wf/groundcond/z
+  maybeWfCondition record { label = label ; terms = (t ∷ terms) } 𝕋 with t ∈? 𝕋
+  ... | no ¬p = nothing
+  ... | yes p with maybeWfCondition (record { label = label ; terms = terms }) 𝕋
+  ...   | nothing = nothing
+  ...   | just wf = just (wf/groundcond/s wf p)
+  
+  -- Maybe builds a proof that a list of ground conditions is well-formed.
+  -- A list of ground conditions is well-formed if all of its elements are well-formed.
+  maybeWfConditions : (ℂ : Vec GroundCondition n) → (𝕋 : Vec TermConstant m) 
+    → Maybe (WfGroundConditions ℂ 𝕋)
+  maybeWfConditions [] 𝕋 = just wf/groundconds/z
+  maybeWfConditions (c ∷ ℂ) 𝕋 with maybeWfCondition c 𝕋
+  ... | nothing = nothing
+  ... | just wfc with maybeWfConditions ℂ 𝕋
+  ...   | nothing = nothing
+  ...   | just wf = just (wf/groundconds/s wf wfc)
+  
+
+  {- Properties of sets of conditions -}
   -- Boolean equality over conditions. This is basically syntactic equality squashed to the
   -- level of booleans
   _≟ᶜᵇ_ : ∀ { s } ( c₁ c₂ : Condition s) → Bool
@@ -93,9 +148,4 @@ module STRIPS.Core.Conditions where
   (x ∷ C₁) ∩ᶜ C₂ with x ∈ᶜᵇ C₂
   ... | false = C₁ ∩ᶜ C₂
   ... | true = x ∷ C₁ ∩ᶜ C₂
-
-  {-
-    Terms of a condition
-  -}
-  constantsOf : ∀ { s } → Condition s → List TermConstant
-  constantsOf c = filterTerms (Condition.terms c)
+   

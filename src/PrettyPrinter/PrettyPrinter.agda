@@ -20,8 +20,8 @@ module PrettyPrinter.PrettyPrinter (width : ℕ) where
   prettyTerm (var x) = char '#' <> (text (showF x))
   
   prettyTCondition : ∀ { s } → TCondition s → Doc
-  prettyTCondition record { name = name ; terms = args } 
-    = text name <> parens (termDocs)
+  prettyTCondition record { label = label ; terms = args } 
+    = text label <> parens (termDocs)
     where
       termDocs : Doc
       termDocs = foldr (λ t acc → (prettyTerm t) <> char ',' <+> acc) empty (toList args)
@@ -48,5 +48,5 @@ module PrettyPrinter.PrettyPrinter (width : ℕ) where
       prettyContext-helper Vec.[] f = empty
       prettyContext-helper (x Vec.∷ V) f = f x <> char ',' <+> prettyContext-helper V f
 
-  prettyProblem : ∀ { x y } → (Context x y) × Prop → Doc
-  prettyProblem ⟨ fst , snd ⟩ = prettyContext fst <+> char '⊢' <+> prettyProp snd <+> char '⊗' <+> char '⊤'
+  prettyProblem : ∀ { x y } → (Context x y) × (Prop × Mode) → Doc
+  prettyProblem ⟨ fst , snd ⟩ = prettyContext fst <+> char '⊢' <+> prettyPropxMode snd

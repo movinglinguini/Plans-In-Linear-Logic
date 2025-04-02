@@ -10,10 +10,15 @@ open import Data.Vec.Relation.Unary.Any
 open import Relation.Binary.PropositionalEquality
 
 open import STRIPS.Problem
+open import Translations.Translations
+open import ADJ.Core
+open import PrettyPrinter.PrettyPrinter 3000
 
 module BlocksWorld where
-  labels : List String
-  labels = "on" ∷ "on-table" ∷ "clear" ∷ "handempty" ∷ "holding" ∷ []
+  terms : List TermConstant
+  terms = const "A" ∷ const "B" ∷ const "C" ∷ []
+
+  terms-vec = Data.Vec.fromList terms
 
   -- Problem conditions
   conditions : List GroundCondition
@@ -109,6 +114,10 @@ module BlocksWorld where
   initState-wf : State initState (conds-vec)
   initState-wf = from-just (maybeWfState initState (conds-vec))
 
+  -- Proof that the condition list is well-formed
+  conds-wf : WfGroundConditions conds-vec terms-vec
+  conds-wf = from-just (maybeWfConditions conds-vec terms-vec)
+
   -- Goals
   goalConds : List (GroundCondition × Bool)
   goalConds = ⟨ (record { label = "on" ; terms = const "C" ∷ const "B" ∷ [] }) , true ⟩ 
@@ -118,9 +127,9 @@ module BlocksWorld where
   goal : Goals goalConds (conds-vec)
   goal = from-just (maybeGoal goalConds (Data.Vec.fromList conditions))
 
-  -- The problem statement
-  problem : PlanProblem conds-vec initState op-vec goal
-  problem = wf/prob (Data.Vec.fromList conditions) initState (Data.Vec.fromList operators) goal initState-wf
+  -- A well-formed problem statement.
+  problem : PlanProblem terms-vec conds-vec initState op-vec goal
+  problem = wf/prob terms-vec conds-vec initState op-vec goal conds-wf initState-wf
 
   {- 
     Transitions for a plan. The transitions are
@@ -272,6 +281,18 @@ module BlocksWorld where
                  (there (there (there (there (there (here refl)))))))))))))))))
     ∷ []
 
-  -- Should normalize to just a large data structure
-  plan : Maybe (Plan initState-wf goal)
-  plan = solver-plan initState-wf goal transitions
+  -- Should normalize to just a large data structure that tells us
+  -- this plan is well-formed.
+  plan : Plan initState-wf goal
+  plan = from-just (solver-plan initState-wf goal transitions)
+
+  -- Not only is the plan well-formed, but it also 
+  -- solves the problem.
+  plan-solves-problem : Solves problem plan
+  plan-solves-problem = solves problem plan
+
+  {- 
+    Translating the planning problem
+  -}
+  transl-prob = translProb problem
+  transl-prob-pretty = render (prettyProblem transl-prob)

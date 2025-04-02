@@ -40,17 +40,19 @@ module STRIPS.Problem where
 
   {-
     Definition of a planning problem. A planning problem is a tuple
-    〈 ℂ, 𝕀, 𝕆, 𝔾 ⟩ where
+    〈 𝕋 , ℂ, 𝕀, 𝕆, 𝔾 ⟩ where
 
-    1. ℂ is a vector of ground conditions
-    2. 𝕀 is a list subset of ℂ
-    3. 𝕆 is a vector of operators
-    4. 𝔾 is a goal definition
+    1. 𝕋 is a vector of constant terms
+    2. ℂ is a vector of ground conditions
+    3. 𝕀 is a list subset of ℂ
+    4. 𝕆 is a vector of operators
+    5. 𝔾 is a goal definition
   -}
   data PlanProblem : ∀ { gs }
-    → (ℂ : Vec GroundCondition n) -- The list of legal ground conditions that can be used.
+    → (𝕋 : Vec TermConstant n)
+    → (ℂ : Vec GroundCondition m) -- The list of legal ground conditions that can be used.
     → List GroundCondition  -- The initial state
-    → Vec Operator m  -- The list of legal operators.
+    → Vec Operator q  -- The list of legal operators.
     → Goals gs ℂ  -- The goal definition
     → Set
     where
@@ -58,17 +60,19 @@ module STRIPS.Problem where
     -- We wrote the definition of 𝔾 to be well-formed.
     -- We add an argument for the well-formedness of the state 𝕀 as an argument.
     wf/prob : 
-      (ℂ : Vec GroundCondition n) (𝕀 : List GroundCondition)
-      (𝕆 : Vec Operator m) (𝔾 : Goals gs ℂ)
+      (𝕋 : Vec TermConstant n)
+      (ℂ : Vec GroundCondition m) (𝕀 : List GroundCondition)
+      (𝕆 : Vec Operator q) (𝔾 : Goals gs ℂ)
+      (wf/conds : WfGroundConditions ℂ 𝕋)
       (wf/state : State 𝕀 ℂ)
-      → PlanProblem ℂ 𝕀 𝕆 𝔾
+      → PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾
 
   private
     variable
-      ℙ : PlanProblem ℂ 𝕀 𝕆 𝔾
+      ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾
 
-  initialState : PlanProblem ℂ 𝕀 𝕆 𝔾 → State 𝕀 ℂ
-  initialState (wf/prob _ _ _ _ wf/state) = wf/state
+  initialState : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 → State 𝕀 ℂ
+  initialState (wf/prob _ _ _ _ _ _ wf/state) = wf/state
 
   open import Data.Vec.Membership.DecPropositional { A = GroundCondition } (_≟ᶜ_)
   maybeWfState : ∀ { n } → (S : List GroundCondition) → (ℂ : Vec GroundCondition n) → Maybe (State S ℂ)
@@ -169,7 +173,7 @@ module STRIPS.Problem where
   solver-plan {S} 𝕊 𝔾 (τ List.∷ τs) | nothing = nothing
 
   -- Relation between plan problems and valid plans.
-  data Solves : (ℙ : PlanProblem ℂ 𝕀 𝕆 𝔾) → Plan (initialState ℙ) 𝔾 → Set where
-    solves : (ℙ : PlanProblem ℂ 𝕀 𝕆 𝔾) (plan : Plan (initialState ℙ) 𝔾)
+  data Solves : (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → Plan (initialState ℙ) 𝔾 → Set where
+    solves : (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) (plan : Plan (initialState ℙ) 𝔾)
       → Solves ℙ plan
     

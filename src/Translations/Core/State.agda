@@ -51,10 +51,10 @@ module Translations.Core.State where
   -- translS : ∀ (S : State) (P : List (Condition 0)) → Vec (Prop × Mode) (length P)
   -- translS S [] = []
   -- translS S (x ∷ P) = ⟨ ` translS-helper x (x ∈ᶜᵇ S) , Linear ⟩ ∷ translS S P
-  translS-Conditions : ∀ { n } → State → ( cs : Vec GroundCondition n) → Vec (Prop × Mode) n
+  translS-Conditions : ∀ { n } → List GroundCondition → ( cs : Vec GroundCondition n) → Vec (Prop × Mode) n
   translS-Conditions S [] = []
   translS-Conditions S (c ∷ cs) = ⟨ ` translS-Condition c (c ∈? S) , Linear ⟩ ∷ (translS-Conditions S cs)
 
   translS : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 → Vec (Prop × Mode) (length ℂ)
-  translS (wf/prob _ ℂ 𝕀 _ _) = translS-Conditions 𝕀 ℂ
+  translS (wf/prob _ ℂ 𝕀 _ _ _ _) = translS-Conditions 𝕀 ℂ
  

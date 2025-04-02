@@ -6,12 +6,15 @@ open import Data.Bool
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality
 
+open import Utils.BigTensor
+
 module Translations.Core.Goal where
   open import STRIPS.Problem hiding (Term)
   open import Translations.Core.Condition
   open import Translations.Core.State
   open import Logic.Core.Props PropAtom
   open import Logic.Core.Terms TermAtom
+  open import Logic.Core.Modes
 
   {- 
     Goal translation. We turn each ground condition in the goal to an atomic
@@ -23,11 +26,11 @@ module Translations.Core.Goal where
   translG-Goal ⟨ c , false ⟩ = ` v[ translC c , const "false" ]
   translG-Goal ⟨ c , true ⟩ = ` v[ translC c , const "true" ]
   
-  translG-Goals : ∀ { gs } (G : Goals ℂ gs) → Vec Prop (length gs)
+  translG-Goals : ∀ { gs } (G : Goals gs ℂ) → Vec Prop (length gs)
   translG-Goals wf/goal/z = []
   translG-Goals (wf/goal/s {g = g} 𝔾 wfcond) = translG-Goal g ∷ translG-Goals 𝔾
 
-  translG : ∀ { gs } { 𝔾 : Goals ℂ gs } 
-    (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → Vec Prop (length gs)
-  translG (wf/prob _ _ _ _ 𝔾) = translG-Goals 𝔾
+  translG : ∀ { gs } { 𝔾 : Goals gs ℂ } 
+    (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → (Prop × Mode)
+  translG (wf/prob _ _ _ _ 𝔾 _ _) = ⟨ (⨂ translG-Goals 𝔾) ⊗ ⊤ , Linear ⟩
    

@@ -49,11 +49,11 @@ module Translations.Core.Operator where
     ... | true = translPs o vc o≤vc Ps (` v[ translC p , const "true" ] ⊗ PL) (` v[ translC p , const "false" ] ⊗ PR)
     ... | false with (p ∈ᶜᵇ (o ⁻ ∩ᶜ o ₋))
     ... | true = translPs o vc o≤vc Ps (` v[ translC p , const "false" ] ⊗ PL) (` v[ translC p , const "false" ] ⊗ PR)
-    ... | false with ((p ∈ᶜᵇ o ⁺)) ∧ (not ((p ∈ᶜᵇ posts o)))
+    ... | false with ((p ∈ᶜᵇ o ⁺)) ∧ (not (p ∈ᶜᵇ (o ₊ ∪ᶜ o ₋)))
     ... | true = translPs o vc o≤vc Ps (` v[ translC p , const "true" ] ⊗ PL) (` v[ translC p , const "true" ] ⊗ PR)
-    ... | false with ((p ∈ᶜᵇ o ⁻)) ∧ (not ((p ∈ᶜᵇ posts o)))
+    ... | false with ((p ∈ᶜᵇ o ⁻)) ∧ (not ((p ∈ᶜᵇ (o ₊ ∪ᶜ o ₋))))
     ... | true = translPs o vc o≤vc Ps (` v[ translC p , const "false" ] ⊗ PL) (` v[ translC p , const "true" ] ⊗ PR)
-    ... | false with ((p ∈ᶜᵇ o ₊)) ∧ (not ((p ∈ᶜᵇ pres o)))
+    ... | false with ((p ∈ᶜᵇ o ₊)) ∧ (not ((p ∈ᶜᵇ (o ⁺ ∪ᶜ o ⁻))))
     ... | true = 
       let o≤svc = ≤-trans o≤vc (n≤1+n vc)
        in translPs o (suc vc) o≤svc Ps (translPs-lift (suc vc) o≤svc p (fromℕ vc) ⊗ PL) (` v[ translC p , const "true" ] ⊗ PR)
@@ -73,35 +73,27 @@ module Translations.Core.Operator where
     translO-Operators (o ∷ os) = translO-Operator o ∷ translO-Operators os
 
   translO : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Vec (Prop × Mode) (length 𝕆)
-  translO (wf/prob _ _ _ 𝕆 _) = translO-Operators 𝕆
+  translO (wf/prob _ _ _ 𝕆 _ _ _) = translO-Operators 𝕆
 
   -- Let's test translO
   private
-    o : Operator
-    o = record
-      { label = "stack"
-      ; arity = 2
-      ; posPre = (record { name = "holding" 
-                        ; terms = var zero ∷ [] }) ∷ 
-                  record { name = "clear" 
-                        ; terms = var (suc zero) ∷ [] } 
-                  ∷ []
-      ; negPre = []
-      ; posPost = (record { name = "clear" 
-                        ; terms = var zero ∷ [] }) ∷ 
-                  record { name = "handempty" 
-                        ; terms = [] } ∷ 
-                  record { name = "on"
-                        ; terms = var zero ∷ var (suc zero) ∷ [] } ∷ []
-      ; negPost = (record { name = "holding" 
-                        ; terms = var zero ∷ [] }) ∷ 
-                  record { name = "clear" 
-                        ; terms = var (suc zero) ∷ [] } 
-                  ∷ []
-      }
+    op : Operator
+    op = record { label = "pick-up" ; arity = 1 
+            ; conds =
+              -- Preconditions
+              opcond ⟨ (record { label = "clear" ; terms = (var zero) ∷ [] }) , true ⟩ precond
+              ∷ opcond ⟨ (record { label = "on-table" ; terms = var zero ∷ [] }) , true ⟩ precond
+              ∷ opcond ⟨ (record { label = "handempty" ; terms = [] }) , true ⟩ precond
+              -- Postconditions 
+              ∷ opcond ⟨ (record { label = "on-table" ; terms = (var zero) ∷ [] }) , false ⟩ postcond 
+              ∷ opcond ⟨ (record { label = "clear" ; terms = (var zero) ∷ [] }) , false ⟩ postcond 
+              ∷ opcond ⟨ (record { label = "handempty" ; terms = [] }) , false ⟩ postcond
+              ∷ opcond ⟨ (record { label = "holding" ; terms = var zero ∷ [] }) , true ⟩ postcond
+              ∷ [] 
+            }
 
   o-trans : Prop × Mode
-  o-trans = translO-Operator o
+  o-trans = translO-Operator op
   
   open import PrettyPrinter.PrettyPrinter 3000
 

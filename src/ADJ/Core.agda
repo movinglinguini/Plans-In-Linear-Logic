@@ -30,7 +30,7 @@ module ADJ.Core where
     subst-Terms (x ∷ ts) t = (subst-Term x t) ∷ (subst-Terms ts t)
 
     subst-TCondition : ∀ { s } → TCondition s → Term 0 → TCondition s
-    subst-TCondition TC t = record { name = (TCondition.name TC) ; terms = subst-Terms (TCondition.terms TC) t }
+    subst-TCondition TC t = record { label = (TCondition.label TC) ; terms = subst-Terms (TCondition.terms TC) t }
 
     -- Helper function for substitution that's needed by the Adjoint Logic module.
     -- Scans over the PropAtom, and replaces all var 0's with t. As it scans,
@@ -41,26 +41,27 @@ module ADJ.Core where
   -- Instantiate the Adjoint Logic with atoms for Props and Terms, and a
   -- function for substitution in PropAtoms.
   open import Logic.Adjoint PropAtom TermAtom subst-PropAtom public
-   
-  -- Let's test out substitution 
-  -- Setting up the conditions to be used as atoms for our props
-  -- Left side of the source Prop
-  sTCondL : TCondition 2
-  sTCondL = record { name = "p1" 
-              ; terms = var zero ∷ var (suc zero) ∷ [] }
-  -- Right side of the target Prop
-  sTCondR : TCondition 2
-  sTCondR = record { name = "p2" 
-              ; terms = var (suc zero) ∷ const "t" ∷ var zero ∷ [] }
+  
+  private
+    -- Let's test out substitution 
+    -- Setting up the conditions to be used as atoms for our props
+    -- Left side of the source Prop
+    sTCondL : TCondition 2
+    sTCondL = record { label = "p1" 
+                ; terms = var zero ∷ var (suc zero) ∷ [] }
+    -- Right side of the target Prop
+    sTCondR : TCondition 2
+    sTCondR = record { label = "p2" 
+                ; terms = var (suc zero) ∷ const "t" ∷ var zero ∷ [] }
 
-  sProp : Prop
-  sProp = ∀[ 1 ][ ` v[ sTCondL , var zero ] ⊸ ` v[ sTCondR , const "false" ] ]
+    sProp : Prop
+    sProp = ∀[ 1 ][ ` v[ sTCondL , var zero ] ⊸ ` v[ sTCondR , const "false" ] ]
 
-  ts : Vec (Term 0) 2
-  ts = const "t0" ∷ const "t1" ∷ []
+    terms : Vec (Term 0) 2
+    terms = const "t0" ∷ const "t1" ∷ []
 
-  tProp = subst sProp ts
-  {-
-    Expecting tProp to look like
-    v[ p1( t0, t1 ) , t0 ] ⊸ v[ p2(t1, t, t0), false ]
-  -}
+    tProp = subst sProp terms
+    {-
+      Expecting tProp to look like
+      v[ p1( t0, t1 ) , t0 ] ⊸ v[ p2(t1, t, t0), false ]
+    -}
