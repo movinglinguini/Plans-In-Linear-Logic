@@ -18,7 +18,7 @@ open import Data.Vec
 module Translations.Core.Operator where
   open import STRIPS.Problem hiding (Term)
   open import Translations.Core.Condition
-  open import Translations.Core.State
+  open import Translations.Core.PropAtom
   open import Logic.Core.Props PropAtom
   open import Logic.Core.Terms TermAtom
   open import Logic.Core.Modes

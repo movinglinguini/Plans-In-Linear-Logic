@@ -9,7 +9,7 @@ module PrettyPrinter.PrettyPrinter (width : ℕ) where
   open import Text.Pretty width public
 
   open import Translations.Core.Condition
-  open import Translations.Core.State
+  open import Translations.Core.PropAtom
   open import ADJ.Core
   
   {-

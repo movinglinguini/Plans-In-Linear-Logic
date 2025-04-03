@@ -16,6 +16,7 @@ open import Data.Maybe
 
 module STRIPS.Problem where
   {- Repackaging the other parts of the STRIPS encoding -}
+  open import STRIPS.Core.Common public
   open import STRIPS.Core.Sat public
   open import STRIPS.Core.Terms public
   open import STRIPS.Core.Conditions public

@@ -15,7 +15,7 @@ module Translations.Core.Condition where
       { arity } : ℕ
       label : String
       terms : Vec (AdjointTerm Scope) arity
-
+      
   -- This form of translC lifts the given condition to a higher scope.
   -- Most cases will just need regular old translC.
   translC′ : ∀ { o } (n : ℕ) → o Data.Nat.≤ n → Condition o → TCondition n   

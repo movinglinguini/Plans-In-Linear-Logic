@@ -12,7 +12,7 @@ open import Data.Bool hiding (_≟_)
 module ADJ.Core where
   open import STRIPS.Problem hiding (Term)
   open import Translations.Core.Condition
-  open import Translations.Core.State
+  open import Translations.Core.PropAtom
   open import Logic.Core.Props PropAtom public
   open import Logic.Core.Terms TermAtom public
   open import Logic.Core.Modes public

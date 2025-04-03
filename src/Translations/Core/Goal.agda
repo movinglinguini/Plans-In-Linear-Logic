@@ -6,6 +6,9 @@ open import Data.Bool
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality
 
+open import Translations.Core.ConditionConfiguration
+open import Translations.Core.PropAtom
+
 open import Utils.BigTensor
 
 module Translations.Core.Goal where
@@ -21,16 +24,12 @@ module Translations.Core.Goal where
     proposition with true or false as its truth value depending on the boolean
     the condition was paired with.
   -}
-
-  translG-Goal : (GroundCondition × Bool) → Prop
-  translG-Goal ⟨ c , false ⟩ = ` v[ translC c , const "false" ]
-  translG-Goal ⟨ c , true ⟩ = ` v[ translC c , const "true" ]
   
   translG-Goals : ∀ { gs } (G : Goals gs ℂ) → Vec Prop (length gs)
   translG-Goals wf/goal/z = []
-  translG-Goals (wf/goal/s {g = g} 𝔾 wfcond) = translG-Goal g ∷ translG-Goals 𝔾
+  translG-Goals (wf/goal/s {g = g} {gs} 𝔾 wfcond) = translConfig (g ∷ gs)
 
   translG : ∀ { gs } { 𝔾 : Goals gs ℂ } 
     (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → (Prop × Mode)
   translG (wf/prob _ _ _ _ 𝔾 _ _) = ⟨ (⨂ translG-Goals 𝔾) ⊗ ⊤ , Linear ⟩
-   
+     

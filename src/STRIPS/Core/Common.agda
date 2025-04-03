@@ -17,3 +17,6 @@ module STRIPS.Core.Common where
   getPositives [] = [] 
   getPositives ((fst , true) ∷ ccs) = fst ∷ getPositives ccs 
   getPositives ((fst , false) ∷ ccs) = getPositives ccs
+
+  -- Convenience type for describing condition configurations
+  ConditionConfiguration = List (GroundCondition × Bool)

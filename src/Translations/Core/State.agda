@@ -12,19 +12,16 @@ open import Data.Vec.Relation.Unary.Any
 open import Data.List.Membership.Propositional renaming (_∈_ to _∈ˡ_; _∉_ to _∉ˡ_)
 open import Data.List.Relation.Unary.Any
 
+open import STRIPS.Problem hiding (Term)
+
+open import Translations.Core.Condition
+open import Translations.Core.PropAtom
+
 module Translations.Core.State where
-  open import Translations.Core.Condition
-  open import STRIPS.Problem hiding (Term)
   open import Logic.Core.Terms TermAtom
 
   open import Data.List.Membership.DecPropositional { A = GroundCondition } (_≟ᶜ_)
   
-  -- We are ultimately translating Conditions into PropAtoms,
-  -- which contain translated conditions (TCondition) + a truth value term.
-  infix 10 v[_,_]
-  data PropAtom : Set where
-    v[_,_] : ∀ { s } → TCondition s → Term s → PropAtom
-
   open import Logic.Core.Props PropAtom
   open import Logic.Core.Modes
   open import Logic.Utils.ModeOf PropAtom
@@ -32,7 +29,6 @@ module Translations.Core.State where
   private
     variable
       s : ℕ
-      𝕊 ℙ : List (Condition s)
 
   -- Helper function for translS
   -- Bool is supposed to represent whether or not the condition c was in the state we
@@ -41,8 +37,6 @@ module Translations.Core.State where
   translS-Condition : ∀ { S } ( c : GroundCondition ) → Dec (c ∈ S) → PropAtom
   translS-Condition c (false because _) = v[ (translC c) , const "false" ]
   translS-Condition c (true because _) = v[ (translC c) , const "true" ]
-  -- translS-Condition c false = v[ (translC c) , const "false" ]
-  -- translS-Condition c true = v[ (translC c) , const "true" ]
 
   {- State Translation -}
   -- Given a state 𝕊 and a list of conditions ℙ, map each condition in ℙ
@@ -57,4 +51,7 @@ module Translations.Core.State where
 
   translS : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 → Vec (Prop × Mode) (length ℂ)
   translS (wf/prob _ ℂ 𝕀 _ _ _ _) = translS-Conditions 𝕀 ℂ
+
+  {- Some properties of translS -}
+
  

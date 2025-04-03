@@ -8,7 +8,9 @@ open import Relation.Binary.PropositionalEquality
 module Translations.Translations where
   {- Repackage other pieces of the translation -}
   open import Translations.Core.Term public
+  open import Translations.Core.PropAtom public
   open import Translations.Core.Condition public
+  open import Translations.Core.ConditionConfiguration public
   open import Translations.Core.State public
   open import Translations.Core.Goal public
   open import Translations.Core.Operator public

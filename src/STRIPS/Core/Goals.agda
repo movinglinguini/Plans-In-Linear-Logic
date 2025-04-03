@@ -10,12 +10,14 @@ open import Data.Bool
 open import Data.Maybe
 open import Relation.Nullary.Decidable
 
+open import STRIPS.Core.Common
+
 module STRIPS.Core.Goals where
   open import STRIPS.Core.Conditions
 
   -- A well-formed goal is one where all its conditions are in the problem condition vector.
   
-  data Goals : ∀ { n } ( gs : List (GroundCondition × Bool) ) → ( ℂ : Vec GroundCondition n ) → Set where
+  data Goals : ∀ { n } ( gs : ConditionConfiguration ) → ( ℂ : Vec GroundCondition n ) → Set where
     wf/goal/z : ∀ { n } { ℂ : Vec GroundCondition n } → Goals [] ℂ
 
     wf/goal/s : ∀ { n g gs } { ℂ : Vec GroundCondition n } 
@@ -29,7 +31,7 @@ module STRIPS.Core.Goals where
     ℂ : Vec GroundCondition 2
     ℂ = (record { label = "cond-1" ; terms = [] }) ∷ ((record { label = "cond-2" ; terms = [] }) ∷ [])
 
-    gs : List (GroundCondition × Bool)
+    gs : ConditionConfiguration
     gs = ((record { label = "cond-2" ; terms = [] }) , false) ∷ (((record { label = "cond-1" ; terms = [] }) , true) ∷ [])
 
     goals : Goals gs ℂ
@@ -37,7 +39,7 @@ module STRIPS.Core.Goals where
   
   open import Data.Vec.Membership.DecPropositional { A = GroundCondition } (_≟ᶜ_)
   -- Build goals
-  maybeGoal : ∀ { n } → (gs : List (GroundCondition × Bool)) → (ℂ : Vec GroundCondition n) → Maybe (Goals gs ℂ)
+  maybeGoal : ∀ { n } → (gs : ConditionConfiguration) → (ℂ : Vec GroundCondition n) → Maybe (Goals gs ℂ)
   maybeGoal [] ℂ = just wf/goal/z 
   maybeGoal (g ∷ gs) ℂ with (proj₁ g) ∈? ℂ
   ... | no ¬p = nothing
