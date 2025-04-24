@@ -1,6 +1,6 @@
 -- Translation of action descriptions from Actions You Can Handle into open 
 -- lolli propositions in Adjoint Logic
-open import Data.List hiding (length)
+open import Data.List
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Data.Bool hiding (_≟_)
@@ -68,12 +68,12 @@ module Translations.Core.Operator where
     translO-Operator : Operator → Prop × Mode
     translO-Operator o = ⟨ translPs o (Operator.arity o) ≤-refl ((o ⁺ ∪ᶜ o ⁻) ∪ᶜ (o ₊ ∪ᶜ o ₋)) 𝟙 𝟙 , Unrestricted ⟩
 
-    translO-Operators : ∀ { n } ( os : Vec Operator n ) → Vec (Prop × Mode) n
+    translO-Operators : ( os : List Operator ) → Vec (Prop × Mode) (Data.List.length os)
     translO-Operators [] = []
     translO-Operators (o ∷ os) = translO-Operator o ∷ translO-Operators os
 
-  translO : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Vec (Prop × Mode) (length 𝕆)
-  translO (wf/prob _ _ _ 𝕆 _ _ _) = translO-Operators 𝕆
+  translO : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Vec (Prop × Mode) (Data.List.length 𝕆)
+  translO (wf/prob _ _ _ 𝕆 _ _ _ _) = translO-Operators 𝕆
 
   -- Let's test translO
   private

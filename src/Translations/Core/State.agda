@@ -1,5 +1,5 @@
 open import Data.Nat
-open import Data.List hiding (length)
+open import Data.List
 open import Data.Bool
 open import Data.Vec 
 open import Relation.Binary.PropositionalEquality
@@ -7,20 +7,19 @@ open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Nullary.Decidable
 open import Relation.Binary.Definitions
 open import Relation.Nullary.Negation
-open import Data.Vec.Membership.Propositional renaming (_∈_ to _∈ᵛ_) 
+open import Data.Vec.Membership.Propositional renaming (_∈_ to _∈ᵛ_)
+open import Data.List.Membership.Propositional renaming (_∈_ to _∈ˡ_)
 open import Data.Vec.Relation.Unary.Any
-open import Data.List.Membership.Propositional renaming (_∈_ to _∈ˡ_; _∉_ to _∉ˡ_)
 open import Data.List.Relation.Unary.Any
 
 open import STRIPS.Problem hiding (Term)
 
 open import Translations.Core.Condition
 open import Translations.Core.PropAtom
+open import Translations.Core.ConditionConfiguration
 
 module Translations.Core.State where
   open import Logic.Core.Terms TermAtom
-
-  open import Data.List.Membership.DecPropositional { A = GroundCondition } (_≟ᶜ_)
   
   open import Logic.Core.Props PropAtom
   open import Logic.Core.Modes
@@ -30,28 +29,26 @@ module Translations.Core.State where
     variable
       s : ℕ
 
-  -- Helper function for translS
-  -- Bool is supposed to represent whether or not the condition c was in the state we
-  -- are translating over. If it is, then the PropAtom we translate to gets a truth
-  -- value of "true". Otherwise, it gets "false".
-  translS-Condition : ∀ { S } ( c : GroundCondition ) → Dec (c ∈ S) → PropAtom
-  translS-Condition c (false because _) = v[ (translC c) , const "false" ]
-  translS-Condition c (true because _) = v[ (translC c) , const "true" ]
 
-  {- State Translation -}
-  -- Given a state 𝕊 and a list of conditions ℙ, map each condition in ℙ
-  -- to a PropAtom where the truth value reflects whether the condition is in
-  -- the state.
-  -- translS : ∀ (S : State) (P : List (Condition 0)) → Vec (Prop × Mode) (length P)
-  -- translS S [] = []
-  -- translS S (x ∷ P) = ⟨ ` translS-helper x (x ∈ᶜᵇ S) , Linear ⟩ ∷ translS S P
-  translS-Conditions : ∀ { n } → List GroundCondition → ( cs : Vec GroundCondition n) → Vec (Prop × Mode) n
-  translS-Conditions S [] = []
-  translS-Conditions S (c ∷ cs) = ⟨ ` translS-Condition c (c ∈? S) , Linear ⟩ ∷ (translS-Conditions S cs)
-
-  translS : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 → Vec (Prop × Mode) (length ℂ)
-  translS (wf/prob _ ℂ 𝕀 _ _ _ _) = translS-Conditions 𝕀 ℂ
+  translS-Conditions : (𝕀 : State) → Vec (Prop × Mode) (Data.List.length 𝕀)
+  translS-Conditions [] = []
+  translS-Conditions (⟨ c , false ⟩ ∷ 𝕀) = ⟨ (` v[ (translC c) , (const "false") ]) , Linear ⟩ ∷ (translS-Conditions 𝕀)
+  translS-Conditions (⟨ c , true ⟩ ∷ 𝕀) = ⟨ (` v[ (translC c) , (const "true") ]) , Linear ⟩ ∷ (translS-Conditions 𝕀)
+  
+  translS : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 → Vec (Prop × Mode) (Data.List.length 𝕀)
+  translS (wf/prob _ _ 𝕀 _ _ _ _ _) = translS-Conditions 𝕀
 
   {- Some properties of translS -}
 
- 
+  -- If a condition config was in the state, then its translation is in the translation
+  -- of the state.
+  ∈-state⇒∈-transl : ∀ { s } 
+    → ( prob : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 )
+    → s ∈ˡ 𝕀 
+    → ⟨ translConfig-Condition s , Linear ⟩ ∈ᵛ translS prob
+  ∈-state⇒∈-transl {s = ⟨ fst , false ⟩} (wf/prob _ _ .(⟨ fst , false ⟩ ∷ _) _ _ wf/conds wf/state wf/goal) (here refl) = here refl
+  ∈-state⇒∈-transl {s = ⟨ fst , true ⟩} (wf/prob _ _ .(⟨ fst , true ⟩ ∷ _) _ _ wf/conds wf/state wf/goal) (here refl) = here refl
+  ∈-state⇒∈-transl {s = ⟨ fst , snd ⟩} (wf/prob _ _ .(⟨ fst₁ , false ⟩ ∷ xs) 𝕆 _ wf/conds (wf/state/s wf/state x) wf/goal) (there {⟨ fst₁ , false ⟩} {xs} mem) 
+    = there (∈-state⇒∈-transl (wf/prob _ _ xs 𝕆 _ wf/conds wf/state wf/goal) mem)
+  ∈-state⇒∈-transl {s = ⟨ fst , snd ⟩} (wf/prob _ _ .(⟨ fst₁ , true ⟩ ∷ xs) 𝕆 _ wf/conds (wf/state/s wf/state x) wf/goal) (there {⟨ fst₁ , true ⟩} {xs} mem) 
+    = there (∈-state⇒∈-transl (wf/prob _ _ xs 𝕆 _ wf/conds wf/state wf/goal) mem)

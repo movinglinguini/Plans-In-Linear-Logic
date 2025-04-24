@@ -25,11 +25,9 @@ module Translations.Core.Goal where
     the condition was paired with.
   -}
   
-  translG-Goals : ∀ { gs } (G : Goals gs ℂ) → Vec Prop (length gs)
-  translG-Goals wf/goal/z = []
-  translG-Goals (wf/goal/s {g = g} {gs} 𝔾 wfcond) = translConfig (g ∷ gs)
+  translG-Goals : (𝔾 : Goal) → Vec Prop (length 𝔾)
+  translG-Goals 𝔾 = translConfig 𝔾
 
-  translG : ∀ { gs } { 𝔾 : Goals gs ℂ } 
-    (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → (Prop × Mode)
-  translG (wf/prob _ _ _ _ 𝔾 _ _) = ⟨ (⨂ translG-Goals 𝔾) ⊗ ⊤ , Linear ⟩
-     
+  translG : (P : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) → (Prop × Mode)
+  translG (wf/prob _ _ _ _ 𝔾 _ _ _) = ⟨ (⨂ translG-Goals 𝔾) ⊗ ⊤ , Linear ⟩
+      

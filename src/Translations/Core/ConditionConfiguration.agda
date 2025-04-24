@@ -16,7 +16,11 @@ module Translations.Core.ConditionConfiguration where
   {-
     Translation of a condition configuration into a vector of prop atoms.
   -}
-  translConfig : (gs : ConditionConfiguration) → Vec Prop (length gs)
+  translConfig-Condition : GroundCondition × Bool → Prop
+  translConfig-Condition (c , false) = ` v[ translC c , const "false" ]
+  translConfig-Condition (c , true) = ` v[ translC c , const "true" ]
+
+  translConfig : (gs : List (GroundCondition × Bool)) → Vec Prop (length gs)
   translConfig [] = []
-  translConfig ((c , false) ∷ gs) = ` v[ translC c , const "false" ] ∷ (translConfig gs)
-  translConfig ((c , true) ∷ gs) = ` v[ translC c , const "true" ] ∷ (translConfig gs)
+  translConfig ((c , false) ∷ gs) = (translConfig-Condition (c , false)) ∷ (translConfig gs)
+  translConfig ((c , true) ∷ gs) = (translConfig-Condition (c , true)) ∷ (translConfig gs)

@@ -14,6 +14,10 @@ module Utils.IrrelifyContext where
   irrelify-One ⟨ fst , (A ∷ Δ) ⟩ A (here refl) = ⟨ fst , ⟨ proj₁ A , Irrelevant ⟩ ∷ Δ ⟩
   irrelify-One ⟨ fst , (B ∷ Δ) ⟩ A (there mem) = ⟨ [] , B ∷ [] ⟩ ++ᶜ irrelify-One ⟨ fst , Δ ⟩ A mem
 
+  irrelify-AllBut : ∀ { p m } (Δ : Context p m) ( A : (Prop × Mode) ) → A ∈ (proj₂ Δ) → Context p m
+  irrelify-AllBut ⟨ fst , (A ∷ As) ⟩ A (here refl) = ⟨ fst , (A ∷ As) ⟩
+  irrelify-AllBut ⟨ fst , (B ∷ As) ⟩ A (there mem) = ⟨ [] , ⟨ proj₁ B , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ irrelify-AllBut ⟨ fst , As ⟩ A mem
+
   postulate
     irrelify : ∀ { n m p } ( Δ : Context p m ) → Vec (Σ (Prop × Mode) (λ A → A ∈ (proj₂ Δ))) n → Context p m
   -- irrelify Δ [] = Δ
@@ -62,4 +66,4 @@ module Utils.IrrelifyContext where
   -- -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {⟨ fst₁ , Linear ⟩} {AinΔ = here px} refl = mg/c {!   !} {!   !}
   -- -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {⟨ fst₁ , Unrestricted ⟩} {AinΔ = here px} refl = {!   !}
   -- -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {⟨ fst₁ , Irrelevant ⟩} {AinΔ = here px} refl = {!   !} 
-  -- -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {AinΔ = there AinΔ} refl = {!   !}    
+  -- -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {AinΔ = there AinΔ} refl = {!   !}      

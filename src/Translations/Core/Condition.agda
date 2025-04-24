@@ -19,7 +19,7 @@ module Translations.Core.Condition where
   -- This form of translC lifts the given condition to a higher scope.
   -- Most cases will just need regular old translC.
   translC′ : ∀ { o } (n : ℕ) → o Data.Nat.≤ n → Condition o → TCondition n   
-  translC′ s o≤n record { label = label ; terms = terms } = record { label = label ; terms = translTs s o≤n (fromList terms) } 
+  translC′ s o≤n record { label = label ; terms = terms } = record { label = label ; terms = translTs s o≤n terms } 
   
   -- Trivial form of translC that translates a condition and retains the same scope.
   -- This will be very useful for translating most things.

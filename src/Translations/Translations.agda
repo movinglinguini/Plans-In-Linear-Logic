@@ -1,5 +1,5 @@
 open import Data.Vec
-open import Data.List hiding (merge ; length)
+open import Data.List
 open import Data.Nat using (_+_; z≤n; ℕ)
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality
@@ -29,17 +29,17 @@ module Translations.Translations where
   -- Expected length of the term context, which will consist of
   -- all translated terms of P plus "true" and "false"
   lenTermCtxt : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾 → ℕ
-  lenTermCtxt (wf/prob 𝕋 _ _ _ _ _ _) = length 𝕋
+  lenTermCtxt (wf/prob 𝕋 _ _ _ _ _ _ _) = Data.List.length 𝕋
 
   -- Expected length of the unrestricted context, which will
   -- consist of all translated operators of P
   lenUnrCtxt : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → ℕ
-  lenUnrCtxt (wf/prob _ _ _ 𝕆 _ _ _) = length 𝕆
+  lenUnrCtxt (wf/prob _ _ _ 𝕆 _ _ _ _) = Data.List.length 𝕆
 
   -- -- Expected length of the linear context, which will
   -- -- consist of all translated conditions of P
   lenLinCtxt : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → ℕ
-  lenLinCtxt (wf/prob _ ℂ _ _ _ _ _) = length ℂ
+  lenLinCtxt (wf/prob _ ℂ _ _ _ _ _ _) = Data.List.length ℂ
 
   -- -- The expected size of the context of the sequent
   -- -- obtained from translating a problem is the size of
@@ -48,26 +48,26 @@ module Translations.Translations where
   -- -- because we are going to get the translated context through
   -- -- concatenation.
   CtxtP : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Set
-  CtxtP (wf/prob 𝕋 ℂ _ 𝕆 _ _ _) = Context (2 + length 𝕋 + 0) (length 𝕆 + length ℂ)
+  CtxtP (wf/prob 𝕋 ℂ _ 𝕆 _ _ _ _) = Context (2 + Data.List.length 𝕋 + 0) (Data.List.length 𝕆 + Data.List.length ℂ)
 
   -- {- 
   --   Translation of operators into an unrestricted context.
   --   We prove that this part of the context is indeed unrestricted below.
   -- -}
-  contextify-operators : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Context (2 + length 𝕋) (length 𝕆)
+  contextify-operators : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Context (2 + Data.List.length 𝕋) (Data.List.length 𝕆)
   contextify-operators P = ⟨ const "true" ∷ const "false" ∷ translTsOfP P , translO P ⟩
   -- {-
   --   Translation of state into a linear context.
   --   We prove that this part of the context is indeed linear below.
   -- -}
-  contextify-state : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Context 0 (length ℂ) 
+  contextify-state : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾  → Context 0 (Data.List.length 𝕀) 
   contextify-state P = ⟨ [] , translS P ⟩
 
   -- {-
   --   Concatenates the operator and state contexts.
   -- -}
   contextOfProblem : ∀ (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾)  
-    → Context ((2 + length 𝕋) + 0) ((length 𝕆) + (length ℂ))
+    → Context ((2 + Data.List.length 𝕋) + 0) ((Data.List.length 𝕆) + (Data.List.length 𝕀))
   contextOfProblem P = contextify-operators P ++ᶜ contextify-state P
 
   -- {-
@@ -76,7 +76,7 @@ module Translations.Translations where
   --   will assume that it's linear in our proofs.
   -- -}
   translProb : ∀ (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) 
-    → (Context ((2 + length 𝕋) + 0) ((length 𝕆) + (length ℂ))) × (Prop × Mode) 
+    → (Context ((2 + Data.List.length 𝕋) + 0) ((Data.List.length 𝕆) + (Data.List.length 𝕀))) × (Prop × Mode) 
   translProb ℙ = ⟨ (contextOfProblem ℙ) , translG ℙ ⟩
 
   -- {------
@@ -84,6 +84,8 @@ module Translations.Translations where
   -- ------}
 
   -- {- Properties of problem translation -}
+  ∈-state⇒∈-context : 
+
 
   -- -- The state translation is fully linear
   -- context-state-all-lin : ∀ { P } → AllOfMode Linear (contextify-state P)

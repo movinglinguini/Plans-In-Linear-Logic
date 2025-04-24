@@ -1,5 +1,5 @@
 open import Data.Vec hiding (remove)
-open import Data.Vec.Membership.Propositional
+open import Data.List.Membership.Propositional
 open import Data.List
 open import Data.Nat
 open import Data.Fin
@@ -11,15 +11,14 @@ open import STRIPS.Core.Conditions
 open import STRIPS.Core.States
 
 module STRIPS.Core.Transitions where
-
   private
     variable
       n m q : ℕ
       o : Operator
       S : List GroundCondition
-      𝕋 : Vec TermConstant n
-      𝕆 : Vec Operator m
-      ℂ : Vec GroundCondition q
+      𝕋 : List TermConstant
+      𝕆 : List Operator
+      ℂ : List GroundCondition
       ts : Vec TermConstant (Operator.arity o)
 
 
@@ -28,9 +27,9 @@ module STRIPS.Core.Transitions where
     a tuple ⟨ o , ts ⟩, where operator o is from the list of problem operators
     and grounding o with ts forms a well-formed ground operator.
   -}
-  data Transition : ∀ { m q } 
-      → Vec GroundCondition q
-      → Vec Operator m
+  data Transition : 
+      List GroundCondition
+      → List Operator
       → Set where
     wf/transition : ( o : Operator ) → (ts : Vec TermConstant (Operator.arity o))
       → o ∈ 𝕆 

@@ -5,7 +5,7 @@ open import Data.Nat
 open import Data.Fin
 open import Data.Product
 open import Data.Vec hiding (remove)
-open import Data.Vec.Membership.Propositional
+open import Data.List.Membership.Propositional
 open import Data.String
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Relation.Nullary.Decidable
@@ -152,11 +152,11 @@ module STRIPS.Core.Operators where
   private
     variable
       n : ℕ
-      ℂ : Vec GroundCondition n
+      ℂ : List GroundCondition
 
   -- A ground operator is well-formed if all of its underlying conditions can be
   -- found in the list of problem conditions.
-  data WfGroundOperator : ∀ { n } → GroundOperator → Vec GroundCondition n → Set where
+  data WfGroundOperator : GroundOperator → List GroundCondition → Set where
     wf/groundop/z : ∀ { ℓ } → WfGroundOperator (record { label = ℓ ; conds = [] }) ℂ
 
     wf/groundop/s : ∀ { ℓ c ocs p b } 
