@@ -1,5 +1,8 @@
 open import Data.Nat
 open import Data.Vec
+open import Data.List
+open import Data.Fin
+open import Data.Product
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality
 open import Data.Vec.Membership.Propositional
@@ -10,60 +13,86 @@ module Utils.IrrelifyContext where
   open import ADJ.Core renaming (Term to AdjointTerm)
   open import Utils.AllOfMode
 
-  irrelify-One : ∀ { p m } (Δ : Context p m) ( A : (Prop × Mode) ) → A ∈ (proj₂ Δ) → Context p m
-  irrelify-One ⟨ fst , (A ∷ Δ) ⟩ A (here refl) = ⟨ fst , ⟨ proj₁ A , Irrelevant ⟩ ∷ Δ ⟩
-  irrelify-One ⟨ fst , (B ∷ Δ) ⟩ A (there mem) = ⟨ [] , B ∷ [] ⟩ ++ᶜ irrelify-One ⟨ fst , Δ ⟩ A mem
+  irrelify-All : ∀ { p m } (Δ : Context p m) → Context p m
+  irrelify-All ⟨ fst , [] ⟩ = ⟨ fst , [] ⟩
+  irrelify-All ⟨ fst , A ∷ snd ⟩ = ⟨ [] , ⟨ proj₁ A , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ irrelify-All ⟨ fst , snd ⟩
 
-  irrelify-AllBut : ∀ { p m } (Δ : Context p m) ( A : (Prop × Mode) ) → A ∈ (proj₂ Δ) → Context p m
-  irrelify-AllBut ⟨ fst , (A ∷ As) ⟩ A (here refl) = ⟨ fst , (A ∷ As) ⟩
-  irrelify-AllBut ⟨ fst , (B ∷ As) ⟩ A (there mem) = ⟨ [] , ⟨ proj₁ B , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ irrelify-AllBut ⟨ fst , As ⟩ A mem
+  irrelify-Only : ∀ { p m } (Δ : Context p m) → Fin m → Context p m
+  irrelify-Only ⟨ fst , x ∷ snd ⟩ zero = ⟨ fst , (⟨ proj₁ x , Irrelevant ⟩ ∷ snd) ⟩
+  irrelify-Only ⟨ fst , x ∷ snd ⟩ (suc idx) = ⟨ [] , x ∷ [] ⟩ ++ᶜ irrelify-Only ⟨ fst , snd ⟩ idx
 
-  postulate
-    irrelify : ∀ { n m p } ( Δ : Context p m ) → Vec (Σ (Prop × Mode) (λ A → A ∈ (proj₂ Δ))) n → Context p m
-  -- irrelify Δ [] = Δ
-  -- irrelify Δ (⟨ A , mem ⟩ ∷ v) = 
-  --   let Δ' = irrelify-One Δ A mem
-  --   in irrelify Δ' {!  !}
-
-  -- {- Helper functions -}
-  -- irrelify : ∀ { n } → Vec (Prop × Mode) n → Vec (Prop × Mode) n
-  -- irrelify [] = []
-  -- irrelify (x ∷ xs) = ⟨ proj₁ x , Irrelevant ⟩ ∷ irrelify xs 
-
-  -- makeAllIrrel : ∀ { n m } → Context n m → Context n m
-  -- makeAllIrrel ⟨ fst , snd ⟩ = ⟨ fst , irrelify snd ⟩
+  irrelify-AllBut : ∀ { p m } (Δ : Context p m) → Fin m → Context p m
+  irrelify-AllBut ⟨ fst , (A ∷ As) ⟩ zero = ⟨ [] , A ∷ [] ⟩ ++ᶜ irrelify-All ⟨ fst , As ⟩
+  irrelify-AllBut ⟨ fst , (B ∷ As) ⟩ (suc idx) = ⟨ [] , ⟨ proj₁ B , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ irrelify-AllBut ⟨ fst , As ⟩ idx 
   
-  -- makeAllIrrelExcept : ∀ { n m } ( A : Prop × Mode ) ( Δ : Context n m ) → A ∈ (proj₂ Δ)  → Context n m
-  -- makeAllIrrelExcept A ⟨ fst , (B ∷ Bs) ⟩ (here px) = ⟨ [] , B ∷ [] ⟩ ++ᶜ (makeAllIrrel ⟨ fst , Bs ⟩)
-  -- makeAllIrrelExcept A ⟨ fst , (B ∷ Bs) ⟩ (there AinΔ) = ⟨ [] , ⟨ proj₁ B , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ (makeAllIrrelExcept A ⟨ fst , Bs ⟩ AinΔ)
+  irrelify-Vec : ∀ { p m } (Δ : Context p m)
+    → List (Fin m)
+    → Context p m
+  irrelify-Vec Δ [] = Δ
+  irrelify-Vec Δ (x ∷ xs) 
+    = let Δ' = irrelify-Only Δ x
+    in irrelify-Vec Δ' xs
 
-  -- onlyIrrelify : ∀ { n m } ( A : Prop × Mode ) ( Δ : Context n m ) → A ∈ (proj₂ Δ)  → Context n m
-  -- onlyIrrelify A ⟨ fst , B ∷ Bs ⟩ (here px) = ⟨ [] , ⟨ proj₁ B , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ ⟨ fst , Bs ⟩
-  -- onlyIrrelify A ⟨ fst , B ∷ Bs ⟩ (there mem) = ⟨ [] , B ∷ [] ⟩ ++ᶜ onlyIrrelify A ⟨ fst , Bs ⟩ mem
+  ∈⇒idx : ∀ { p m Aₘ } ( Δ : Context p m )
+    → Aₘ ∈ proj₂ Δ
+    → Fin m
+  ∈⇒idx Δ (here refl) = zero
+  ∈⇒idx ⟨ fst , x ∷ xs ⟩ (there mem) = suc (∈⇒idx ⟨ fst , xs ⟩ mem)
 
-  -- {- Properties of irrelification -}
-  -- irrelify-is-cWeak : ∀ { n m } { IΔ Δ : Context n m } → IΔ ≡ (makeAllIrrel Δ) → cWeakenable IΔ
-  -- irrelify-is-cWeak {Δ = ⟨ fst , [] ⟩} refl = weak/n 
-  -- irrelify-is-cWeak {Δ = ⟨ fst , x ∷ snd ⟩} refl = weak/c (irrelify-is-cWeak refl) mweak/i
+  lookup⇒∈ : ∀ { p m Aₘ i } (Δ : Context p m )
+    → Aₘ ≡ Data.Vec.lookup (proj₂ Δ) i 
+    → Aₘ ∈ proj₂ Δ
+  lookup⇒∈ {i = zero} ⟨ fst , x ∷ snd ⟩ refl = here refl
+  lookup⇒∈ {i = suc i} ⟨ fst , x ∷ snd ⟩ refl = there (lookup⇒∈ ⟨ fst , snd ⟩ refl)
 
-  -- irrelify-is-cContr : ∀ { n m } { IΔ Δ : Context n m } → IΔ ≡ (makeAllIrrel Δ) → cContractable IΔ
-  -- irrelify-is-cContr {Δ = ⟨ fst , [] ⟩} refl = cont/n
-  -- irrelify-is-cContr {Δ = ⟨ fst , x ∷ snd ⟩} refl = cont/c (irrelify-is-cContr refl) mcontract/i
 
-  -- irrelify-merge-i : ∀ { n m } { IΔ Δ : Context n m } → IΔ ≡ (makeAllIrrel Δ) → merge IΔ IΔ IΔ
-  -- irrelify-merge-i {Δ = ⟨ fst , [] ⟩} refl = mg/n 
-  -- irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} refl = mg/c (irrelify-merge-i refl) i∙i
+  {- Properties of irrelification -}
 
-  -- irrelify-merge-l : ∀ { n m } { IΔ Δ : Context n m } → IΔ ≡ (makeAllIrrel Δ) → AllOfMode Linear Δ → merge IΔ Δ Δ
-  -- irrelify-merge-l refl all-mode/z = mg/n  
-  -- irrelify-merge-l refl (all-mode/s {A = ⟨ fst , Linear ⟩} lin x) = mg/c (irrelify-merge-l refl lin) i∙l 
+  -- If we irrelified all but Aₘ in a context, then we still know the location
+  -- of Aₘ in the new context.
+  -- ∈-Δ⇒∈-IΔ : ∀ { n m i } { Aₘ : Prop × Mode } ( Δ : Context n m )
+  --   → Aₘ ≡ (Data.Vec.lookup (proj₂ Δ) i)
+  --   → Aₘ ∈ proj₂ (irrelify-AllBut Δ i)
+  -- ∈-Δ⇒∈-IΔ {i = zero} ⟨ fst , x ∷ snd ⟩ refl = here refl
+  -- ∈-Δ⇒∈-IΔ {i = suc i} ⟨ fst , x ∷ snd ⟩ refl = there (∈-Δ⇒∈-IΔ ⟨ fst , snd ⟩ refl)
 
-  -- {- Properties of near total irrelification -}
-  -- -- almost-irrelify-merge-i : ∀ { n m } { IΔ Δ : Context n m } { A : Prop × Mode } { AinΔ : A ∈ proj₂ Δ }
-  -- --   → IΔ ≡ (makeAllIrrelExcept A Δ AinΔ)
-  -- --   → merge IΔ IΔ IΔ
+  ∈-Δ⇒∈-IΔ : ∀ { n m i } { Aₘ : Prop × Mode } { Δ : Context n m }
+    → Aₘ ≡ Data.Vec.lookup (proj₂ Δ) i
+    → Aₘ ∈ proj₂ (irrelify-AllBut Δ i)
+  ∈-Δ⇒∈-IΔ {i = zero} {Δ = ⟨ fst , x ∷ snd ⟩} refl = here refl
+  ∈-Δ⇒∈-IΔ {i = suc i} {Δ = ⟨ fst , x ∷ snd ⟩} refl = there (∈-Δ⇒∈-IΔ { Δ = ⟨ fst , snd ⟩ } refl)
 
-  -- -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {⟨ fst₁ , Linear ⟩} {AinΔ = here px} refl = mg/c {!   !} {!   !}
-  -- -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {⟨ fst₁ , Unrestricted ⟩} {AinΔ = here px} refl = {!   !}
-  -- -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {⟨ fst₁ , Irrelevant ⟩} {AinΔ = here px} refl = {!   !} 
-  -- -- almost-irrelify-merge-i {Δ = ⟨ fst , x ∷ snd ⟩} {AinΔ = there AinΔ} refl = {!   !}      
+  irrelify-allbut⇒update : ∀ { n m Aₘ i } { Δ Δ' : Context n m }
+    → Aₘ ≡ (Data.Vec.lookup (proj₂ Δ) i)
+    → Δ' ≡ irrelify-AllBut Δ i
+    → Σ (Context n m) (λ Δ'' → update Δ' Aₘ (proj₁ Aₘ , Irrelevant) Δ'')
+  irrelify-allbut⇒update { Δ = Δ } refl refl = ∈⇒update (∈-Δ⇒∈-IΔ { Δ = Δ } refl)
+
+  -- irrelify-allbut⇒update : ∀ { n m i Aₘ }
+  --   → (Δ Δ' : Context n m)
+  --   → Aₘ ≡ Data.Vec.lookup (proj₂ Δ) i
+  --   → Δ' ≡ irrelify-AllBut Δ i
+  --   → Σ (Context n m) (λ Δ'' → update Δ' Aₘ (proj₁ Aₘ , Irrelevant) Δ'')
+  -- irrelify-allbut⇒update Δ _ refl refl = ∈⇒update (∈-Δ⇒∈-IΔ Δ refl)
+
+  -- -- 
+  -- irrelify-allbut⇒update : ∀ { n m } { k : Mode } { A : Prop } { Δ Δ' : Context n m } { mem : (A , k) ∈ proj₂ Δ }
+  --   → Δ' ≡ (irrelify-AllBut Δ (A , k) mem)
+  --   → Σ (Context n m) (λ Δ'' → update Δ' (A , k) (A , Irrelevant) Δ'' )
+  -- irrelify-allbut⇒update {k = k} {A = A } {mem = mem} refl 
+  --   = ∈⇒update (∈-Δ⇒∈-IΔ mem)
+
+  -- -- A fully irrelevant context is weakenable
+  irrelify-weak : ∀ { n m } ( Δ : Context n m )
+    → cWeakenable (irrelify-All Δ)
+  irrelify-weak ⟨ fst , [] ⟩ = weak/n
+  irrelify-weak ⟨ fst , x ∷ snd ⟩ = weak/c (irrelify-weak ⟨ fst , snd ⟩ ) mweak/i
+
+  -- If you irrelify the remaining prop from an irrelify-AllBut, then you have
+  -- a weakenable context.
+  -- irrelify-allbut-update-irr-irr :  ∀ { n m } { k : Mode } { A : Prop } { Δ Δ' : Context n m } { mem : (A , k) ∈ proj₂ Δ }
+  --   → (eq : Δ' ≡ (irrelify-AllBut Δ (∈⇒idx Δ mem)))
+  --   → cWeakenable (proj₁ (irrelify-allbut⇒update mem eq))
+  -- irrelify-allbut-update-irr-irr {Δ = ⟨ fst , x ∷ snd ⟩} {mem = here refl} refl = weak/c (irrelify-weak ⟨ fst , snd ⟩) mweak/i
+  -- irrelify-allbut-update-irr-irr {Δ = ⟨ fst , x ∷ snd ⟩} {mem = there mem} refl 
+  --   = weak/c (irrelify-allbut-update-irr-irr { Δ = ⟨ fst , snd ⟩ } refl) mweak/i  

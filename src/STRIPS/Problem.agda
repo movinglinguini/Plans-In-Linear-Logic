@@ -133,7 +133,7 @@ module STRIPS.Problem where
   -- transforms the initial state into one that satisfies the goal.
   data Plan : State → Goal → Set where
     wf/plan/z : (S : State) (G : Goal)
-      → sat S G
+      → Sat S G
       → Plan S G
 
     wf/plan/s : (inp : State) (out : State) (τ : Transition ℂ 𝕆)

@@ -2,8 +2,12 @@ open import Data.Vec
 open import Data.List
 open import Data.Nat using (_+_; z≤n; ℕ)
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
+open import Data.Vec.Membership.Propositional renaming (_∈_ to _∈ᵛ_)
+open import Data.Vec.Relation.Unary.Any
+open import Data.List.Membership.Propositional renaming (_∈_ to _∈ˡ_)
+open import Data.List.Relation.Unary.Any
 open import Relation.Binary.PropositionalEquality
-
+open import Data.Bool
 
 module Translations.Translations where
   {- Repackage other pieces of the translation -}
@@ -84,43 +88,21 @@ module Translations.Translations where
   -- ------}
 
   -- {- Properties of problem translation -}
-  ∈-state⇒∈-context : 
+  ∈-state⇒∈-state-context : ∀ { s } → (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾)
+    → s ∈ˡ 𝕀
+    → ⟨ translConfig-Condition s , Linear ⟩ ∈ᵛ (proj₂ (contextify-state ℙ))
+  ∈-state⇒∈-state-context {𝕀 = 𝕀} {s = ⟨ fst , false ⟩} (wf/prob _ _ .(⟨ fst , false ⟩ ∷ _) _ _ wf/conds wf/state wf/goal) (here refl) = here refl
+  ∈-state⇒∈-state-context {𝕀 = 𝕀} {s = ⟨ fst , true ⟩} (wf/prob _ _ .(⟨ fst , true ⟩ ∷ _) _ _ wf/conds wf/state wf/goal) (here refl) = here refl
+  ∈-state⇒∈-state-context (wf/prob _ _ .(⟨ fst , false ⟩ ∷ xs) 𝕆 _ wf/conds (wf/state/s wf/state x) wf/goal) (there {⟨ fst , false ⟩} {xs = xs} mem) 
+    = there (∈-state⇒∈-state-context (wf/prob _ _ xs 𝕆 _ wf/conds wf/state wf/goal) mem)
+  ∈-state⇒∈-state-context (wf/prob _ _ .(⟨ fst , true ⟩ ∷ xs) 𝕆 _ wf/conds (wf/state/s wf/state x) wf/goal) (there {⟨ fst , true ⟩} {xs = xs} mem) 
+    = there (∈-state⇒∈-state-context (wf/prob _ _ xs 𝕆 _ wf/conds wf/state wf/goal) mem)
 
+  ∈-state-context⇒∈-context : ∀ { s } → (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) 
+    → s ∈ᵛ (proj₂ (contextify-state ℙ))
+    → s ∈ᵛ (proj₂ (contextOfProblem ℙ))
+  ∈-state-context⇒∈-context {𝕆 = []} (wf/prob _ _ _ .[] _ wf/conds wf/state wf/goal) mem = mem
+  ∈-state-context⇒∈-context {𝕆 = x ∷ 𝕆} (wf/prob _ _ 𝕀 .(x ∷ 𝕆) _ wf/conds wf/state wf/goal) mem 
+    = there (∈-state-context⇒∈-context (wf/prob _ _ 𝕀 𝕆 _ wf/conds wf/state wf/goal) mem)
 
-  -- -- The state translation is fully linear
-  -- context-state-all-lin : ∀ { P } → AllOfMode Linear (contextify-state P)
-  -- context-state-all-lin {record { terms = terms ; conditions = [] ; initialState = initialState ; operators = operators ; goals = goals }} = all-mode/z
-  -- context-state-all-lin {record { terms = terms ; conditions = x ∷ conditions ; initialState = initialState ; operators = operators ; goals = goals }} 
-  --   = all-mode/s (context-state-all-lin { P = record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals } }) refl
-
-  -- -- The operator translation is fully unrestricted
-  -- context-operator-all-unr : ∀ { P } → AllOfMode Unrestricted (contextify-operators P)
-  -- context-operator-all-unr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} = all-mode/z
-  -- context-operator-all-unr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} 
-  --   = all-mode/s (context-operator-all-unr { record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals } }) refl
-
-  -- -- The operator context is weakenable
-  -- context-operator-cWeak : ∀ { P } → cWeakenable (contextify-operators P)
-  -- context-operator-cWeak {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} = weak/n
-  -- context-operator-cWeak {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} 
-  --   = weak/c (context-operator-cWeak {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals }}) mweak/u
   
-  -- -- The operator context is contractable
-  -- context-operator-cContr : ∀ { P } → cContractable (contextify-operators P)
-  -- context-operator-cContr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} = cont/n
-  -- context-operator-cContr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} 
-  --   = cont/c (context-operator-cContr {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = operators ; goals = goals }}) mcontract/u
-
-  -- -- The operator context can merge with itself
-  -- context-operator-merge : ∀ { P Γ } → Γ ≡ (contextify-operators P) → merge Γ Γ Γ
-  -- context-operator-merge {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }} {Γ = .(contextify-operators (record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = [] ; goals = goals }))} refl = mg/n
-  -- context-operator-merge {record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }} {Γ = .(contextify-operators (record { terms = terms ; conditions = conditions ; initialState = initialState ; operators = x ∷ operators ; goals = goals }))} refl 
-  --   = mg/c (context-operator-merge
-  --      {record
-  --       { terms = terms
-  --       ; conditions = conditions
-  --       ; initialState = initialState
-  --       ; operators = operators
-  --       ; goals = goals
-  --       }}
-  --      refl) u∙u 
