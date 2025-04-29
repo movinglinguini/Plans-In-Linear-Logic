@@ -39,6 +39,14 @@ module Utils.IrrelifyContext where
   ∈⇒idx Δ (here refl) = zero
   ∈⇒idx ⟨ fst , x ∷ xs ⟩ (there mem) = suc (∈⇒idx ⟨ fst , xs ⟩ mem)
 
+  ∈≡idx : ∀ { p m Aₘ } ( Δ : Context p m )
+    → ( idx : Fin m )
+    → (mem : Aₘ ∈ proj₂ Δ)
+    → idx ≡ ∈⇒idx Δ mem
+    → Aₘ ≡ Data.Vec.lookup (proj₂ Δ) idx
+  ∈≡idx { Aₘ = Aₘ } ⟨ fst , (x ∷ xs) ⟩ .(∈⇒idx { Aₘ = Aₘ } ⟨ fst , x ∷ xs ⟩ (here refl)) (here refl) refl = refl
+  ∈≡idx ⟨ fst , (x ∷ xs) ⟩ .(∈⇒idx ⟨ fst , x ∷ xs ⟩ (there mem)) (there mem) refl = ∈≡idx ⟨ fst , xs ⟩ (∈⇒idx ⟨ fst , xs ⟩ mem) mem refl
+
   lookup⇒∈ : ∀ { p m Aₘ i } (Δ : Context p m )
     → Aₘ ≡ Data.Vec.lookup (proj₂ Δ) i 
     → Aₘ ∈ proj₂ Δ
@@ -66,21 +74,18 @@ module Utils.IrrelifyContext where
     → Aₘ ≡ (Data.Vec.lookup (proj₂ Δ) i)
     → Δ' ≡ irrelify-AllBut Δ i
     → Σ (Context n m) (λ Δ'' → update Δ' Aₘ (proj₁ Aₘ , Irrelevant) Δ'')
-  irrelify-allbut⇒update { Δ = Δ } refl refl = ∈⇒update (∈-Δ⇒∈-IΔ { Δ = Δ } refl)
+  irrelify-allbut⇒update {i = zero} {Δ = ⟨ fst , x ∷ snd ⟩} { Δ' = Δ' } refl refl 
+    = ⟨ irrelify-Only Δ' zero , N ⟩
+  irrelify-allbut⇒update {i = suc i} {Δ = ⟨ fst , x ∷ snd ⟩} {Δ' = Δ'} refl refl 
+    = ⟨ ⟨ [] , ⟨ (proj₁ x) , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ proj₁ IH , S (proj₂ IH) ⟩
+      where
+        IH = irrelify-allbut⇒update { i = i } { Δ = ⟨ fst , snd ⟩ } refl refl
 
-  -- irrelify-allbut⇒update : ∀ { n m i Aₘ }
-  --   → (Δ Δ' : Context n m)
-  --   → Aₘ ≡ Data.Vec.lookup (proj₂ Δ) i
-  --   → Δ' ≡ irrelify-AllBut Δ i
-  --   → Σ (Context n m) (λ Δ'' → update Δ' Aₘ (proj₁ Aₘ , Irrelevant) Δ'')
-  -- irrelify-allbut⇒update Δ _ refl refl = ∈⇒update (∈-Δ⇒∈-IΔ Δ refl)
-
-  -- -- 
-  -- irrelify-allbut⇒update : ∀ { n m } { k : Mode } { A : Prop } { Δ Δ' : Context n m } { mem : (A , k) ∈ proj₂ Δ }
-  --   → Δ' ≡ (irrelify-AllBut Δ (A , k) mem)
-  --   → Σ (Context n m) (λ Δ'' → update Δ' (A , k) (A , Irrelevant) Δ'' )
-  -- irrelify-allbut⇒update {k = k} {A = A } {mem = mem} refl 
-  --   = ∈⇒update (∈-Δ⇒∈-IΔ mem)
+  -- An irrelified context is irrelevant
+  irrelify-irr : ∀ { n m } ( Δ : Context n m )
+    → cIrrelevant (irrelify-All Δ)
+  irrelify-irr ⟨ fst , [] ⟩ = irr/n
+  irrelify-irr ⟨ fst , x ∷ snd ⟩ = irr/c (irrelify-irr ⟨ fst , snd ⟩)
 
   -- -- A fully irrelevant context is weakenable
   irrelify-weak : ∀ { n m } ( Δ : Context n m )
@@ -88,11 +93,33 @@ module Utils.IrrelifyContext where
   irrelify-weak ⟨ fst , [] ⟩ = weak/n
   irrelify-weak ⟨ fst , x ∷ snd ⟩ = weak/c (irrelify-weak ⟨ fst , snd ⟩ ) mweak/i
 
-  -- If you irrelify the remaining prop from an irrelify-AllBut, then you have
-  -- a weakenable context.
-  -- irrelify-allbut-update-irr-irr :  ∀ { n m } { k : Mode } { A : Prop } { Δ Δ' : Context n m } { mem : (A , k) ∈ proj₂ Δ }
-  --   → (eq : Δ' ≡ (irrelify-AllBut Δ (∈⇒idx Δ mem)))
-  --   → cWeakenable (proj₁ (irrelify-allbut⇒update mem eq))
-  -- irrelify-allbut-update-irr-irr {Δ = ⟨ fst , x ∷ snd ⟩} {mem = here refl} refl = weak/c (irrelify-weak ⟨ fst , snd ⟩) mweak/i
-  -- irrelify-allbut-update-irr-irr {Δ = ⟨ fst , x ∷ snd ⟩} {mem = there mem} refl 
-  --   = weak/c (irrelify-allbut-update-irr-irr { Δ = ⟨ fst , snd ⟩ } refl) mweak/i  
+  -- A fully irrelevant context is contractable
+  irrelify-contract : ∀ { n m } ( Δ : Context n m )
+    → cContractable (irrelify-All Δ)
+  irrelify-contract ⟨ fst , [] ⟩ = cont/n
+  irrelify-contract ⟨ fst , x ∷ snd ⟩ = cont/c (irrelify-contract ⟨ fst , snd ⟩) mcontract/i
+
+  {-
+    The context attained by updating the only remaining prop to irrelevant
+    after using irrelify-AllBut is all irrelevant.
+  -}
+  irrelify-allbut-upd-irrel-irr : ∀ { n m Aₘ i } { Δ Δ' Δ'' : Context n m }
+    → (eq1 : Aₘ ≡ (Data.Vec.lookup (proj₂ Δ) i))
+    → (eq2 : Δ' ≡ irrelify-AllBut Δ i)
+    → (eq3 : Δ'' ≡ (proj₁ (irrelify-allbut⇒update eq1 eq2)))
+    → cIrrelevant Δ''
+  irrelify-allbut-upd-irrel-irr {i = zero} {⟨ fst , x ∷ snd ⟩} refl refl refl = irr/c (irrelify-irr ⟨ fst , snd ⟩)
+  irrelify-allbut-upd-irrel-irr {i = suc i} {⟨ fst , x ∷ snd ⟩} refl refl refl = irr/c (irrelify-allbut-upd-irrel-irr { i = i } refl refl refl)
+
+  -- Corollary to the above: the context attained is also weakeanable.
+  irrelify-allbut-upd-irrel-weak : ∀ { n m Aₘ i } { Δ Δ' Δ'' : Context n m }
+    → (eq1 : Aₘ ≡ (Data.Vec.lookup (proj₂ Δ) i))
+    → (eq2 : Δ' ≡ irrelify-AllBut Δ i)
+    → (eq3 : Δ'' ≡ (proj₁ (irrelify-allbut⇒update eq1 eq2)))
+    → cWeakenable Δ''
+  irrelify-allbut-upd-irrel-weak eq1 eq2 eq3 = cIrrelevant-to-cWeaken (irrelify-allbut-upd-irrel-irr eq1 eq2 eq3)
+
+  -- lem : ∀ { n m Aₘ } { Δ Δ' : Context n m }
+  --       → update (irrelify-All Δ) Aₘ (proj₁ Aₘ , Irrelevant) Δ'
+  --       → cIrrelevant Δ'
+  --     lem = {!   !}
