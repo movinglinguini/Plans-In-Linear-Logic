@@ -88,6 +88,9 @@ module Translations.Translations where
   -- ------}
 
   -- {- Properties of problem translation -}
+
+  -- If we knew that a condition was in the state, then we know where it is in 
+  -- the state translation.
   ∈-state⇒∈-state-context : ∀ { s } → (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾)
     → s ∈ˡ 𝕀
     → ⟨ translConfig-Condition s , Linear ⟩ ∈ᵛ (proj₂ (contextify-state ℙ))
@@ -98,6 +101,8 @@ module Translations.Translations where
   ∈-state⇒∈-state-context (wf/prob _ _ .(⟨ fst , true ⟩ ∷ xs) 𝕆 _ wf/conds (wf/state/s wf/state x) wf/goal) (there {⟨ fst , true ⟩} {xs = xs} mem) 
     = there (∈-state⇒∈-state-context (wf/prob _ _ xs 𝕆 _ wf/conds wf/state wf/goal) mem)
 
+  -- If we know where a translated state is in the state context,
+  -- then we know where it is in the problem context. 
   ∈-state-context⇒∈-context : ∀ { s } → (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾) 
     → s ∈ᵛ (proj₂ (contextify-state ℙ))
     → s ∈ᵛ (proj₂ (contextOfProblem ℙ))
@@ -105,4 +110,28 @@ module Translations.Translations where
   ∈-state-context⇒∈-context {𝕆 = x ∷ 𝕆} (wf/prob _ _ 𝕀 .(x ∷ 𝕆) _ wf/conds wf/state wf/goal) mem 
     = there (∈-state-context⇒∈-context (wf/prob _ _ 𝕀 𝕆 _ wf/conds wf/state wf/goal) mem)
 
-  
+  -- The operator part of the context is completely unrestricted
+  Γ-unrestricted : ∀ (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾)
+    → cUnrestricted (contextify-operators ℙ)
+  Γ-unrestricted {𝕆 = []} (wf/prob _ _ _ .[] _ wf/conds wf/state wf/goal) = unr/n
+  Γ-unrestricted {𝕆 = x ∷ 𝕆} (wf/prob _ _ _ .(x ∷ 𝕆) _ wf/conds wf/state wf/goal) 
+    = unr/c (Γ-unrestricted (wf/prob _ _ _ 𝕆 _ wf/conds wf/state wf/goal))
+
+  -- Corallary to the above lemma, the operator context is weakenable.
+  Γ-weakenable : ∀ (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾)
+    → cWeakenable (contextify-operators ℙ)
+  Γ-weakenable ℙ = cUnrestricted-to-cWeaken (Γ-unrestricted ℙ)
+
+  -- Also corallary, the operator context is contractable
+  Γ-contractable : ∀ (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾)
+    → cContractable (contextify-operators ℙ)
+  Γ-contractable ℙ = cUnrestricted-to-cContract (Γ-unrestricted ℙ)
+
+  -- The state part of the context is linear
+  Δ-linear : ∀ (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾)
+    → cLinear (contextify-state ℙ)
+  Δ-linear (wf/prob _ _ [] _ _ wf/conds wf/state wf/goal) = lin/n
+  Δ-linear (wf/prob _ _ (⟨ c , false ⟩ ∷ 𝕀) 𝕆 _ wf/conds (wf/state/s wf/state x) wf/goal) 
+    = lin/c (Δ-linear (wf/prob _ _ 𝕀 𝕆 _ wf/conds wf/state wf/goal))
+  Δ-linear (wf/prob _ _ (⟨ c , true ⟩ ∷ 𝕀) 𝕆 _ wf/conds (wf/state/s wf/state x) wf/goal) 
+    = lin/c (Δ-linear (wf/prob _ _ 𝕀 𝕆 _ wf/conds wf/state wf/goal))

@@ -1,7 +1,7 @@
 open import Data.Nat using (_+_; _∸_; ℕ)
 open import Data.Fin hiding (_+_)
-open import Data.List hiding (merge)
-open import Data.Vec
+open import Data.List hiding (merge; _++_)
+open import Data.Vec hiding (length)
 open import Data.Bool
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum renaming ([_,_] to case-⊎)
@@ -37,52 +37,88 @@ module Proofs.Correctness where
   {- 
     Lemma: If 
   -}
-    
-  correctness-base : ∀ { tℙ }
+  correctness-base : ∀ { Γ Δ }
     → (ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 𝔾)
     → Sat 𝕀 𝔾
-    → tℙ ≡ translProb ℙ
-    → (exh-state : List (Fin (Data.List.length 𝕆 + Data.List.length 𝕀)))
-    → irrelify-Vec (proj₁ tℙ) exh-state ⊢ⁱ (proj₂ tℙ)
-  correctness-base (wf/prob _ _ _ _ [] wf/conds wf/state wf/goal) sat refl exh-state = {!  !}
-  correctness-base (wf/prob _ _ _ _ (⟨ c , false ⟩ ∷ 𝔾) wf/conds wf/state wf/goal) sat refl exh-state = {!   !}
-  correctness-base { tℙ = tℙ } (wf/prob 𝕋 ℂ 𝕀 𝕆 (⟨ c , true ⟩ ∷ 𝔾) wf/conds wf/state wf/goal) (sat/s sat mem) refl exh-state 
+    → (exh-state : List (Fin (Data.List.length 𝕀)))
+    → Γ ≡ contextify-operators ℙ
+    → Δ ≡ contextify-state ℙ
+    → (Γ ++ᶜ (irrelify-List Δ exh-state)) ⊢ⁱ proj₂ (translProb ℙ)
+  correctness-base (wf/prob _ _ _ _ [] wf/conds wf/state wf/goal) sat exh-state eq1 eq2 = {!   !}
+  correctness-base {Γ = Γ} {Δ} (wf/prob _ _ _ _ (⟨ g , false ⟩ ∷ 𝔾) wf/conds wf/state wf/goal) sat exh-state eq1 eq2 = {!   !}
+  correctness-base {Γ = Γ} {Δ} (wf/prob 𝕋 ℂ 𝕀 𝕆 (⟨ g , true ⟩ ∷ 𝔾) wf/conds wf/state wf/goal) (sat/s sat mem) exh-state refl refl 
     = ⊗-assoc 
       (⊗R M12 M23 M Δ₂-contract 
-        (id (proj₂ U) U-weak) 
-        IH)
-    where
-      ℙ : PlanProblem 𝕋 ℂ 𝕀 𝕆 (⟨ c , true ⟩ ∷ 𝔾)
-      ℙ = wf/prob 𝕋 ℂ 𝕀 𝕆 (⟨ c , true ⟩ ∷ 𝔾) wf/conds wf/state wf/goal
+      (id updateable-Δ₁₂ updated-Δ₁₂-weak) 
+      IH)
+    where 
+      ℙ = wf/prob 𝕋 ℂ 𝕀 𝕆 (⟨ g , true ⟩ ∷ 𝔾) wf/conds wf/state wf/goal
+      ℙ' = ℙ⇒ℙ' ℙ
+      
+      -- The translation of the goal (tg) at the head is in the state context
+      tg-mem : ⟨ translConfig-Condition ⟨ g , true ⟩ , Linear ⟩ ∈ᵛ (proj₂ Δ)
+      tg-mem = ∈-state⇒∈-state-context ℙ mem
 
-      tg-∈-ctxt = translg-∈-ctxt ℙ mem
-      tg-idx = ∈⇒idx (proj₁ tℙ) tg-∈-ctxt
-      tg = ⟨ ` v[ translC c , const "true" ] , Linear ⟩
-      Itℙ = (irrelify-Vec (proj₁ tℙ) exh-state)
+      -- Using the vector membership constructor, we produce an index 
+      -- for tg in the state context.
+      tg-idx : Fin (length 𝕀)
+      tg-idx = ∈⇒idx Δ tg-mem
 
-      Δ₁ = {!   !}
-      Δ₂ = irrelify-All Itℙ
-      Δ₃ = {!   !}
-      Δ₁₂ = irrelify-AllBut (proj₁ tℙ) tg-idx
-      Δ₂₃ = irrelify-Vec (proj₁ tℙ) (tg-idx ∷ exh-state)
+      -- Now, we set up splitting our contexts
+      -- The context that goes to the left will only contain the
+      -- operators and only tg.
+      Δ₁₂ = Γ ++ᶜ (irrelify-AllBut Δ tg-idx)
+      -- The context that goes to the right will only contain the
+      -- operators and whatever has not been exhausted already.
+      Δ₂₃ = Γ ++ᶜ (irrelify-List Δ (tg-idx ∷ exh-state))
 
-      Δ₂-contract = irrelify-contract Itℙ
+      Δ₁ = Δ₁₂ -- Δ₁ is basically everything going to the left
+      Δ₂ = Γ ++ᶜ (irrelify-All Δ) -- Δ₂ isn't useful here, so we irrelify all the linear part.
+      Δ₃ = Δ₂₃ -- Δ₃ is basically everything going to the right
 
-      IH : Δ₂₃ ⊢ⁱ ⟨ (⨂ translConfig 𝔾) ⊗ ⊤ , Linear ⟩
+      -- Lemma: Δ₂ is contractable
+      Δ₂-contract : cContractable Δ₂
+      Δ₂-contract = concat-cContr refl (Γ-contractable ℙ) (irrelify-contract Δ)
+
+      -- Now we need to explain how we are splitting our context
+      M12 : merge Δ₁ Δ₂ Δ₁₂
+      M12 = concat-merge (cUnrestricted-merge-id (Γ-unrestricted ℙ)) (irrelify-lin-merge (Δ-linear ℙ))
+      M23 : merge Δ₂ Δ₃ Δ₂₃
+      M23 = concat-merge (cUnrestricted-merge-id (Γ-unrestricted ℙ)) (irrelify-all-list-merge (tg-idx ∷ exh-state) (Δ-linear ℙ))
+      M : merge Δ₁₂ Δ₃ (Γ ++ᶜ (irrelify-List Δ exh-state))
+      M = concat-merge (cUnrestricted-merge-id (Γ-unrestricted ℙ)) (irrelify-allbut-list-merge tg-idx exh-state (Δ-linear ℙ))
+
+      -- Having Δ₂₃ lets us produce our IH
+      IH : Δ₂₃ ⊢ⁱ ⟨ (⨂ (translConfig 𝔾)) ⊗ ⊤ , Linear ⟩
       IH with ℙ⇒ℙ' ℙ
       ... | wf/prob .𝕋 .ℂ .𝕀 .𝕆 .𝔾 wf/conds wf/state wf/goal 
-        = correctness-base (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾 wf/conds wf/state wf/goal) sat refl ((∈⇒idx (proj₁ tℙ) tg-∈-ctxt) ∷ exh-state)
+        = correctness-base { Γ = Γ } { Δ = Δ }
+          (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾 wf/conds wf/state wf/goal) 
+          sat 
+          (tg-idx ∷ exh-state) 
+          refl 
+          refl 
 
-      M12 : merge {!   !} Δ₂ Δ₁₂
-      M23 : merge Δ₂ {!   !} Δ₂₃
-      M : merge Δ₁₂ {!   !} Itℙ
+      -- Now, we prove we can use id to eliminate the translated goal
+      -- To do that, we show that we can indeed update the tg so that
+      -- it is exhausted/irrelevant in Δ₁₂. After that, we need
+      -- to show that the updated context is weakenable. 
 
-      U = irrelify-allbut⇒update { Δ = proj₁ tℙ }
-        (∈≡idx (proj₁ tℙ) tg-idx tg-∈-ctxt refl) 
-        refl
-      U-weak = irrelify-allbut-upd-irrel-weak 
-        { Δ = (proj₁ tℙ) } { Δ' = Δ₁₂ } { Δ'' = proj₁ U } 
-        ((∈≡idx (proj₁ tℙ) tg-idx tg-∈-ctxt refl)) refl refl
+      -- First, a quick detour: we show that the element from the state
+      -- context that we can find using tg-mem is the same element
+      -- that we can find using tg-idx.
+      tg-mem≡tg-idx = ∈≡idx Δ tg-idx tg-mem refl
+
+      -- Lemma: We can update tg in Δ
+      updateable-lem = irrelify-allbut⇒update { Δ = Δ } tg-mem≡tg-idx refl 
+      -- Lemma: With the previous lemma, we can update in Γ ++ Δ
+      updateable-Δ₁₂ = concat-update-r { Δ₂ = Γ } (proj₂ updateable-lem)
+      -- Lemma: The updated Γ ++ Δ is weakenable. It must be since it
+      -- is now all irrelevant
+      updated-Δ₁₂-weak-lem = irrelify-allbut-upd-irrel-weak { Δ = Δ } tg-mem≡tg-idx refl refl
+      -- Finally, with the above lemma and concat-cWeak, we can show that our entire
+      -- updated context is cWeak
+      updated-Δ₁₂-weak = concat-cWeak refl (Γ-weakenable ℙ) updated-Δ₁₂-weak-lem
         
   {-  
     Our main theorem. Given that we have a well-formed plan that solves a well-formed planning problem,
@@ -92,5 +128,5 @@ module Proofs.Correctness where
     → Plan 𝕀 𝔾
     → Σ  (Context ((2 + Data.List.length 𝕋) + 0) ((Data.List.length 𝕆) + (Data.List.length 𝕀)) × (Prop × Mode))
          λ (tℙ) → (proj₁ tℙ) ⊢ⁱ (proj₂ tℙ) 
-  correctness {ℙ = ℙ} (wf/plan/z _ _ x) = ⟨ (translProb ℙ) , correctness-base ℙ x refl [] ⟩
-  correctness { ℙ = ℙ } (wf/plan/s _ out τ _ plan x) = ⟨ translProb ℙ , {!   !} ⟩                 
+  correctness {ℙ = ℙ} (wf/plan/z _ _ x) = ⟨ (translProb ℙ) , correctness-base ℙ x [] refl refl ⟩
+  correctness { ℙ = ℙ } (wf/plan/s _ out τ _ plan x) = ⟨ translProb ℙ , {!   !} ⟩                      

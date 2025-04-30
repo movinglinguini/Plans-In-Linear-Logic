@@ -1,6 +1,6 @@
 open import Data.Nat
 open import Data.Vec
-open import Data.List
+open import Data.List hiding (merge)
 open import Data.Fin
 open import Data.Product
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
@@ -12,6 +12,16 @@ module Utils.IrrelifyContext where
   open import Translations.Core.State
   open import ADJ.Core renaming (Term to AdjointTerm)
   open import Utils.AllOfMode
+
+  data LinOrIrr : ∀ { n m } → Context n m → Set where
+    lin/irr/z : ∀ { n } { ts : Vec (AdjointTerm 0) n }
+      → LinOrIrr ⟨ ts , [] ⟩
+    lin/irr/s-1 : ∀ { n m A } { Δ : Context n m }
+      → LinOrIrr Δ
+      → LinOrIrr ⟨ proj₁ Δ , (⟨ A , Linear ⟩ ∷ proj₂ Δ) ⟩
+    lin/irr/s-2 : ∀ { n m A } { Δ : Context n m }
+      → LinOrIrr Δ
+      → LinOrIrr ⟨ proj₁ Δ , (⟨ A , Irrelevant ⟩ ∷ proj₂ Δ) ⟩
 
   irrelify-All : ∀ { p m } (Δ : Context p m) → Context p m
   irrelify-All ⟨ fst , [] ⟩ = ⟨ fst , [] ⟩
@@ -25,13 +35,13 @@ module Utils.IrrelifyContext where
   irrelify-AllBut ⟨ fst , (A ∷ As) ⟩ zero = ⟨ [] , A ∷ [] ⟩ ++ᶜ irrelify-All ⟨ fst , As ⟩
   irrelify-AllBut ⟨ fst , (B ∷ As) ⟩ (suc idx) = ⟨ [] , ⟨ proj₁ B , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ irrelify-AllBut ⟨ fst , As ⟩ idx 
   
-  irrelify-Vec : ∀ { p m } (Δ : Context p m)
+  irrelify-List : ∀ { p m } (Δ : Context p m)
     → List (Fin m)
     → Context p m
-  irrelify-Vec Δ [] = Δ
-  irrelify-Vec Δ (x ∷ xs) 
+  irrelify-List Δ [] = Δ
+  irrelify-List Δ (x ∷ xs) 
     = let Δ' = irrelify-Only Δ x
-    in irrelify-Vec Δ' xs
+    in irrelify-List Δ' xs
 
   ∈⇒idx : ∀ { p m Aₘ } ( Δ : Context p m )
     → Aₘ ∈ proj₂ Δ
@@ -119,7 +129,30 @@ module Utils.IrrelifyContext where
     → cWeakenable Δ''
   irrelify-allbut-upd-irrel-weak eq1 eq2 eq3 = cIrrelevant-to-cWeaken (irrelify-allbut-upd-irrel-irr eq1 eq2 eq3)
 
-  -- lem : ∀ { n m Aₘ } { Δ Δ' : Context n m }
-  --       → update (irrelify-All Δ) Aₘ (proj₁ Aₘ , Irrelevant) Δ'
-  --       → cIrrelevant Δ'
-  --     lem = {!   !}
+  -- Given a linear context that has been mostly irrelified,
+  -- the irrelified form is its right identity in a merge operation.
+  irrelify-lin-merge : ∀ { n m i } { Δ : Context n m }
+    → cLinear Δ
+    → merge (irrelify-AllBut Δ i) (irrelify-All Δ) (irrelify-AllBut Δ i)
+  irrelify-lin-merge {i = zero} { Δ = ⟨ fst , x ∷ snd ⟩ } (lin/c lin) = mg/c (cIrrelevant-merge (irrelify-irr ⟨ fst , snd ⟩)) l∙i
+  irrelify-lin-merge {i = suc i} (lin/c lin) = mg/c (irrelify-lin-merge lin) i∙i
+
+  -- Given a linear context, its irrelified form is its left identity on the merge.
+  irrelify-all-left : ∀ { n m } { Δ : Context n m }
+    → cLinear Δ
+    → merge (irrelify-All Δ) Δ Δ
+  irrelify-all-left lin/n = mg/n
+  irrelify-all-left (lin/c lin) = mg/c (irrelify-all-left lin) i∙l
+
+  -- The following arguments are similar to the above argument.
+  postulate
+    irrelify-all-list-merge : ∀ { n m } { Δ : Context n m }
+      → (lst : List (Fin m))
+      → cLinear Δ
+      → merge (irrelify-All Δ) (irrelify-List Δ lst) (irrelify-List Δ lst)
+
+    irrelify-allbut-list-merge : ∀ { n m } { Δ : Context n m }
+      → (i : Fin m)
+      → (lst : List (Fin m))
+      → cLinear Δ 
+      → merge (irrelify-AllBut Δ i) (irrelify-List Δ (i ∷ lst)) (irrelify-List Δ lst)
