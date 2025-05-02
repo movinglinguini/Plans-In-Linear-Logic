@@ -43,18 +43,26 @@ module Proofs.Correctness where
     → (exh-state : List (Fin (Data.List.length 𝕀)))
     → Γ ≡ contextify-operators ℙ
     → Δ ≡ contextify-state ℙ
-    → (Γ ++ᶜ (irrelify-List Δ exh-state)) ⊢ⁱ proj₂ (translProb ℙ)
-  correctness-base (wf/prob _ _ _ _ [] wf/conds wf/state wf/goal) sat exh-state eq1 eq2 = {!   !}
-  correctness-base {Γ = Γ} {Δ} (wf/prob _ _ _ _ (⟨ g , false ⟩ ∷ 𝔾) wf/conds wf/state wf/goal) sat exh-state eq1 eq2 = {!   !}
-  correctness-base {Γ = Γ} {Δ} (wf/prob 𝕋 ℂ 𝕀 𝕆 (⟨ g , true ⟩ ∷ 𝔾) wf/conds wf/state wf/goal) (sat/s sat mem) exh-state refl refl 
-    = ⊗-assoc 
-      (⊗R M12 M23 M Δ₂-contract 
-      (id updateable-Δ₁₂ updated-Δ₁₂-weak) 
-      IH)
+    → (lin/irr : LinOrIrr Δ)
+    → (Γ ++ᶜ (proj₁ (irrelify-List-lin/irr Δ exh-state lin/irr ))) ⊢ⁱ proj₂ (translProb ℙ)
+    -- → Σ (Context 0 (Data.List.length 𝕀))
+    --     (λ Δ' → ((Γ ++ᶜ Δ') ⊢ⁱ (proj₂ (translProb ℙ)) × Comparable Δ Δ' × LinOrIrr Δ'))
+  correctness-base { Δ = Δ } (wf/prob 𝕋 ℂ 𝕀 𝕆 [] wf/conds wf/state wf/goal) sat exh-state refl refl 
+    = {!   !}
+    where
+      ℙ = wf/prob 𝕋 ℂ 𝕀 𝕆 [] wf/conds wf/state wf/goal
+      Δ' = irrelify-List-lin/irr Δ (exh-state) (lin-to-lin/irr (Δ-linear ℙ))
+  correctness-base {Γ = Γ} {Δ} (wf/prob 𝕋 ℂ 𝕀 𝕆 (⟨ g , false ⟩ ∷ 𝔾) wf/conds wf/state wf/goal) sat exh-state refl refl 
+    = {!   !}
+    where
+      ℙ = wf/prob 𝕋 ℂ 𝕀 𝕆 (⟨ g , false ⟩ ∷ 𝔾) wf/conds wf/state wf/goal
+      Δ' = irrelify-List-lin/irr Δ (exh-state) (lin-to-lin/irr (Δ-linear ℙ))
+  correctness-base {Γ = Γ} {Δ} (wf/prob 𝕋 ℂ 𝕀 𝕆 (⟨ g , true ⟩ ∷ 𝔾) wf/conds wf/state (wf/state/s wf/goal x)) (sat/s sat mem) exh-state refl refl lin/irr
+    = ⊗-assoc (⊗R M12 M23 M Δ₂-contract {!   !} (IH))
     where 
-      ℙ = wf/prob 𝕋 ℂ 𝕀 𝕆 (⟨ g , true ⟩ ∷ 𝔾) wf/conds wf/state wf/goal
+      ℙ = wf/prob 𝕋 ℂ 𝕀 𝕆 (⟨ g , true ⟩ ∷ 𝔾) wf/conds wf/state (wf/state/s wf/goal x)
       ℙ' = ℙ⇒ℙ' ℙ
-      
+
       -- The translation of the goal (tg) at the head is in the state context
       tg-mem : ⟨ translConfig-Condition ⟨ g , true ⟩ , Linear ⟩ ∈ᵛ (proj₂ Δ)
       tg-mem = ∈-state⇒∈-state-context ℙ mem
@@ -64,13 +72,19 @@ module Proofs.Correctness where
       tg-idx : Fin (length 𝕀)
       tg-idx = ∈⇒idx Δ tg-mem
 
+      Δ' = irrelify-List-lin/irr Δ (exh-state) lin/irr
+      Δ'' = irrelify-List-lin/irr Δ (tg-idx ∷ exh-state) (lin-to-lin/irr (Δ-linear ℙ))
+      
+      -- First, our IH
+      IH = correctness-base (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾 wf/conds wf/state wf/goal) sat (tg-idx ∷ exh-state) refl refl lin/irr
+
       -- Now, we set up splitting our contexts
       -- The context that goes to the left will only contain the
       -- operators and only tg.
       Δ₁₂ = Γ ++ᶜ (irrelify-AllBut Δ tg-idx)
       -- The context that goes to the right will only contain the
       -- operators and whatever has not been exhausted already.
-      Δ₂₃ = Γ ++ᶜ (irrelify-List Δ (tg-idx ∷ exh-state))
+      Δ₂₃ = Γ ++ᶜ proj₁ (irrelify-List-lin/irr Δ (tg-idx ∷ exh-state) lin/irr)
 
       Δ₁ = Δ₁₂ -- Δ₁ is basically everything going to the left
       Δ₂ = Γ ++ᶜ (irrelify-All Δ) -- Δ₂ isn't useful here, so we irrelify all the linear part.
@@ -84,21 +98,20 @@ module Proofs.Correctness where
       M12 : merge Δ₁ Δ₂ Δ₁₂
       M12 = concat-merge (cUnrestricted-merge-id (Γ-unrestricted ℙ)) (irrelify-lin-merge (Δ-linear ℙ))
       M23 : merge Δ₂ Δ₃ Δ₂₃
-      M23 = concat-merge (cUnrestricted-merge-id (Γ-unrestricted ℙ)) (irrelify-all-list-merge (tg-idx ∷ exh-state) (Δ-linear ℙ))
-      M : merge Δ₁₂ Δ₃ (Γ ++ᶜ (irrelify-List Δ exh-state))
-      M = concat-merge (cUnrestricted-merge-id (Γ-unrestricted ℙ)) (irrelify-allbut-list-merge tg-idx exh-state (Δ-linear ℙ))
-
-      -- Having Δ₂₃ lets us produce our IH
-      IH : Δ₂₃ ⊢ⁱ ⟨ (⨂ (translConfig 𝔾)) ⊗ ⊤ , Linear ⟩
-      IH with ℙ⇒ℙ' ℙ
-      ... | wf/prob .𝕋 .ℂ .𝕀 .𝕆 .𝔾 wf/conds wf/state wf/goal 
-        = correctness-base { Γ = Γ } { Δ = Δ }
-          (wf/prob 𝕋 ℂ 𝕀 𝕆 𝔾 wf/conds wf/state wf/goal) 
-          sat 
-          (tg-idx ∷ exh-state) 
-          refl 
-          refl 
-
+      M23 = concat-merge 
+        (cUnrestricted-merge-id (Γ-unrestricted ℙ))
+        (irrel-lin/irr-merge-id-left 
+          (proj₁ (proj₂ (irrelify-List-lin/irr Δ (tg-idx ∷ exh-state) lin/irr))) 
+          (irrelify-irr Δ) 
+          (comparable-trans 
+            (comparable-comm (proj₂ (proj₂ (proj₂ (irrelify-List-lin/irr Δ (tg-idx ∷ exh-state) lin/irr))))) 
+            (irrelify-all-comp Δ)))
+                  
+      M : merge Δ₁₂ Δ₃ (Γ ++ᶜ (proj₁ (irrelify-List-lin/irr Δ (exh-state) lin/irr)))
+      M = concat-merge
+            (cUnrestricted-merge-id (Γ-unrestricted ℙ)) 
+            (irrelify-allbut-list-merge tg-idx exh-state lin/irr)
+      
       -- Now, we prove we can use id to eliminate the translated goal
       -- To do that, we show that we can indeed update the tg so that
       -- it is exhausted/irrelevant in Δ₁₂. After that, we need
@@ -128,5 +141,5 @@ module Proofs.Correctness where
     → Plan 𝕀 𝔾
     → Σ  (Context ((2 + Data.List.length 𝕋) + 0) ((Data.List.length 𝕆) + (Data.List.length 𝕀)) × (Prop × Mode))
          λ (tℙ) → (proj₁ tℙ) ⊢ⁱ (proj₂ tℙ) 
-  correctness {ℙ = ℙ} (wf/plan/z _ _ x) = ⟨ (translProb ℙ) , correctness-base ℙ x [] refl refl ⟩
-  correctness { ℙ = ℙ } (wf/plan/s _ out τ _ plan x) = ⟨ translProb ℙ , {!   !} ⟩                      
+  correctness {ℙ = ℙ} (wf/plan/z _ _ x) = ⟨ (translProb ℙ) , {!   !} ⟩
+  correctness { ℙ = ℙ } (wf/plan/s _ out τ _ plan x) = ⟨ translProb ℙ , {!   !} ⟩                             

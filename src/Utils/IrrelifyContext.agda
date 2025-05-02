@@ -23,18 +23,97 @@ module Utils.IrrelifyContext where
       → LinOrIrr Δ
       → LinOrIrr ⟨ proj₁ Δ , (⟨ A , Irrelevant ⟩ ∷ proj₂ Δ) ⟩
 
+  {-
+    Properties of LinOrIrr
+  -}
+
+  -- Linear contexts are LinOrIrr contexts
+  lin-to-lin/irr : ∀ { n m } {Δ : Context n m}
+    → cLinear Δ
+    → LinOrIrr Δ
+  lin-to-lin/irr lin/n = lin/irr/z
+  lin-to-lin/irr (lin/c lin) = lin/irr/s-1 (lin-to-lin/irr lin)
+
+  -- Irrelevant contexts are LinOrIrr contexts
+  irr-to-lin/irr : ∀ { n m } { Δ : Context n m }
+    → cIrrelevant Δ
+    → LinOrIrr Δ
+  irr-to-lin/irr irr/n = lin/irr/z
+  irr-to-lin/irr (irr/c irr) = lin/irr/s-2 (irr-to-lin/irr irr)
+
+  -- Fully Irrelevant contexts are the left identity of LinOrIrr contexts in a merge
+  -- if they are comparable.
+  irrel-lin/irr-merge-id-left : ∀ { n m } { Δ₁ Δ₂ : Context n m }
+    → LinOrIrr Δ₁
+    → cIrrelevant Δ₂
+    → Comparable Δ₁ Δ₂
+    → merge Δ₂ Δ₁ Δ₁
+  irrel-lin/irr-merge-id-left lin/irr irr comp/z = mg/n
+  irrel-lin/irr-merge-id-left (lin/irr/s-1 lin/irr) (irr/c irr) (comp/s comp) = mg/c (irrel-lin/irr-merge-id-left lin/irr irr comp) i∙l
+  irrel-lin/irr-merge-id-left (lin/irr/s-2 lin/irr) (irr/c irr) (comp/s comp) = mg/c (irrel-lin/irr-merge-id-left lin/irr irr comp) i∙i
+
+  private
+    irrelify-All-prop : ∀ { m } → Vec (Prop × Mode) m → Vec (Prop × Mode) m
+    irrelify-All-prop [] = []
+    irrelify-All-prop (p ∷ ps) = ⟨ (proj₁ p) , Irrelevant ⟩ ∷ (irrelify-All-prop ps)
+
   irrelify-All : ∀ { p m } (Δ : Context p m) → Context p m
-  irrelify-All ⟨ fst , [] ⟩ = ⟨ fst , [] ⟩
-  irrelify-All ⟨ fst , A ∷ snd ⟩ = ⟨ [] , ⟨ proj₁ A , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ irrelify-All ⟨ fst , snd ⟩
+  irrelify-All ⟨ fst , snd ⟩ = ⟨ fst , irrelify-All-prop snd ⟩
+
+  {-
+    Properties of irrelify-All
+  -}
+  -- When you irrelify all of a context, then the result is comparable to the original
+  irrelify-all-comp : ∀ { m n } (Δ : Context n m)
+    → Comparable Δ (irrelify-All Δ)
+  irrelify-all-comp ⟨ fst , [] ⟩ = comp/z
+  irrelify-all-comp ⟨ fst , x ∷ snd ⟩ = comp/s (irrelify-all-comp ⟨ fst , snd ⟩)
+
+  private
+    irrelify-Only-prop : ∀ { m } → Vec (Prop × Mode) m → Fin m → Vec (Prop × Mode) m
+    irrelify-Only-prop (p ∷ ps) zero = ⟨ proj₁ p , Irrelevant ⟩ ∷ ps
+    irrelify-Only-prop (p ∷ ps) (suc idx) = p ∷ irrelify-Only-prop ps idx
 
   irrelify-Only : ∀ { p m } (Δ : Context p m) → Fin m → Context p m
-  irrelify-Only ⟨ fst , x ∷ snd ⟩ zero = ⟨ fst , (⟨ proj₁ x , Irrelevant ⟩ ∷ snd) ⟩
-  irrelify-Only ⟨ fst , x ∷ snd ⟩ (suc idx) = ⟨ [] , x ∷ [] ⟩ ++ᶜ irrelify-Only ⟨ fst , snd ⟩ idx
+  irrelify-Only ⟨ fst , snd ⟩ idx = ⟨ fst , irrelify-Only-prop snd idx ⟩
+
+  {- Properties of irrelify-Only -}
+  -- If we irrelify a prop in a linear context, then the result is
+  -- a context that is part linear, part irrelevant.
+  irrel-only-lin/irr-1 : ∀ { n m } { Δ : Context n m }
+    → (i : Fin m)
+    → cLinear Δ
+    → LinOrIrr (irrelify-Only Δ i)
+  irrel-only-lin/irr-1 zero (lin/c lin) = lin/irr/s-2 (lin-to-lin/irr lin)
+  irrel-only-lin/irr-1 (suc i) (lin/c lin) = lin/irr/s-1 (irrel-only-lin/irr-1 i lin)
+
+  -- If we irrelify a prop in a context that is part linear, part irrelevant, then
+  -- the result is a context that is part linear, part irrelevant.
+  irrel-only-lin/irr-2 : ∀ { n m } { Δ : Context n m }
+    → (i : Fin m)
+    → LinOrIrr Δ
+    → LinOrIrr (irrelify-Only Δ i)
+  irrel-only-lin/irr-2 zero (lin/irr/s-1 lin/irr) = lin/irr/s-2 lin/irr
+  irrel-only-lin/irr-2 zero (lin/irr/s-2 lin/irr) = lin/irr/s-2 lin/irr
+  irrel-only-lin/irr-2 (suc i) (lin/irr/s-1 lin/irr) = lin/irr/s-1 (irrel-only-lin/irr-2 i lin/irr)
+  irrel-only-lin/irr-2 (suc i) (lin/irr/s-2 lin/irr) = lin/irr/s-2 (irrel-only-lin/irr-2 i lin/irr)
+
+  -- If we irrelify a prop in a context, the result is comparable to the original.
+  irrel-only-comp : ∀ { n m } ( Δ : Context n m )
+    → (i : Fin m)
+    → Comparable Δ (irrelify-Only Δ i)
+  irrel-only-comp ⟨ fst , x ∷ snd ⟩ zero = comp/s comparable-id
+  irrel-only-comp ⟨ fst , x ∷ snd ⟩ (suc i) = comp/s (irrel-only-comp ⟨ fst , snd ⟩ i)
+
+  {- Irrelifying all but one prop -}
+  private
+    irrelify-AllBut-prop : ∀ { m } → Vec (Prop × Mode) m → Fin m → Vec (Prop × Mode) m
+    irrelify-AllBut-prop (x ∷ xs) zero = x ∷ irrelify-All-prop xs
+    irrelify-AllBut-prop (x ∷ xs) (suc idx) = x ∷ irrelify-AllBut-prop xs idx
 
   irrelify-AllBut : ∀ { p m } (Δ : Context p m) → Fin m → Context p m
-  irrelify-AllBut ⟨ fst , (A ∷ As) ⟩ zero = ⟨ [] , A ∷ [] ⟩ ++ᶜ irrelify-All ⟨ fst , As ⟩
-  irrelify-AllBut ⟨ fst , (B ∷ As) ⟩ (suc idx) = ⟨ [] , ⟨ proj₁ B , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ irrelify-AllBut ⟨ fst , As ⟩ idx 
-  
+  irrelify-AllBut ⟨ fst , As ⟩ idx = ⟨ fst , irrelify-AllBut-prop As idx ⟩
+  -- Irrelify by a list of indices
   irrelify-List : ∀ { p m } (Δ : Context p m)
     → List (Fin m)
     → Context p m
@@ -42,6 +121,29 @@ module Utils.IrrelifyContext where
   irrelify-List Δ (x ∷ xs) 
     = let Δ' = irrelify-Only Δ x
     in irrelify-List Δ' xs
+
+  -- Property of irrelifying by a list: we can irrelify in such a way that
+  -- preserves the linearity/irrelevancy of the original context.
+  irrelify-List-lin/irr : ∀ { n m } (Δ : Context n m)
+    → List (Fin m)
+    → LinOrIrr Δ
+    → Σ (Context n m) (λ Δ' → (LinOrIrr Δ' × Comparable Δ Δ'))
+  irrelify-List-lin/irr Δ [] lin/irr = ⟨ Δ , ⟨ lin/irr , comparable-id ⟩ ⟩
+  irrelify-List-lin/irr Δ (x ∷ lst) lin/irr 
+    = let Δ' = irrelify-List-lin/irr Δ lst lin/irr
+      in let Δ'' = irrelify-Only (proj₁ Δ') x
+      in let Δ''-comp = irrel-only-comp (proj₁ Δ') x
+      in let Δ''-lin/irr = irrel-only-lin/irr-2 x (proj₁ (proj₂ Δ'))
+      in ⟨ Δ'' , ⟨ Δ''-lin/irr , 
+                  comparable-trans (proj₂ (proj₂ Δ')) Δ''-comp ⟩ ⟩
+  -- Extension of the above function, but starting with a fully linear context.
+  -- irrelify-List-lin : ∀ { n m } (Δ : Context n m)
+  --   → List (Fin m)
+  --   → cLinear Δ
+  --   → Σ (Context n m) (λ Δ' → LinOrIrr Δ')
+  -- irrelify-List-lin Δ [] lin = ⟨ Δ , (lin-to-lin/irr lin) ⟩
+  -- irrelify-List-lin Δ (idx ∷ lst) lin
+  --   = irrelify-List-lin/irr (irrelify-Only Δ idx) lst (irrel-only-lin/irr-1 idx lin) 
 
   ∈⇒idx : ∀ { p m Aₘ } ( Δ : Context p m )
     → Aₘ ∈ proj₂ Δ
@@ -80,16 +182,16 @@ module Utils.IrrelifyContext where
   ∈-Δ⇒∈-IΔ {i = zero} {Δ = ⟨ fst , x ∷ snd ⟩} refl = here refl
   ∈-Δ⇒∈-IΔ {i = suc i} {Δ = ⟨ fst , x ∷ snd ⟩} refl = there (∈-Δ⇒∈-IΔ { Δ = ⟨ fst , snd ⟩ } refl)
 
-  irrelify-allbut⇒update : ∀ { n m Aₘ i } { Δ Δ' : Context n m }
-    → Aₘ ≡ (Data.Vec.lookup (proj₂ Δ) i)
-    → Δ' ≡ irrelify-AllBut Δ i
-    → Σ (Context n m) (λ Δ'' → update Δ' Aₘ (proj₁ Aₘ , Irrelevant) Δ'')
-  irrelify-allbut⇒update {i = zero} {Δ = ⟨ fst , x ∷ snd ⟩} { Δ' = Δ' } refl refl 
-    = ⟨ irrelify-Only Δ' zero , N ⟩
-  irrelify-allbut⇒update {i = suc i} {Δ = ⟨ fst , x ∷ snd ⟩} {Δ' = Δ'} refl refl 
-    = ⟨ ⟨ [] , ⟨ (proj₁ x) , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ proj₁ IH , S (proj₂ IH) ⟩
-      where
-        IH = irrelify-allbut⇒update { i = i } { Δ = ⟨ fst , snd ⟩ } refl refl
+  -- irrelify-allbut⇒update : ∀ { n m Aₘ i } { Δ Δ' : Context n m }
+  --   → Aₘ ≡ (Data.Vec.lookup (proj₂ Δ) i)
+  --   → Δ' ≡ irrelify-AllBut Δ i
+  --   → Σ (Context n m) (λ Δ'' → update Δ' Aₘ (proj₁ Aₘ , Irrelevant) Δ'')
+  -- irrelify-allbut⇒update {i = zero} {Δ = ⟨ fst , x ∷ snd ⟩} { Δ' = Δ' } refl refl 
+  --   = ⟨ irrelify-Only Δ' zero , N ⟩
+  -- irrelify-allbut⇒update {i = suc i} {Δ = ⟨ fst , x ∷ snd ⟩} {Δ' = Δ'} refl refl 
+  --   = ⟨ ⟨ [] , ⟨ (proj₁ x) , Irrelevant ⟩ ∷ [] ⟩ ++ᶜ proj₁ IH , S (proj₂ IH) ⟩
+  --     where
+  --       IH = irrelify-allbut⇒update { i = i } { Δ = ⟨ fst , snd ⟩ } refl refl
 
   -- An irrelified context is irrelevant
   irrelify-irr : ∀ { n m } ( Δ : Context n m )
@@ -113,21 +215,21 @@ module Utils.IrrelifyContext where
     The context attained by updating the only remaining prop to irrelevant
     after using irrelify-AllBut is all irrelevant.
   -}
-  irrelify-allbut-upd-irrel-irr : ∀ { n m Aₘ i } { Δ Δ' Δ'' : Context n m }
-    → (eq1 : Aₘ ≡ (Data.Vec.lookup (proj₂ Δ) i))
-    → (eq2 : Δ' ≡ irrelify-AllBut Δ i)
-    → (eq3 : Δ'' ≡ (proj₁ (irrelify-allbut⇒update eq1 eq2)))
-    → cIrrelevant Δ''
-  irrelify-allbut-upd-irrel-irr {i = zero} {⟨ fst , x ∷ snd ⟩} refl refl refl = irr/c (irrelify-irr ⟨ fst , snd ⟩)
-  irrelify-allbut-upd-irrel-irr {i = suc i} {⟨ fst , x ∷ snd ⟩} refl refl refl = irr/c (irrelify-allbut-upd-irrel-irr { i = i } refl refl refl)
+  -- irrelify-allbut-upd-irrel-irr : ∀ { n m Aₘ i } { Δ Δ' Δ'' : Context n m }
+  --   → (eq1 : Aₘ ≡ (Data.Vec.lookup (proj₂ Δ) i))
+  --   → (eq2 : Δ' ≡ irrelify-AllBut Δ i)
+  --   → (eq3 : Δ'' ≡ (proj₁ (irrelify-allbut⇒update eq1 eq2)))
+  --   → cIrrelevant Δ''
+  -- irrelify-allbut-upd-irrel-irr {i = zero} {⟨ fst , x ∷ snd ⟩} refl refl refl = irr/c (irrelify-irr ⟨ fst , snd ⟩)
+  -- irrelify-allbut-upd-irrel-irr {i = suc i} {⟨ fst , x ∷ snd ⟩} refl refl refl = irr/c (irrelify-allbut-upd-irrel-irr { i = i } refl refl refl)
 
   -- Corollary to the above: the context attained is also weakeanable.
-  irrelify-allbut-upd-irrel-weak : ∀ { n m Aₘ i } { Δ Δ' Δ'' : Context n m }
-    → (eq1 : Aₘ ≡ (Data.Vec.lookup (proj₂ Δ) i))
-    → (eq2 : Δ' ≡ irrelify-AllBut Δ i)
-    → (eq3 : Δ'' ≡ (proj₁ (irrelify-allbut⇒update eq1 eq2)))
-    → cWeakenable Δ''
-  irrelify-allbut-upd-irrel-weak eq1 eq2 eq3 = cIrrelevant-to-cWeaken (irrelify-allbut-upd-irrel-irr eq1 eq2 eq3)
+  -- irrelify-allbut-upd-irrel-weak : ∀ { n m Aₘ i } { Δ Δ' Δ'' : Context n m }
+  --   → (eq1 : Aₘ ≡ (Data.Vec.lookup (proj₂ Δ) i))
+  --   → (eq2 : Δ' ≡ irrelify-AllBut Δ i)
+  --   → (eq3 : Δ'' ≡ (proj₁ (irrelify-allbut⇒update eq1 eq2)))
+  --   → cWeakenable Δ''
+  -- irrelify-allbut-upd-irrel-weak eq1 eq2 eq3 = cIrrelevant-to-cWeaken (irrelify-allbut-upd-irrel-irr eq1 eq2 eq3)
 
   -- Given a linear context that has been mostly irrelified,
   -- the irrelified form is its right identity in a merge operation.
@@ -135,24 +237,43 @@ module Utils.IrrelifyContext where
     → cLinear Δ
     → merge (irrelify-AllBut Δ i) (irrelify-All Δ) (irrelify-AllBut Δ i)
   irrelify-lin-merge {i = zero} { Δ = ⟨ fst , x ∷ snd ⟩ } (lin/c lin) = mg/c (cIrrelevant-merge (irrelify-irr ⟨ fst , snd ⟩)) l∙i
-  irrelify-lin-merge {i = suc i} (lin/c lin) = mg/c (irrelify-lin-merge lin) i∙i
+  irrelify-lin-merge {i = suc i} (lin/c lin) = mg/c (irrelify-lin-merge lin) l∙i
 
   -- Given a linear context, its irrelified form is its left identity on the merge.
-  irrelify-all-left : ∀ { n m } { Δ : Context n m }
-    → cLinear Δ
+  irrelify-all-id-left : ∀ { n m } { Δ : Context n m }
+    → LinOrIrr Δ
     → merge (irrelify-All Δ) Δ Δ
-  irrelify-all-left lin/n = mg/n
-  irrelify-all-left (lin/c lin) = mg/c (irrelify-all-left lin) i∙l
+  irrelify-all-id-left lin/irr/z = mg/n
+  irrelify-all-id-left (lin/irr/s-1 lin/irr) = mg/c (irrelify-all-id-left lin/irr) i∙l
+  irrelify-all-id-left (lin/irr/s-2 lin/irr) = mg/c (irrelify-all-id-left lin/irr) i∙i
 
-  -- The following arguments are similar to the above argument.
-  postulate
-    irrelify-all-list-merge : ∀ { n m } { Δ : Context n m }
-      → (lst : List (Fin m))
-      → cLinear Δ
-      → merge (irrelify-All Δ) (irrelify-List Δ lst) (irrelify-List Δ lst)
+  -- Given a context that is linear, if we irrelified a list, a fully irrelified
+  -- version of the same list would be the left identity of the merge operation.
+  irrelify-all-list-merge : ∀ { n m } { Δ : Context n m }
+    → (lst : List (Fin m))
+    → (lin/irr : LinOrIrr Δ)
+    → merge (irrelify-All Δ) (proj₁ (irrelify-List-lin/irr Δ lst lin/irr)) (proj₁ (irrelify-List-lin/irr Δ lst lin/irr))
+  irrelify-all-list-merge {Δ = Δ} lst lin/irr with irrelify-List-lin/irr Δ lst lin/irr
+  ... | ⟨ Δ' , ⟨ fst , snd ⟩ ⟩ = irrel-lin/irr-merge-id-left fst (irrelify-irr Δ) (comparable-trans Δ'-comp-Δ lem)
+    where
+      Δ'-comp-Δ : Comparable Δ' Δ
+      Δ'-comp-Δ = comparable-comm snd
 
-    irrelify-allbut-list-merge : ∀ { n m } { Δ : Context n m }
-      → (i : Fin m)
-      → (lst : List (Fin m))
-      → cLinear Δ 
-      → merge (irrelify-AllBut Δ i) (irrelify-List Δ (i ∷ lst)) (irrelify-List Δ lst)
+      lem : ∀ { n m } → { Δ : Context n m }
+        → Comparable Δ (irrelify-All Δ)
+      lem {Δ = ⟨ fst , [] ⟩} = comp/z
+      lem {Δ = ⟨ fst , ⟨ fst₁ , Linear ⟩ ∷ snd ⟩} = comp/s lem
+      lem {Δ = ⟨ fst , ⟨ fst₁ , Unrestricted ⟩ ∷ snd ⟩} = comp/s lem
+      lem {Δ = ⟨ fst , ⟨ fst₁ , Irrelevant ⟩ ∷ snd ⟩} = comp/s lem
+
+  irrelify-allbut-list-merge : ∀ { n m } { Δ : Context n m }
+    → (idx : Fin m)
+    → (lst : List (Fin m))
+    → (lin/irr : LinOrIrr Δ)
+    → merge (irrelify-AllBut Δ idx) (proj₁ (irrelify-List-lin/irr Δ (idx ∷ lst) lin/irr)) (proj₁ (irrelify-List-lin/irr Δ lst lin/irr))
+  irrelify-allbut-list-merge { Δ = Δ } idx lst lin/irr with irrelify-List-lin/irr Δ lst lin/irr
+  irrelify-allbut-list-merge {Δ = ⟨ fst , .(⟨ _ , Linear ⟩ ∷ _) ⟩} zero [] (lin/irr/s-1 lin/irr) | ⟨ ⟨ .fst , .(⟨ _ , Linear ⟩) ∷ snd ⟩ , ⟨ lin/irr/s-1 fst₂ , comp/s snd₁ ⟩ ⟩ = mg/c {!   !} l∙i
+  irrelify-allbut-list-merge {Δ = ⟨ fst , .(⟨ _ , Linear ⟩ ∷ _) ⟩} zero [] (lin/irr/s-1 lin/irr) | ⟨ ⟨ .fst , .(⟨ _ , Irrelevant ⟩) ∷ snd ⟩ , ⟨ lin/irr/s-2 fst₂ , comp/s snd₁ ⟩ ⟩ = mg/c {!   !} {!   !}
+  irrelify-allbut-list-merge {Δ = ⟨ fst , .(⟨ _ , Irrelevant ⟩ ∷ _) ⟩} zero [] (lin/irr/s-2 lin/irr) | Δ₂ = {!   !}
+  irrelify-allbut-list-merge {Δ = Δ} zero (x ∷ lst) lin/irr | Δ₂ = {!   !}
+  irrelify-allbut-list-merge {Δ = Δ} (suc idx) lst lin/irr | Δ₂ = {!   !}
