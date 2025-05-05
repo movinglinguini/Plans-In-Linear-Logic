@@ -1,12 +1,15 @@
 open import Data.Nat
 open import Data.Vec
 open import Data.List hiding (merge)
+open import Data.List.Relation.Unary.Unique.Propositional
+open import Data.List.Relation.Unary.All
 open import Data.Fin
 open import Data.Product
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality
 open import Data.Vec.Membership.Propositional
 open import Data.Vec.Relation.Unary.Any
+open import Relation.Nullary.Negation using (contradiction; contraposition)
 
 module Utils.IrrelifyContext where
   open import Translations.Core.State
@@ -136,14 +139,27 @@ module Utils.IrrelifyContext where
       in let Δ''-lin/irr = irrel-only-lin/irr-2 x (proj₁ (proj₂ Δ'))
       in ⟨ Δ'' , ⟨ Δ''-lin/irr , 
                   comparable-trans (proj₂ (proj₂ Δ')) Δ''-comp ⟩ ⟩
+                  
   -- Extension of the above function, but starting with a fully linear context.
-  -- irrelify-List-lin : ∀ { n m } (Δ : Context n m)
-  --   → List (Fin m)
-  --   → cLinear Δ
-  --   → Σ (Context n m) (λ Δ' → LinOrIrr Δ')
-  -- irrelify-List-lin Δ [] lin = ⟨ Δ , (lin-to-lin/irr lin) ⟩
-  -- irrelify-List-lin Δ (idx ∷ lst) lin
-  --   = irrelify-List-lin/irr (irrelify-Only Δ idx) lst (irrel-only-lin/irr-1 idx lin) 
+  irrelify-List-lin : ∀ { n m } (Δ : Context n m)
+    → List (Fin m)
+    → cLinear Δ
+    → Σ (Context n m) (λ Δ' → (LinOrIrr Δ' × Comparable Δ Δ'))
+  irrelify-List-lin Δ lst lin = irrelify-List-lin/irr Δ lst (lin-to-lin/irr lin)
+
+  -- Let's say we've irrelified propositions from a unique list in a linea context. Then any proposition
+  -- that was not indexed by that list should be linear.
+  irrelify-list-still-lin : ∀ { n m idx Aₗ } { Δ : Context n m }
+    → (lin : cLinear Δ)
+    → (lst : List (Fin m))
+    → Unique (idx ∷ lst)
+    → Aₗ ≡ Data.Vec.lookup (proj₂ (proj₁ (irrelify-List-lin Δ lst lin))) idx
+    → proj₂ Aₗ ≡ Linear
+  irrelify-list-still-lin {idx = zero} (lin/c lin) [] uniq refl = refl
+  irrelify-list-still-lin {idx = suc idx} (lin/c lin) [] uniq refl = irrelify-list-still-lin lin [] ([] ∷ []) refl
+  irrelify-list-still-lin {idx = zero} (lin/c lin) (zero ∷ lst) ((px ∷ x₁) ∷ uniq) refl = contradiction refl px
+  irrelify-list-still-lin {idx = suc idx} (lin/c lin) (zero ∷ lst) ((px ∷ x₁) ∷ uniq) refl = {!  !}
+  irrelify-list-still-lin (lin/c lin) (suc x ∷ lst) (x₁ ∷ uniq) refl = {!   !}
 
   ∈⇒idx : ∀ { p m Aₘ } ( Δ : Context p m )
     → Aₘ ∈ proj₂ Δ
@@ -266,14 +282,8 @@ module Utils.IrrelifyContext where
       lem {Δ = ⟨ fst , ⟨ fst₁ , Unrestricted ⟩ ∷ snd ⟩} = comp/s lem
       lem {Δ = ⟨ fst , ⟨ fst₁ , Irrelevant ⟩ ∷ snd ⟩} = comp/s lem
 
-  irrelify-allbut-list-merge : ∀ { n m } { Δ : Context n m }
-    → (idx : Fin m)
-    → (lst : List (Fin m))
-    → (lin/irr : LinOrIrr Δ)
-    → merge (irrelify-AllBut Δ idx) (proj₁ (irrelify-List-lin/irr Δ (idx ∷ lst) lin/irr)) (proj₁ (irrelify-List-lin/irr Δ lst lin/irr))
-  irrelify-allbut-list-merge { Δ = Δ } idx lst lin/irr with irrelify-List-lin/irr Δ lst lin/irr
-  irrelify-allbut-list-merge {Δ = ⟨ fst , .(⟨ _ , Linear ⟩ ∷ _) ⟩} zero [] (lin/irr/s-1 lin/irr) | ⟨ ⟨ .fst , .(⟨ _ , Linear ⟩) ∷ snd ⟩ , ⟨ lin/irr/s-1 fst₂ , comp/s snd₁ ⟩ ⟩ = mg/c {!   !} l∙i
-  irrelify-allbut-list-merge {Δ = ⟨ fst , .(⟨ _ , Linear ⟩ ∷ _) ⟩} zero [] (lin/irr/s-1 lin/irr) | ⟨ ⟨ .fst , .(⟨ _ , Irrelevant ⟩) ∷ snd ⟩ , ⟨ lin/irr/s-2 fst₂ , comp/s snd₁ ⟩ ⟩ = mg/c {!   !} {!   !}
-  irrelify-allbut-list-merge {Δ = ⟨ fst , .(⟨ _ , Irrelevant ⟩ ∷ _) ⟩} zero [] (lin/irr/s-2 lin/irr) | Δ₂ = {!   !}
-  irrelify-allbut-list-merge {Δ = Δ} zero (x ∷ lst) lin/irr | Δ₂ = {!   !}
-  irrelify-allbut-list-merge {Δ = Δ} (suc idx) lst lin/irr | Δ₂ = {!   !}
+  irrelify-allbut-list-merge : ∀ { n m idx } { Δ : Context n m } { lst : List (Fin m) }
+    → (lin : cLinear Δ)
+    → (uniq-lst : Unique lst)
+    → (uniq-lst-ext : Unique (idx ∷ lst))
+    → merge (irrelify-AllBut Δ idx) (proj₁ (irrelify-List-lin Δ (idx ∷ lst) lin)) (proj₁ (irrelify-List-lin Δ lst lin)) 
